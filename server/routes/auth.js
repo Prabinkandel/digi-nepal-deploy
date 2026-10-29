@@ -29,7 +29,7 @@ async function challenge(emailAddress, purpose, extra = {}) {
   if (!await mailer.configured()) fail(503, 'Email is not configured. Contact the site administrator.');
   const code = String(randomInt(10000000, 100000000));
   await Challenge.findOneAndUpdate({ email: emailAddress, purpose }, { ...extra, code_hash: await bcrypt.hash(code, 12), expires_at: new Date(Date.now()+10*60000), attempts: 0 }, { upsert: true });
-  await mailer.sendMail({ to: emailAddress, subject: purpose === 'reset' ? 'Reset your Digi Nepal password' : 'Verify your Digi Nepal email', text: 'Your verification code is ' + code + '. It expires in 10 minutes. If you did not request this, ignore this email.' });
+  await mailer.sendMail({ to: emailAddress, subject: purpose === 'reset' ? 'Reset your Digi Prime Nepal password' : 'Verify your Digi Prime Nepal email', text: 'Your verification code is ' + code + '. It expires in 10 minutes. If you did not request this, ignore this email.' });
 }
 async function consume(emailAddress, purpose, code) {
   const record = await Challenge.findOneAndUpdate({ email: emailAddress, purpose, attempts: { $lt: 5 }, expires_at: { $gt: new Date() } }, { $inc: { attempts: 1 } }, { new: true });
@@ -54,10 +54,10 @@ router.post('/send-otp', limited, async (req, res) => {
 
   const mailResult = await mailer.sendMail({
     to: data.email,
-    subject: `🔐 Your Digi Nepal Login Verification Code: ${otpCode}`,
+    subject: `🔐 Your Digi Prime Nepal Login Verification Code: ${otpCode}`,
     html: `<div style="font-family:'Segoe UI',Helvetica,Arial,sans-serif;max-width:520px;margin:0 auto;padding:24px;background:#141416;color:#ffffff;border-radius:16px;border:1px solid #2a2a30;">
       <div style="text-align:center;margin-bottom:20px;">
-        <h2 style="color:#e50914;margin:0;font-size:24px;letter-spacing:-0.5px;">Digi Nepal</h2>
+        <h2 style="color:#e50914;margin:0;font-size:24px;letter-spacing:-0.5px;">Digi Prime Nepal</h2>
         <p style="color:#a1a1aa;font-size:13px;margin-top:4px;">Secure Account Authentication</p>
       </div>
       <div style="background:#1c1c20;padding:20px;border-radius:12px;text-align:center;border:1px solid #33333d;">
@@ -111,9 +111,9 @@ router.post('/test-email', auth, async (req, res) => {
   const data = z.object({ to: email }).strict().parse(req.body);
   const result = await mailer.sendMail({
     to: data.to,
-    subject: '🧪 Digi Nepal Gmail SMTP Test Email',
+    subject: '🧪 Digi Prime Nepal Gmail SMTP Test Email',
     html: `<div style="font-family:sans-serif;padding:24px;background:#141416;color:#ffffff;border-radius:12px;border:1px solid #333;">
-      <h2 style="color:#e50914;">Digi Nepal SMTP Configuration</h2>
+      <h2 style="color:#e50914;">Digi Prime Nepal SMTP Configuration</h2>
       <p style="font-size:15px;color:#e4e4e7;">Congratulations! Your Gmail SMTP email setup is working perfectly!</p>
       <p style="font-size:13px;color:#a1a1aa;">Sent at: ${new Date().toLocaleString()}</p>
     </div>`
@@ -130,7 +130,7 @@ router.get('/google/start', limit('google-start', 12, 900), async (req,res,next)
   if (!google.configured()) return res.redirect('/?auth=google-unavailable');
   try { const url = google.start(req); await new Promise((resolve,reject) => req.session.save(error => error ? reject(error) : resolve())); res.redirect(url); } catch (error) { next(error); }
 });
-router.get('/google/callback', limit('google-callback', 12, 900), async (req,res,next) => {
+router.get('/google/callback', limit('google-callback', 12, 900), async (req,res,_next) => {
   if (!google.configured()) return res.redirect('/?auth=google-unavailable');
   try {
     const code = typeof req.query.code === 'string' ? req.query.code : ''; const state = typeof req.query.state === 'string' ? req.query.state : '';

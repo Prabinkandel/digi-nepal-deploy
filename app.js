@@ -4,7 +4,7 @@ if (['localhost','127.0.0.1'].includes(window.location.hostname) && ['5500', '55
 const API = '/api';
 const WHATSAPP_ICON_SVG = '<svg class="whatsapp-icon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>';
 const GOOGLE_ICON_SVG = '<svg class="google-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>';
-const state = { user: null, csrf: localStorage.getItem('dn_csrf') || '', category: '', categoryName: '', sort: 'newest', search: '', page: 1, total: 0, catalog: [], searchTimer: null, catalogSearchTimer: null, searchController: null, catalogController: null, providers: { google: false }, pendingAction: null };
+const state = { user: null, csrf: localStorage.getItem('dn_csrf') || '', category: '', categoryName: '', sort: 'newest', search: '', page: 1, total: 0, catalog: [], allCatalog: [], categories: [], campaign: null, campaignItems: [], searchTimer: null, catalogSearchTimer: null, searchController: null, catalogController: null, providers: { google: false }, pendingAction: null };
 const $ = id => document.getElementById(id);
 const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, char => ({ '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;' }[char]));
 const formatMoney = amount => new Intl.NumberFormat('en-NP',{style:'currency',currency:'NPR',maximumFractionDigits:0}).format(Number(amount || 0));
@@ -106,6 +106,15 @@ function durationOf(product) {
 
 function getBrandEmblem(name) {
   const n = (name || '').toLowerCase();
+  if (n.includes('free fire') || n.includes('diamond')) {
+    return '<span class="brand-badge brand-freefire" style="background:linear-gradient(135deg,#1f0a0c,#3b0d11)" aria-hidden="true"><svg viewBox="0 0 40 40" width="48" height="48" fill="none"><rect width="40" height="40" rx="9" fill="#140608"/><path d="M20 7L28 14L20 33L12 14L20 7Z" fill="#ff4b2b" stroke="#ffa200" stroke-width="1.5"/><path d="M20 7L24 14L20 22L16 14L20 7Z" fill="#ffe600"/><polygon points="20,11 25,14 20,24 15,14" fill="#fff" opacity=".35"/></svg></span>';
+  }
+  if (n.includes('pubg')) {
+    return '<span class="brand-badge brand-pubg" style="background:#1a1505" aria-hidden="true"><svg viewBox="0 0 40 40" width="48" height="48" fill="none"><rect width="40" height="40" rx="9" fill="#181308"/><path d="M12 14h16v12H12z" fill="#f59e0b"/><circle cx="20" cy="20" r="4" fill="#000"/></svg></span>';
+  }
+  if (n.includes('steam')) {
+    return '<span class="brand-badge brand-steam" style="background:#0a1728" aria-hidden="true"><svg viewBox="0 0 40 40" width="48" height="48" fill="none"><rect width="40" height="40" rx="9" fill="#0a1728"/><circle cx="20" cy="20" r="11" stroke="#38bdf8" stroke-width="2"/><circle cx="16" cy="18" r="3.5" fill="#38bdf8"/></svg></span>';
+  }
   if (n.includes('netflix')) {
     return '<span class="brand-badge brand-netflix" aria-hidden="true"><svg viewBox="0 0 40 40" width="48" height="48" fill="none"><rect width="40" height="40" rx="9" fill="#080808"/><path d="M13 10V30M27 10V30" stroke="#B81D24" stroke-width="4" stroke-linecap="round"/><path d="M13 10L27 30" stroke="#E50914" stroke-width="4.2" stroke-linecap="round"/></svg></span>';
   }
@@ -172,24 +181,103 @@ function getBrandEmblem(name) {
   if (n.includes('prime') || n.includes('amazon')) {
     return '<span class="brand-badge brand-prime" aria-hidden="true"><svg viewBox="0 0 40 40" width="48" height="48" fill="none"><rect width="40" height="40" rx="9" fill="#00A8E1"/><path d="M11 20H15M25 20H29" stroke="#FFF" stroke-width="2.5" stroke-linecap="round"/><path d="M13 24C16 27 24 27 27 24" stroke="#FFF" stroke-width="2.5" stroke-linecap="round"/></svg></span>';
   }
-  const tone = ((name || '').charCodeAt(0) % 5);
-  const initial = escapeHtml((name || '?').slice(0, 1).toUpperCase());
-  return '<span class="product-monogram tone-' + tone + '" aria-hidden="true">' + initial + '</span>';
+  const initials = (name || '?').trim().split(/\s+/).map(w => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
+  return '<span class="product-monogram brand-monogram" aria-hidden="true">' + escapeHtml(initials || '?') + '</span>';
+}
+/* ═══════════════════════════════════════════════════════════════════════════
+   AUTO-THEMING ENGINE — Zero-Config Dynamic Brand Colors
+   3-Tier Fallback: Brand Hex → Category Palette → Digi Nepal Default
+   ═══════════════════════════════════════════════════════════════════════════ */
+function hexToHSL(hex) {
+  hex = hex.replace('#', '');
+  const r = parseInt(hex.substr(0,2),16)/255, g = parseInt(hex.substr(2,2),16)/255, b = parseInt(hex.substr(4,2),16)/255;
+  const max = Math.max(r,g,b), min = Math.min(r,g,b);
+  let h = 0, s = 0, l = (max+min)/2;
+  if (max !== min) {
+    const d = max-min;
+    s = l > 0.5 ? d/(2-max-min) : d/(max+min);
+    if (max === r) h = ((g-b)/d+(g<b?6:0))/6;
+    else if (max === g) h = ((b-r)/d+2)/6;
+    else h = ((r-g)/d+4)/6;
+  }
+  return [Math.round(h*360), Math.round(s*100), Math.round(l*100)];
+}
+
+/* Tier 1: Explicit brand colors [primary, secondary] */
+const BRAND_COLORS = {
+  netflix:['#E50914','#FF6B6B'], spotify:['#1DB954','#1ED760'], youtube:['#FF0000','#FF4444'],
+  chatgpt:['#10A37F','#1ED4A8'], openai:['#10A37F','#1ED4A8'], gpt:['#10A37F','#1ED4A8'],
+  claude:['#E8843C','#F5A05A'], anthropic:['#E8843C','#F5A05A'],
+  canva:['#00C4CC','#7D2AE8'], figma:['#A259FF','#0ACF83'], adobe:['#FA0F00','#FF6B6B'],
+  microsoft:['#00A4EF','#FFB900'], office:['#00A4EF','#FFB900'], '365':['#00A4EF','#FFB900'],
+  google:['#4285F4','#34A853'], github:['#8B949E','#F0F6FC'], copilot:['#8B949E','#F0F6FC'],
+  duolingo:['#58CC02','#1CB0F6'], coursera:['#0056D2','#38BDF8'],
+  linkedin:['#0077B5','#00A0DC'], notion:['#787774','#F7F6F3'],
+  disney:['#113CCF','#29B6F6'], hotstar:['#113CCF','#29B6F6'],
+  expressvpn:['#DA3940','#F87171'], nordvpn:['#4687FF','#6366F1'], nord:['#4687FF','#6366F1'],
+  surfshark:['#29B6F6','#14B8A6'], vpn:['#14B8A6','#6366F1'],
+  prime:['#00A8E1','#1ED760'], amazon:['#FF9900','#FFD700'],
+  midjourney:['#B8C4D4','#FFFFFF'], apple:['#A2AAAD','#FFFFFF'],
+  grammarly:['#15C39A','#0BA770'], zoom:['#2D8CFF','#0B5CFF'],
+  dropbox:['#0061FF','#60A5FA'], slack:['#4A154B','#E01E5A'],
+  twitch:['#9146FF','#BF94FF'], telegram:['#0088CC','#34AADC'],
+  whatsapp:['#25D366','#128C7E']
+};
+
+/* Tier 2: Category-based palettes */
+const CATEGORY_PALETTES = {
+  'ai tools':['#8B5CF6','#06B6D4'], 'ai':['#8B5CF6','#06B6D4'],
+  'entertainment':['#E11D48','#FB7185'], 'streaming':['#E11D48','#FB7185'],
+  'design & media':['#D946EF','#F59E0B'], 'design':['#D946EF','#F59E0B'], 'media':['#D946EF','#F59E0B'],
+  'cloud & office':['#2563EB','#38BDF8'], 'cloud':['#2563EB','#38BDF8'], 'productivity':['#2563EB','#38BDF8'],
+  'education':['#10B981','#84CC16'], 'learning':['#10B981','#84CC16'],
+  'security & vpn':['#14B8A6','#6366F1'], 'security':['#14B8A6','#6366F1'],
+  'gaming':['#EF4444','#F97316'], 'games':['#EF4444','#F97316'], 'game':['#EF4444','#F97316']
+};
+
+/* Tier 3: Digi Nepal default crimson-coral */
+const DEFAULT_THEME = { primary: hexToHSL('#EF4444'), secondary: hexToHSL('#F97316') };
+
+function getBrandTheme(name, category, explicitHex) {
+  // Tier 1: Explicit Brand Hex Prop
+  if (explicitHex && typeof explicitHex === 'string' && /^#[0-9a-f]{3,8}$/i.test(explicitHex.trim())) {
+    const primary = hexToHSL(explicitHex.trim());
+    const secondary = [(primary[0] + 25) % 360, Math.min(100, primary[1] + 5), Math.min(85, primary[2] + 10)];
+    return { primary, secondary };
+  }
+  const n = (name || '').toLowerCase();
+  // Tier 1b: Exact brand registry match
+  for (const [brand, colors] of Object.entries(BRAND_COLORS)) {
+    if (n.includes(brand)) return { primary: hexToHSL(colors[0]), secondary: hexToHSL(colors[1]) };
+  }
+  // Tier 2: Category palette
+  const cat = (category || '').toLowerCase();
+  for (const [key, colors] of Object.entries(CATEGORY_PALETTES)) {
+    if (cat.includes(key)) return { primary: hexToHSL(colors[0]), secondary: hexToHSL(colors[1]) };
+  }
+  // Tier 3: Default Digi Nepal Crimson-Coral
+  return DEFAULT_THEME;
+}
+
+function themeVarsString(theme) {
+  return '--bh:' + theme.primary[0] + ';--bs:' + theme.primary[1] + '%;--bl:' + theme.primary[2] +
+    '%;--bh2:' + theme.secondary[0] + ';--bs2:' + theme.secondary[1] + '%;--bl2:' + theme.secondary[2] + '%';
 }
 
 function productVisual(product, compact = false) {
   const brandVisual = getBrandEmblem(product.name);
+  const cls = 'product-image' + (compact ? ' compact-product-image' : '');
   if (!product.image_url) {
-    return '<div class="product-image' + (compact ? ' compact-product-image' : '') + '">' + brandVisual + '</div>';
+    return '<div class="' + cls + '"><div class="banner-logo-wrap">' + brandVisual + '</div></div>';
   }
   const img = '<img src="' + escapeHtml(product.image_url) + '" alt="' + escapeHtml(product.name || '') + '" loading="lazy" decoding="async" onload="this.classList.add(\'loaded\')" onerror="this.style.display=\'none\';if(this.nextElementSibling)this.nextElementSibling.style.display=\'flex\';">';
   const fallback = '<div style="display:none" class="brand-fallback-wrap">' + brandVisual + '</div>';
-  return '<div class="product-image' + (compact ? ' compact-product-image' : '') + '">' + img + fallback + '</div>';
+  return '<div class="' + cls + '">' + img + fallback + '</div>';
 }
 
-/* ── Reusable festive sale badge ─────────────────────────────────────────
-   Supports: dashain | tihar | newyear | flash | (any plain label)
-   Usage: saleBadge({ type: 'dashain', label: 'DASHAIN SALE' })
+/* ── Reusable festive sale & status badge ─────────────────────────────────
+   Supports: hot | popular | sale | bestseller | new | dashain | tihar | newyear | flash | plain
+   Usage: saleBadge('POPULAR') or saleBadge({ type: 'hot', label: 'HOT' })
    ─────────────────────────────────────────────────────────────────────── */
 function saleBadge(labelOrObj) {
   if (!labelOrObj) return '';
@@ -198,96 +286,229 @@ function saleBadge(labelOrObj) {
   if (typeof labelOrObj === 'string') {
     label = labelOrObj;
     const lo = label.toLowerCase();
-    if (lo.includes('dashain'))     type = 'dashain';
-    else if (lo.includes('tihar')) type = 'tihar';
-    else if (lo.includes('new year') || lo.includes('newyear')) type = 'newyear';
-    else if (lo.includes('flash'))  type = 'flash';
-    else                            type = 'plain';
+    if (lo.includes('dashain'))                                    type = 'dashain';
+    else if (lo.includes('tihar'))                                 type = 'tihar';
+    else if (lo.includes('new year') || lo.includes('newyear'))    type = 'newyear';
+    else if (lo.includes('hot'))                                   type = 'hot';
+    else if (lo.includes('popular'))                               type = 'popular';
+    else if (lo.includes('bestseller') || lo.includes('best seller')) type = 'bestseller';
+    else if (lo.includes('new'))                                   type = 'new';
+    else if (lo.includes('sale') || lo.includes('flash'))          type = 'sale';
+    else                                                           type = 'plain';
   } else {
     label = labelOrObj.label || '';
     type  = labelOrObj.type  || 'plain';
   }
 
   const icons = {
-    // Premium Tika + Jamara barley grass + gold sparkle + akshata
-    dashain: '<svg class="sb-icon" viewBox="0 0 18 18" width="16" height="16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
-      '<path d="M6.5 14 C5.5 10, 4 6, 2.5 2.5" stroke="#7ac95b" stroke-width="1.3" stroke-linecap="round"/>' +
-      '<path d="M8 14 C7.5 9, 6.2 4.8, 5.8 1.5" stroke="#9de878" stroke-width="1.4" stroke-linecap="round"/>' +
-      '<path d="M9 14 C9.5 9, 10.8 4.8, 11.2 1.5" stroke="#7ac95b" stroke-width="1.4" stroke-linecap="round"/>' +
-      '<path d="M10.5 14 C12 10, 13.5 6, 14.8 2.8" stroke="#5da842" stroke-width="1.3" stroke-linecap="round"/>' +
-      '<path d="M8.5 14 C8.5 8, 8.5 4, 8.5 1" stroke="#b6f792" stroke-width="1.2" stroke-linecap="round"/>' +
-      '<path d="M14.5 1.5 L15 2.5 L16 3 L15 3.5 L14.5 4.5 L14 3.5 L13 3 L14 2.5 Z" fill="#ffd15c"/>' +
-      '<circle cx="6.2" cy="11.5" r="0.75" fill="#ffeaa7"/>' +
-      '<circle cx="11.2" cy="11.2" r="0.7" fill="#ffeaa7"/>' +
-      '<circle cx="7.2" cy="14.4" r="0.65" fill="#ffeaa7"/>' +
-      '<circle cx="10.4" cy="14.5" r="0.65" fill="#ffeaa7"/>' +
-      '<circle cx="8.7" cy="12.8" r="2.7" fill="#be1222"/>' +
-      '<circle cx="8.7" cy="12.8" r="2.1" fill="#e02232"/>' +
-      '<circle cx="8.1" cy="12.1" r="0.9" fill="#ff6b78"/>' +
-    '</svg>',
-
-    tihar: '<svg class="sb-icon" viewBox="0 0 18 18" width="16" height="16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
-      '<ellipse cx="9" cy="14.5" rx="3.5" ry="1.5" fill="#c0841b" opacity=".6"/>' +
-      '<path d="M9 12.5 Q7 8.5 9 4.5 Q11 8.5 9 12.5Z" fill="#f5a623"/>' +
-      '<path d="M9 10.5 Q8 8 9 6 Q10 8 9 10.5Z" fill="#ffe07a"/>' +
-      '<circle cx="9" cy="14.5" r="1.2" fill="#d4950a"/>' +
-    '</svg>',
-
-    newyear: '<svg class="sb-icon" viewBox="0 0 18 18" width="16" height="16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
-      '<path d="M9 2 L9 16 M2 9 L16 9 M4 4 L14 14 M14 4 L4 14" stroke="#f5be3c" stroke-width="1.3" stroke-linecap="round"/>' +
-      '<circle cx="9" cy="9" r="2" fill="#f5be3c"/>' +
-    '</svg>',
-
-    flash: '<svg class="sb-icon" viewBox="0 0 18 18" width="16" height="16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
-      '<path d="M10.5 1.5 L4.5 10 L9 10 L6.5 16.5 L12.5 8 L8 8 Z" fill="#f5be3c" stroke="#d4950a" stroke-width=".4"/>' +
-    '</svg>',
-
+    dashain: '<svg class="sb-icon" viewBox="0 0 18 18" width="14" height="14" fill="none" aria-hidden="true"><path d="M6.5 14 C5.5 10, 4 6, 2.5 2.5" stroke="#7ac95b" stroke-width="1.3" stroke-linecap="round"/><path d="M8 14 C7.5 9, 6.2 4.8, 5.8 1.5" stroke="#9de878" stroke-width="1.4" stroke-linecap="round"/><path d="M9 14 C9.5 9, 10.8 4.8, 11.2 1.5" stroke="#7ac95b" stroke-width="1.4" stroke-linecap="round"/><circle cx="8.7" cy="12.8" r="2.1" fill="#e02232"/></svg>',
+    tihar: '<svg class="sb-icon" viewBox="0 0 18 18" width="14" height="14" fill="none" aria-hidden="true"><ellipse cx="9" cy="14.5" rx="3.5" ry="1.5" fill="#c0841b" opacity=".6"/><path d="M9 12.5 Q7 8.5 9 4.5 Q11 8.5 9 12.5Z" fill="#f5a623"/><circle cx="9" cy="14.5" r="1.2" fill="#d4950a"/></svg>',
+    newyear: '<svg class="sb-icon" viewBox="0 0 18 18" width="14" height="14" fill="none" aria-hidden="true"><path d="M9 2 L9 16 M2 9 L16 9" stroke="#f5be3c" stroke-width="1.3" stroke-linecap="round"/><circle cx="9" cy="9" r="2" fill="#f5be3c"/></svg>',
+    hot: '<svg class="sb-icon" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 17c1.38 0 2.5-1.12 2.5-2.5 0-.74-.28-1.42-.74-1.92L12 11.5l-.76 1.08c-.46.5-.74 1.18-.74 1.92Z"/><path d="M12 2c1 3 4 5 4 9a6 6 0 0 1-12 0c0-4 3-6 4-9 1 2 2 3 4 0Z"/></svg>',
+    popular: '<svg class="sb-icon" viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>',
+    sale: '<svg class="sb-icon" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 1.5 L4.5 10 L9 10 L6.5 16.5 L12.5 8 L8 8 Z" fill="currentColor"/></svg>',
+    bestseller: '<svg class="sb-icon" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>',
+    new: '<svg class="sb-icon" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
+    flash: '<svg class="sb-icon" viewBox="0 0 18 18" width="12" height="12" fill="none" aria-hidden="true"><path d="M10.5 1.5 L4.5 10 L9 10 L6.5 16.5 L12.5 8 L8 8 Z" fill="#f5be3c"/></svg>',
+    campaign: '<svg class="sb-icon" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 1.5 L4.5 10 L9 10 L6.5 16.5 L12.5 8 L8 8 Z" fill="currentColor"/></svg>',
     plain: ''
   };
+
+  /* ── Special: campaign label with admin-configured banner image ── */
+  if (type === 'campaign' && labelOrObj && labelOrObj.banner) {
+    return '<span class="store-badge store-badge-campaign sb-campaign sb-campaign-banner" data-campaign="campaign">' +
+      '<img src="' + escapeHtml(labelOrObj.banner) + '" alt="On sale" class="campaign-banner-img" loading="lazy">' +
+    '</span>';
+  }
+
+  /* ── Special: Dashain festive graphic emblem ── */
+  if (type === 'dashain') {
+    return '<span class="store-badge-festive sb-dashain-emblem" data-campaign="dashain" title="' + escapeHtml(label || 'Dashain Sale') + '">' +
+      '<img src="/dashain-sale-banner.png" alt="Dashain Sale" class="dashain-emblem-img" loading="lazy">' +
+    '</span>';
+  }
 
   const icon = icons[type] || '';
   const cls  = 'store-badge store-badge-campaign sb-' + type;
   return '<span class="' + cls + '" data-campaign="' + type + '">' + icon + '<span class="sb-label">' + escapeHtml(label) + '</span></span>';
 }
 
-function productCard(product) {
-  const badge = product.offer_label || product.badge;
-  const saving = savingsOf(product);
-  const duration = durationOf(product);
-  const inStock = product.stock === undefined || product.stock === null || Number(product.stock) > 0;
-  const benefits = (product.features || []).slice(0,3).map(feature => '<li>' + escapeHtml(feature) + '</li>').join('');
-  const badges = [];
-  if (saving) badges.push('<span class="store-badge store-badge-save">-' + saving.percent + '%</span>');
-  if (badge)  badges.push(saleBadge(badge));
-  return '<article class="product-card">' +
-    '<div class="card-visual">' + productVisual(product) +
-      (badges.length ? '<div class="card-badges">' + badges.join('') + '</div>' : '') +
-    '</div>' +
+/* Build a campaign status badge for a product card. When a live campaign has
+   card badges enabled and its short label is not already the product's offer
+   label, this renders the campaign's label (with banner image when set) so
+   customers can see which sale a product belongs to. */
+/* Campaign target check: true when the live campaign explicitly lists this
+   product (admin "Products in this sale" picker) or when it is one of the
+   items returned by /api/campaigns/active (explicit picks + discount
+   fallback). */
+function isCampaignTarget(product) {
+  if (!state.campaign) return false;
+  if ((state.campaign.product_ids || []).includes(product.id)) return true;
+  return (state.campaignItems || []).some(item => item.id === product.id);
+}
+
+function campaignBadge(product, saving) {
+  const campaign = state.campaign;
+  if (!campaign || !campaign.show_sale_badge_on_cards || !isCampaignTarget(product)) return '';
+  const shortLabel = String(campaign.short_label || 'ON SALE').toUpperCase();
+  if (String(product.offer_label || '').toUpperCase() === shortLabel) return '';
+  if (campaign.banner_image_url) {
+    return saleBadge({ type: 'campaign', label: shortLabel, banner: campaign.banner_image_url });
+  }
+  if (saving && campaign.badge_text && campaign.badge_text !== '-{pct}') {
+    return saleBadge({ type: 'campaign', label: campaign.badge_text.replace('{pct}', String(saving.percent)) });
+  }
+  return saleBadge({ type: 'campaign', label: shortLabel });
+}
+
+/* Group duration variants (e.g. "ChatGPT Plus" 1 Month / 1 Year) into one
+   browsable card. All values come from the live catalogue. */
+function baseKey(name) { return String(name || '').trim().toLowerCase(); }
+
+function groupProducts(products) {
+  const map = new Map();
+  for (const p of (products || [])) {
+    const key = baseKey(p.name);
+    if (!map.has(key)) map.set(key, { key, name: p.name, category_name: p.category_name, category_id: p.category_id, image_url: p.image_url, brand_color: p.brand_color || p.brandColor, variants: [] });
+    const g = map.get(key);
+    g.variants.push(p);
+    if (!g.image_url && p.image_url) g.image_url = p.image_url;
+    if (!g.brand_color && (p.brand_color || p.brandColor)) g.brand_color = p.brand_color || p.brandColor;
+  }
+  return [...map.values()].map(g => {
+    g.variants.sort((a, b) => Number(a.price) - Number(b.price));
+    g.minPrice = Math.min(...g.variants.map(v => Number(v.price || 0)));
+    const withSaving = g.variants.map(v => ({ v, s: savingsOf(v) })).filter(x => x.s).sort((a, b) => b.s.percent - a.s.percent);
+    g.bestSaving = withSaving.length ? withSaving[0].s : null;
+    const dashainVariant = g.variants.find(v => (v.badge && v.badge.toLowerCase().includes('dashain')) || (v.offer_label && v.offer_label.toLowerCase().includes('dashain')));
+    g.offer_label = dashainVariant ? (dashainVariant.badge || dashainVariant.offer_label) : ((withSaving.length && withSaving[0].v.offer_label) || g.variants.find(v => v.badge)?.badge || g.variants[0].badge || '');
+    const durs = g.variants.map(v => durationOf(v)).filter(Boolean);
+    g.durationLabel = durs.length > 1 ? durs[0] + ' – ' + durs[durs.length - 1] : (durs[0] || '');
+    g.inStock = g.variants.some(v => v.stock === undefined || v.stock === null || Number(v.stock) > 0);
+    g.rep = g.variants[0];
+    g.maxPrice = withSaving.length ? withSaving[0].v.original_price || withSaving[0].v.compare_price : null;
+    return g;
+  });
+}
+
+/* Short, consistent pill label for a duration ("1 Month" -> "1M", "1 Year" -> "1Yr"). */
+function durationPillLabel(variant) {
+  const d = durationOf(variant);
+  if (!d) return null;
+  if (d === 'Lifetime') return 'Life';
+  const m = d.match(/(\d+)\s*(Month|Year|Week|Day)/i);
+  if (!m) return d;
+  const n = m[1];
+  const unit = m[2].charAt(0).toUpperCase() + m[2].slice(1, 2).toLowerCase();
+  return n + (unit === 'Year' ? 'Yr' : unit.charAt(0));
+}
+
+/* Builds the clickable duration pill row for a multi-variant group.
+   Each pill maps to one duration variant; the cheapest is selected by default. */
+function durationPills(group) {
+  const variants = selectedGroupVariants(group).filter(v => {
+    const inStock = v.stock === undefined || v.stock === null || Number(v.stock) > 0;
+    return inStock;
+  });
+  if (!variants.length) return '';
+  const pills = variants.map(v => {
+    const label = durationPillLabel(v) || v.name;
+    return '<button type="button" class="dur-pill" data-pill-variant="' + escapeHtml(v.id) + '" aria-pressed="false">' +
+      '<span class="dur-pill-label">' + escapeHtml(label) + '</span>' +
+      '<span class="dur-pill-price">' + formatMoney(v.price) + '</span>' +
+    '</button>';
+  }).join('');
+  return '<div class="duration-pills" role="group" aria-label="Choose a plan duration">' + pills + '</div>';
+}
+
+/* After a card is rendered, bind its duration pills: clicking one updates the
+   card's displayed NPR price and marks the chosen variant so Buy Now carries it. */
+function wireDurationPills(card) {
+  const pills = card.querySelectorAll('.duration-pills .dur-pill');
+  if (!pills.length) return;
+  const priceEl = card.querySelector('[data-card-price]');
+  const ctxEl = card.querySelector('.price-context');
+  const buyBtn = card.querySelector('.card-buy[data-group-view]');
+  const activate = (pill) => {
+    pills.forEach(p => {
+      const on = p === pill;
+      p.classList.toggle('active', on);
+      p.setAttribute('aria-pressed', String(on));
+    });
+    const variantId = pill.dataset.pillVariant;
+    const group = state.groupByKey?.get(card.dataset.groupKey);
+    const variant = group ? group.variants.find(v => v.id === variantId) : null;
+    if (!variant) return;
+    if (priceEl) priceEl.textContent = formatMoney(variant.price);
+    if (ctxEl) ctxEl.textContent = 'SELECTED';
+    if (buyBtn) buyBtn.dataset.selectedVariant = variant.id;
+  };
+  pills.forEach(pill => { pill.onclick = (e) => { e.stopPropagation(); activate(pill); }; });
+  const defaultPill = card.querySelector('.duration-pills .dur-pill');
+  if (defaultPill) { activate(defaultPill); }
+}
+
+function productCard(group) {
+  const saving = group.bestSaving;
+  const multi = group.variants.length > 1;
+  const theme = getBrandTheme(group.name, group.category_name, group.brand_color);
+  const tvars = themeVarsString(theme);
+
+  // Dual-slot badges: Top-Left discount pill, Top-Right promotional/status badge
+  const discountBadge = saving ? '<span class="store-badge store-badge-save">-' + saving.percent + '% OFF</span>' : '';
+  const campaignBadgeHtml = group.variants
+    .map(v => campaignBadge(v, saving))
+    .find(Boolean) || '';
+  const statusBadge = group.offer_label ? saleBadge(group.offer_label) : campaignBadgeHtml;
+  const badgesHtml = (discountBadge || statusBadge)
+    ? '<div class="card-badges">' +
+        '<div class="badge-slot-left">' + discountBadge + '</div>' +
+        '<div class="badge-slot-right">' + statusBadge + '</div>' +
+      '</div>'
+    : '';
+
+  const visual = group.image_url
+    ? productVisual({ name: group.name, image_url: group.image_url })
+    : productVisual(group.rep);
+
+  const crossedPrice = group.maxPrice ? '<s class="was-price">' + formatMoney(group.maxPrice) + '</s>' : '';
+
+  return '<article class="product-card" data-group-key="' + escapeHtml(group.key) + '" style="' + tvars + '" tabindex="0" role="button" aria-label="View ' + escapeHtml(group.name) + ' plans">' +
+    '<div class="card-glow" aria-hidden="true"></div>' +
+    '<div class="card-visual">' + visual + badgesHtml + '</div>' +
     '<div class="card-body">' +
-      '<p class="product-category">' + escapeHtml(product.category_name || 'DIGITAL SERVICE') + '</p>' +
-      '<h3>' + escapeHtml(product.name) + '</h3>' +
-      '<p class="product-desc">' + escapeHtml(product.description || 'View subscription details and plan information.') + '</p>' +
-      (benefits ? '<ul class="product-benefits">' + benefits + '</ul>' : '') +
+      '<p class="product-category">' + escapeHtml(group.category_name || 'DIGITAL SERVICE') + '</p>' +
+      '<h3>' + escapeHtml(group.name) + '</h3>' +
       '<div class="card-meta">' +
-        (duration ? '<span class="card-meta-item">' + escapeHtml(duration) + '</span>' : '') +
-        '<span class="card-meta-stock' + (inStock ? '' : ' is-out') + '">' + (inStock ? 'Available now' : 'Currently unavailable') + '</span>' +
+        (group.durationLabel ? '<span class="card-meta-item"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>' + escapeHtml(group.durationLabel) + '</span>' : '') +
+        (multi ? '<span class="card-meta-item card-meta-plans"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>' + group.variants.length + ' plans</span>' : '') +
+        '<span class="card-meta-stock' + (group.inStock ? '' : ' is-out') + '">' + (group.inStock ? 'Available now' : 'Currently unavailable') + '</span>' +
       '</div>' +
       '<div class="price-row">' +
-        '<div><small>Price</small><span class="price">' + formatMoney(product.price) + '</span></div>' +
-        (saving ? '<div class="price-compare"><small class="was-price">' + formatMoney(product.original_price) + '</small><span class="price-save">Save ' + formatMoney(saving.amount) + '</span></div>' : '') +
+        '<div class="price-main"><small class="price-context">' + (multi ? 'FROM' : 'PRICE') + '</small><span class="price" data-card-price>' + formatMoney(group.minPrice) + '</span>' + crossedPrice + '</div>' +
       '</div>' +
+      (multi ? durationPills(group) : '') +
       '<div class="product-actions">' +
-        '<button type="button" class="card-action card-buy" data-buy="' + escapeHtml(product.id) + '" title="Buy online with eSewa / Khalti / QR"' + (inStock ? '' : ' disabled') + '>Buy now</button>' +
-        '<button type="button" class="card-action card-view" data-product="' + escapeHtml(product.id) + '">Details</button>' +
-        '<button type="button" class="card-action card-whatsapp" data-whatsapp="' + escapeHtml(product.id) + '" aria-label="Order ' + escapeHtml(product.name) + ' via WhatsApp">' + WHATSAPP_ICON_SVG + '<span>WhatsApp</span></button>' +
+        (group.name.toLowerCase().includes('free fire')
+          ? '<button type="button" class="card-buy card-action" data-freefire="true" aria-label="Top up Free Fire Diamonds"><span class="card-buy-text">Top Up Now</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>'
+          : (multi
+              ? '<button type="button" class="card-buy card-action" data-group-view="' + escapeHtml(group.key) + '"' + (group.inStock ? '' : ' disabled') + ' aria-label="Buy ' + escapeHtml(group.name) + '"><span class="card-buy-text">Buy Now</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>'
+              : '<button type="button" class="card-buy card-action" data-buy="' + escapeHtml(group.variants[0].id) + '"' + (group.inStock ? '' : ' disabled') + ' aria-label="Buy ' + escapeHtml(group.name) + '"><span class="card-buy-text">Buy Now</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>')) +
+        (group.name.toLowerCase().includes('free fire')
+          ? '<button type="button" class="card-view card-action" data-freefire="true">View Product</button>'
+          : (multi
+              ? '<button type="button" class="card-view card-action" data-group-view="' + escapeHtml(group.key) + '">Plans</button>'
+              : '<button type="button" class="card-view card-action" data-product="' + escapeHtml(group.variants[0].id) + '">Details</button>')) +
       '</div>' +
     '</div>' +
   '</article>';
 }
 
+
+
 async function loadProducts() {
   setProductLoading();
-  const query = new URLSearchParams({ page:String(state.page), limit:'12', sort:state.sort });
+  const query = new URLSearchParams({ page:String(state.page), limit:'24', sort:state.sort });
   if (state.category) query.set('category',state.category);
   if (state.search) query.set('search',state.search);
   if (state.catalogController) state.catalogController.abort();
@@ -300,8 +521,11 @@ async function loadProducts() {
     }
     state.catalog = products;
     state.total = Number(result.total ?? products.length);
-    $('product-grid').innerHTML = products.map(productCard).join('');
-    $('catalog-empty').hidden = products.length > 0;
+    state.groups = groupProducts(products);
+    state.groupByKey = new Map(state.groups.map(g => [g.key, g]));
+    $('product-grid').innerHTML = state.groups.map(productCard).join('') || '';
+    $('product-grid').querySelectorAll('.product-card[data-group-key]').forEach(wireDurationPills);
+    $('catalog-empty').hidden = state.groups.length > 0;
     renderCatalogStatus(products.length);
     renderDeals(state.allCatalog || products);
     renderPages(result.pages || 1);
@@ -335,10 +559,53 @@ function renderCatalogStatus(shown) {
    FLASH SALE — auto-rotating carousel + countdown + social proof
    ========================================================= */
 
-const NEPALI_CITIES = ['Kathmandu','Pokhara','Lalitpur','Bhaktapur','Biratnagar','Birgunj','Butwal','Dharan','Hetauda','Janakpur','Nepalgunj','Itahari'];
+/* Load the live sale campaign (if any) from /api/campaigns/active. The
+   server picks the live campaign with the lowest display_order; its label,
+   banner, and product selection drive the flash-sale section and card
+   badges. Failures are non-fatal — the section falls back to catalog
+   discounts. */
+async function loadCampaign() {
+  try {
+    const result = await api('/campaigns/active');
+    state.campaign = result.campaign || null;
+    state.campaignItems = Array.isArray(result.items) ? result.items : [];
+  } catch {
+    state.campaign = null;
+    state.campaignItems = [];
+  }
+  applyCampaignTheme(state.campaign);
+  applyCampaignSection(state.campaign);
+}
 
-let _allFlashDeals = [];
-let _activeFlashCat = 'all';
+/* Apply the campaign's theme to the document so CSS can key off it
+   (accent colors, variant class on <body>). */
+function applyCampaignTheme(campaign) {
+  const body = document.body;
+  if (!body) return;
+  body.classList.remove('campaign-default', 'campaign-festive-red', 'campaign-gold-red', 'campaign-dark-premium', 'campaign-neon-offer');
+  if (!campaign) return;
+  const variant = campaign.theme_variant || 'default';
+  body.classList.add('campaign-' + variant);
+  const root = document.documentElement;
+  if (campaign.accent_color) root.style.setProperty('--campaign-accent', campaign.accent_color);
+  else root.style.removeProperty('--campaign-accent');
+  if (campaign.bg_color) root.style.setProperty('--campaign-bg', campaign.bg_color);
+  else root.style.removeProperty('--campaign-bg');
+}
+
+/* Update the flash-sale section header (badge text, title, subtitle, CTA)
+   from the live campaign. */
+function applyCampaignSection(campaign) {
+  if (!campaign) return;
+  const badge = document.querySelector('.flash-badge-text');
+  if (badge) badge.textContent = campaign.short_label || 'ON SALE';
+  const title = document.querySelector('.flash-title');
+  if (title && campaign.name) title.textContent = campaign.name;
+  const sub = document.querySelector('.flash-subtitle');
+  if (sub && campaign.subtitle) sub.textContent = campaign.subtitle;
+  const cta = document.querySelector('.flash-see-all');
+  if (cta && campaign.cta_text) cta.textContent = campaign.cta_text;
+}
 
 function renderDeals(products) {
   const section = $('flash-sale');
@@ -346,58 +613,61 @@ function renderDeals(products) {
   if (!section || !carousel) return;
   if (state.search || state.category) { section.hidden = true; return; }
 
-  const deals = products
+  // When a live campaign is present, use its curated products instead of
+  // scanning the whole catalog for discounts. The server already decorates
+  // prices via offers, so savings still flow through savingsOf().
+  const source = state.campaign && state.campaignItems.length ? state.campaignItems : products;
+  const deals = source
     .map(p => ({ product: p, saving: savingsOf(p) }))
-    .filter(e => e.saving)
-    .sort((a, b) => b.saving.percent - a.saving.percent);
+    .filter(e => e.saving || (state.campaign && state.campaignItems.includes(e.product)))
+    .sort((a, b) => (b.saving ? b.saving.percent : 0) - (a.saving ? a.saving.percent : 0));
 
   if (!deals.length) { section.hidden = true; return; }
   section.hidden = false;
-  _allFlashDeals = deals;
+
+  // Show only the top deals — the full range lives in the catalogue below.
+  const limit = state.campaign ? (state.campaign.max_products || 8) : 8;
+  const top = deals.slice(0, limit);
+
+  const sub = document.querySelector('.flash-subtitle');
+  if (sub) {
+    sub.textContent = state.campaign && state.campaign.subtitle
+      ? state.campaign.subtitle
+      : 'Top ' + top.length + ' discounts right now — same prices you pay at checkout.';
+  }
 
   // Hide the cat bar — no longer needed
   const catBar = $('flash-cat-bar');
   if (catBar) catBar.hidden = true;
 
-  renderFlashCards(deals);
-  startFlashCountdown();
-  startSocialProof(products);
+  renderFlashCards(top);
 }
 
 function renderFlashCards(deals) {
   const carousel = $('flash-carousel');
   if (!carousel) return;
 
-  carousel.innerHTML = deals.map(({ product, saving }, idx) => {
-    const catLabel = product.category_name ? escapeHtml(product.category_name.toUpperCase()) : 'FLASH DEAL';
+  carousel.innerHTML = deals.map(({ product, saving }) => {
     const duration = durationOf(product);
-    const desc = escapeHtml((product.description || '').slice(0, 72) + ((product.description || '').length > 72 ? '…' : ''));
-    const topFeature = product.features && product.features[0] ? escapeHtml(product.features[0]) : '';
     const inStock = product.stock === undefined || product.stock === null || Number(product.stock) > 0;
-    const saveAmt = formatMoney(Number(product.original_price) - Number(product.price));
-    return '<div class="flash-deal-card fdc-rich" role="listitem" data-flash-id="' + escapeHtml(product.id) + '" style="animation-delay:' + (idx * 55) + 'ms">' +
+    const theme = getBrandTheme(product.name, product.category_name, product.brand_color || product.brandColor);
+    const tvars = themeVarsString(theme);
+    return '<div class="flash-deal-card fdc-rich" role="listitem" data-flash-id="' + escapeHtml(product.id) + '" style="' + tvars + '">' +
+      '<div class="card-glow" aria-hidden="true"></div>' +
       '<div class="fdc-top">' +
         '<div class="fdc-thumb">' + dealThumb(product) + '</div>' +
-        '<div class="fdc-badges">' +
-          '<span class="fdc-save-pill">-' + saving.percent + '%</span>' +
-          (duration ? '<span class="fdc-dur-pill">' + escapeHtml(duration) + '</span>' : '') +
-        '</div>' +
+        '<span class="fdc-save-pill">-' + saving.percent + '% OFF</span>' +
       '</div>' +
       '<div class="fdc-body">' +
-        '<p class="fdc-cat">' + catLabel + '</p>' +
         '<h3 class="fdc-name">' + escapeHtml(product.name) + '</h3>' +
-        (desc ? '<p class="fdc-desc">' + desc + '</p>' : '') +
-        (topFeature ? '<p class="fdc-feature">✓ ' + topFeature + '</p>' : '') +
+        (duration ? '<p class="fdc-dur">' + escapeHtml(duration) + '</p>' : '') +
         '<div class="fdc-price-row">' +
-          '<div class="fdc-price-group">' +
-            '<span class="fdc-price">' + formatMoney(product.price) + '</span>' +
-            '<span class="fdc-was">' + formatMoney(product.original_price) + '</span>' +
-          '</div>' +
-          '<span class="fdc-save-amt">Save ' + saveAmt + '</span>' +
+          '<span class="fdc-price">' + formatMoney(product.price) + '</span>' +
+          '<span class="fdc-was">' + formatMoney(product.original_price) + '</span>' +
         '</div>' +
         '<div class="fdc-actions">' +
-          '<button class="fdc-btn-buy" type="button"' + (inStock ? '' : ' disabled') + '>Buy now →</button>' +
-          '<button class="fdc-btn-detail" type="button">Details</button>' +
+          '<button class="fdc-btn-buy" type="button"' + (inStock ? '' : ' disabled') + ' aria-label="Buy ' + escapeHtml(product.name) + '"><span class="card-buy-text">Buy Now</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>' +
+          '<button class="fdc-btn-detail" type="button" aria-label="Details for ' + escapeHtml(product.name) + '">Details</button>' +
         '</div>' +
         (!inStock ? '<p class="fdc-out-stock">Currently unavailable</p>' : '') +
       '</div>' +
@@ -416,12 +686,7 @@ function renderFlashCards(deals) {
   });
 
   buildFlashDots(deals.length);
-  setupFlashCarousel(deals, []);
-}
-
-function applyFlashFilter(allProducts) {
-  // Legacy: just re-render all deals
-  renderFlashCards(_allFlashDeals);
+  setupFlashCarousel(deals);
 }
 
 function buildFlashDots(count) {
@@ -437,8 +702,7 @@ function updateFlashDots(idx) {
   dots.forEach((d, i) => d.classList.toggle('active', i === idx));
 }
 
-let _flashAutoTimer = null;
-function setupFlashCarousel(deals, allProducts) {
+function setupFlashCarousel(deals) {
   const carousel = $('flash-carousel');
   if (!carousel || !deals.length) return;
 
@@ -448,7 +712,6 @@ function setupFlashCarousel(deals, allProducts) {
   };
 
   let currentIdx = 0;
-  let paused = false;
 
   const scrollTo = (idx) => {
     currentIdx = ((idx % deals.length) + deals.length) % deals.length;
@@ -459,25 +722,16 @@ function setupFlashCarousel(deals, allProducts) {
   const next = () => scrollTo(currentIdx + 1);
   const prev = () => scrollTo(currentIdx - 1);
 
-  const startAuto = () => {
-    clearInterval(_flashAutoTimer);
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    _flashAutoTimer = setInterval(() => { if (!paused) next(); }, 3500);
-  };
-
-  carousel.onpointerenter = () => { paused = true; };
-  carousel.onpointerleave = () => { paused = false; };
-  carousel.ontouchstart = () => { paused = true; };
-  carousel.ontouchend = () => { setTimeout(() => { paused = false; }, 2000); };
+  // No autoplay: customers browse offers at their own pace.
 
   const prevBtn = $('flash-prev'); const nextBtn = $('flash-next');
-  if (prevBtn) prevBtn.onclick = () => { prev(); startAuto(); };
-  if (nextBtn) nextBtn.onclick = () => { next(); startAuto(); };
+  if (prevBtn) prevBtn.onclick = () => { prev(); };
+  if (nextBtn) nextBtn.onclick = () => { next(); };
 
   const dotsEl = $('flash-dots');
   if (dotsEl) dotsEl.onclick = e => {
     const dot = e.target.closest('[data-dot]');
-    if (dot) { scrollTo(Number(dot.dataset.dot)); startAuto(); }
+    if (dot) { scrollTo(Number(dot.dataset.dot)); }
   };
 
   let scrollTimer;
@@ -492,73 +746,6 @@ function setupFlashCarousel(deals, allProducts) {
       }
     }, 80);
   };
-
-  startAuto();
-}
-
-/* Countdown: resets to end of current day (midnight) */
-function startFlashCountdown() {
-  const hEl = $('cd-h'); const mEl = $('cd-m'); const sEl = $('cd-s');
-  if (!hEl || !mEl || !sEl) return;
-  const pad = n => String(n).padStart(2, '0');
-  const flip = el => { el.classList.remove('flipping'); void el.offsetWidth; el.classList.add('flipping'); };
-
-  const tick = () => {
-    const now = new Date();
-    const midnight = new Date(); midnight.setHours(24, 0, 0, 0);
-    let diff = Math.floor((midnight - now) / 1000);
-    const h = Math.floor(diff / 3600); diff -= h * 3600;
-    const m = Math.floor(diff / 60);
-    const s = diff - m * 60;
-    const nh = pad(h); const nm = pad(m); const ns = pad(s);
-    if (hEl.textContent !== nh) { hEl.textContent = nh; flip(hEl); }
-    if (mEl.textContent !== nm) { mEl.textContent = nm; flip(mEl); }
-    if (sEl.textContent !== ns) { sEl.textContent = ns; flip(sEl); }
-  };
-  tick();
-  setInterval(tick, 1000);
-}
-
-/* Social proof: "Someone from X just ordered Y" */
-let _spTimer = null;
-function startSocialProof(products) {
-  if (_spTimer) return;
-  const region = $('social-proof-region');
-  if (!region || !products.length) return;
-
-  const actions = ['just ordered', 'just purchased', 'just bought', 'grabbed'];
-  const show = () => {
-    const p = products[Math.floor(Math.random() * products.length)];
-    const city = NEPALI_CITIES[Math.floor(Math.random() * NEPALI_CITIES.length)];
-    const action = actions[Math.floor(Math.random() * actions.length)];
-    const minsAgo = Math.floor(Math.random() * 18) + 1;
-    const thumbHtml = p.image_url
-      ? '<img src="' + escapeHtml(p.image_url) + '" alt="" loading="lazy" onerror="this.style.display=\'none\';if(this.nextElementSibling)this.nextElementSibling.style.display=\'flex\';"><div style="display:none">' + getBrandEmblem(p.name) + '</div>'
-      : getBrandEmblem(p.name);
-
-    const el = document.createElement('div');
-    el.className = 'sp-toast';
-    el.innerHTML =
-      '<div class="sp-thumb">' + thumbHtml + '</div>' +
-      '<div class="sp-body">' +
-        '<div class="sp-name">' + escapeHtml(p.name) + '</div>' +
-        '<div class="sp-meta"><span class="sp-live-dot"></span>Someone from ' + city + ' ' + action + ' · ' + minsAgo + 'm ago</div>' +
-      '</div>';
-    el.onclick = () => openProduct(p.id);
-    el.style.cursor = 'pointer';
-    region.appendChild(el);
-
-    // Auto-remove after 4.5s
-    setTimeout(() => {
-      el.classList.add('sp-out');
-      el.addEventListener('animationend', () => el.remove(), { once: true });
-    }, 4500);
-  };
-
-  setTimeout(() => {
-    show();
-    _spTimer = setInterval(() => show(), 12000 + Math.random() * 13000);
-  }, 4000);
 }
 
 function dealThumb(product) {
@@ -569,11 +756,11 @@ function dealThumb(product) {
 }
 
 
-function renderDiscovery(products) { const rail=$('discovery-rail'); if(!rail) return; rail.innerHTML=products.map(product => '<button class="discovery-card" data-discovery-product="' + escapeHtml(product.id) + '">' + productVisual(product,true) + '<span><small>' + escapeHtml(product.category_name || 'DIGITAL SERVICE') + '</small><strong>' + escapeHtml(product.name) + '</strong><b>' + formatMoney(product.price) + '</b></span></button>').join(''); rail.querySelectorAll('[data-discovery-product]').forEach(button=>button.onclick=()=>openProduct(button.dataset.discoveryProduct)); }
+function _renderDiscovery(products) { const rail=$('discovery-rail'); if(!rail) return; rail.innerHTML=products.map(product => '<button class="discovery-card" data-discovery-product="' + escapeHtml(product.id) + '">' + productVisual(product,true) + '<span><small>' + escapeHtml(product.category_name || 'DIGITAL SERVICE') + '</small><strong>' + escapeHtml(product.name) + '</strong><b>' + formatMoney(product.price) + '</b></span></button>').join(''); rail.querySelectorAll('[data-discovery-product]').forEach(button=>button.onclick=()=>openProduct(button.dataset.discoveryProduct)); }
 
 function renderPages(pages) { const holder = $('pagination'); holder.replaceChildren(); if (pages <= 1) return; for (let number=1; number<=pages; number++) { const button = document.createElement('button'); button.className = 'page-button' + (number === state.page ? ' active':''); button.textContent = number; button.ariaLabel = 'Page ' + number; button.onclick = () => { state.page = number; loadProducts(); document.querySelector('#catalog').scrollIntoView({behavior:'smooth'}); }; holder.append(button); } }
 
-function getCategoryMeta(name) {
+function _getCategoryMeta(name) {
   const n = (name || '').toLowerCase();
   if (n.includes('entertain') || n.includes('stream') || n.includes('video') || n.includes('music')) {
     return {
@@ -617,6 +804,18 @@ function getCategoryMeta(name) {
   };
 }
 
+function categoryIcon(name) {
+  const n = String(name || '').toLowerCase();
+  if (n.includes('ai') || n.includes('gpt')) return '✦';
+  if (n.includes('design') || n.includes('media')) return '◐';
+  if (n.includes('cloud') || n.includes('office')) return '▦';
+  if (n.includes('entertain') || n.includes('stream') || n.includes('music') || n.includes('video')) return '▶';
+  if (n.includes('vpn') || n.includes('secur')) return '⬢';
+  if (n.includes('educ') || n.includes('learn') || n.includes('course')) return '✎';
+  if (n.includes('product') || n.includes('soft')) return '▣';
+  return '○';
+}
+
 async function loadCategories() {
   try {
     const result = await api('/categories?limit=100&sort=name');
@@ -635,10 +834,12 @@ async function loadCategories() {
       button.dataset.category = category.id;
       button.dataset.categoryName = category.name;
       button.setAttribute('role', 'tab');
-      button.textContent = category.name;
+      button.innerHTML = '<span class="cat-ico" aria-hidden="true">' + escapeHtml(category.icon || categoryIcon(category.name)) + '</span><span>' + escapeHtml(category.name) + '</span>';
       button.onclick = () => selectCategory(category.id);
       holder.append(button);
     });
+    const active = holder.querySelector('.category.active');
+    if (active) active.scrollIntoView({ block: 'nearest', inline: 'center' });
 
   } catch {
     toast('Categories are temporarily unavailable.');
@@ -646,6 +847,8 @@ async function loadCategories() {
 }
 
 function selectCategory(category) {
+  const ff = $('free-fire');
+  if (ff) ff.hidden = true;
   state.category = category || '';
   state.page = 1;
   state.categoryName = '';
@@ -682,10 +885,10 @@ function detailRelated(product) {
 
 function detailStaticBlocks() {
   return '<section class="pd-block"><h2>How delivery works</h2><ol class="pd-delivery">' +
-      '<li><b>Place your order.</b> Pick WhatsApp or online payment above.</li>' +
-      '<li><b>Send your payment.</b> Use eSewa, Khalti, bank transfer or scan the QR, then upload the receipt.</li>' +
-      '<li><b>We verify it.</b> Our team confirms the payment against your order reference.</li>' +
-      '<li><b>You get your details.</b> Access details are shared once the order is approved, and the status updates in your account.</li>' +
+      '<li class="pd-step-item"><div class="pd-step-body"><b>Place your order.</b> Pick WhatsApp or online payment above.</div></li>' +
+      '<li class="pd-step-item"><div class="pd-step-body"><b>Send your payment.</b> Use eSewa, Khalti, bank transfer or scan the QR, then upload the receipt.</div></li>' +
+      '<li class="pd-step-item"><div class="pd-step-body"><b>We verify it.</b> Our team confirms the payment against your order reference.</div></li>' +
+      '<li class="pd-step-item"><div class="pd-step-body"><b>You get your details.</b> Access details are shared once the order is approved, and the status updates in your account.</div></li>' +
     '</ol></section>' +
     '<section class="pd-block pd-faq"><h2>Common questions</h2>' +
       '<details><summary>Which payment methods can I use?</summary><p>eSewa, Khalti, bank transfer and QR payment. You will see the available options at checkout.</p></details>' +
@@ -694,11 +897,109 @@ function detailStaticBlocks() {
     '</section>';
 }
 
+function selectedGroupVariants(group) {
+  return (group?.variants || []).slice().sort((a, b) => Number(a.price) - Number(b.price));
+}
+
+function planOptionCard(variant, selected) {
+  const duration = durationOf(variant);
+  const saving = savingsOf(variant);
+  const inStock = variant.stock === undefined || variant.stock === null || Number(variant.stock) > 0;
+  return '<button type="button" class="plan-option' + (selected ? ' selected' : '') + '" data-plan="' + escapeHtml(variant.id) + '"' + (inStock ? '' : ' disabled') + ' aria-pressed="' + (selected ? 'true' : 'false') + '">' +
+    '<span class="plan-duration">' + escapeHtml(duration || variant.name) + '</span>' +
+    '<span class="plan-price">' + formatMoney(variant.price) + '</span>' +
+    (variant.original_price && Number(variant.original_price) > Number(variant.price) ? '<span class="plan-was">' + formatMoney(variant.original_price) + '</span>' : '') +
+    (saving ? '<span class="price-save">Save ' + saving.percent + '%</span>' : '') +
+    (!inStock ? '<span class="plan-out">Unavailable</span>' : '') +
+  '</button>';
+}
+
+function renderGroupDetail(group, preselectVariantId) {
+  const variants = selectedGroupVariants(group);
+  const preIndex = preselectVariantId ? variants.findIndex(v => v.id === preselectVariantId) : -1;
+  const chosen = preIndex >= 0 ? variants[preIndex] : null;
+  const fallback = chosen || variants.find(v => v.stock === undefined || v.stock === null || Number(v.stock) > 0) || variants[0];
+  const features = (fallback.features || []).map(feature => '<li>' + escapeHtml(feature) + '</li>').join('');
+  $('product-detail').innerHTML = '<div class="pd-layout">' +
+    '<div class="pd-media">' +
+      '<div class="product-detail-image">' + detailVisual({ name: group.name, image_url: group.image_url || fallback.image_url }) + '</div>' +
+    '</div>' +
+    '<div class="pd-main">' +
+      '<div class="pd-head">' +
+        '<p class="pd-category">' + escapeHtml((group.category_name || 'SUBSCRIPTION').toUpperCase()) + '</p>' +
+        '<h1 id="product-title">' + escapeHtml(group.name) + '</h1>' +
+        '<p class="pd-summary">' + escapeHtml(fallback.description || 'Choose a plan, then start your order.') + '</p>' +
+      '</div>' +
+      '<section class="pd-block pd-plans" aria-label="Choose a plan"><h2>Choose a plan · ' + variants.length + ' options</h2><div class="plan-grid" id="plan-grid">' +
+        variants.map((v, i) => planOptionCard(v, preIndex >= 0 ? v.id === chosen.id : i === 0)).join('') +
+      '</div></section>' +
+      '<div class="pd-price-card">' +
+        '<div class="pd-price-top">' +
+          '<span class="pd-price-main"><small id="pd-plan-label">' + escapeHtml((durationOf(fallback) || 'SELECTED PLAN').toUpperCase()) + '</small><b id="pd-plan-price">' + formatMoney(fallback.price) + '</b></span>' +
+        '</div>' +
+        '<div class="pd-actions">' +
+          '<button type="button" class="button" id="start-order" data-id="' + escapeHtml(fallback.id) + '"><span class="card-buy-text">Buy now with eSewa / Khalti / QR</span> <span aria-hidden="true">→</span></button>' +
+          '<button type="button" class="button button-whatsapp" id="start-whatsapp-order" data-id="' + escapeHtml(fallback.id) + '">' + WHATSAPP_ICON_SVG + '<span>Order via WhatsApp</span></button>' +
+        '</div>' +
+        '<ul class="pd-reassure">' +
+          '<li>Pay with eSewa, Khalti, bank transfer or QR</li>' +
+          '<li>Every payment receipt is checked by our team</li>' +
+          '<li>Track the status of your order from your account</li>' +
+        '</ul>' +
+      '</div>' +
+      (features ? '<section class="pd-block"><h2>What you get</h2><ul class="feature-list">' + features + '</ul></section>' : '') +
+      detailStaticBlocks() +
+    '</div>' +
+  '</div>';
+  const byId = new Map(variants.map(v => [v.id, v]));
+  $('plan-grid').querySelectorAll('[data-plan]').forEach(btn => {
+    btn.onclick = () => {
+      const v = byId.get(btn.dataset.plan);
+      if (!v) return;
+      $('plan-grid').querySelectorAll('[data-plan]').forEach(b => { b.classList.toggle('selected', b === btn); b.setAttribute('aria-pressed', String(b === btn)); });
+      $('pd-plan-label').textContent = (durationOf(v) || 'SELECTED PLAN').toUpperCase();
+      $('pd-plan-price').textContent = formatMoney(v.price);
+      $('start-order').dataset.id = v.id;
+      $('start-whatsapp-order').dataset.id = v.id;
+    };
+  });
+  $('start-order').onclick = () => startOrder($('start-order').dataset.id);
+  $('start-whatsapp-order').onclick = () => startWhatsAppOrder($('start-whatsapp-order').dataset.id);
+}
+
+function openGroup(key) {
+  if (key && key.toLowerCase().includes('free fire')) {
+    openFreeFireProduct();
+    return;
+  }
+  const group = state.groupByKey?.get(key);
+  if (!group) return;
+  showDialog('product-dialog');
+  if (group.variants.length === 1) { openProduct(group.variants[0].id); return; }
+  renderGroupDetail(group);
+}
+
+function openGroupWithPlan(key, variantId) {
+  const group = state.groupByKey?.get(key);
+  if (!group) return;
+  if (group.variants.length === 1) { openProduct(group.variants[0].id); return; }
+  showDialog('product-dialog');
+  renderGroupDetail(group, variantId);
+}
+
 async function openProduct(id) {
   showDialog('product-dialog');
   $('product-detail').innerHTML = '<div class="pd-layout"><div class="pd-media"><div class="product-detail-image skeleton"></div></div><div><p class="eyebrow">LOADING DETAILS</p><h1 id="product-title">Subscription</h1></div></div>';
   try {
     const product = await api('/products/' + encodeURIComponent(id));
+    if (product.name && product.name.toLowerCase().includes('free fire')) {
+      closeDialog('product-dialog');
+      openFreeFireProduct();
+      return;
+    }
+    const byKey = baseKey(product.name);
+    const group = state.groupByKey?.get(byKey);
+    if (group && group.variants.length > 1) { renderGroupDetail(group, id); return; }
     const saving = savingsOf(product);
     const duration = durationOf(product);
     const badge = product.offer_label || product.badge;
@@ -724,7 +1025,7 @@ async function openProduct(id) {
             (saving ? '<span class="pd-price-side"><s>' + formatMoney(product.original_price) + '</s><span class="price-save">You save ' + formatMoney(saving.amount) + '</span></span>' : '') +
           '</div>' +
           '<div class="pd-actions">' +
-            '<button type="button" class="button" id="start-order" data-id="' + escapeHtml(product.id) + '">Buy now with eSewa / Khalti / QR <span aria-hidden="true">→</span></button>' +
+            '<button type="button" class="button" id="start-order" data-id="' + escapeHtml(product.id) + '"><span class="card-buy-text">Buy now with eSewa / Khalti / QR</span> <span aria-hidden="true">→</span></button>' +
             '<button type="button" class="button button-whatsapp" id="start-whatsapp-order" data-id="' + escapeHtml(product.id) + '">' + WHATSAPP_ICON_SVG + '<span>Order via WhatsApp</span></button>' +
           '</div>' +
           '<ul class="pd-reassure">' +
@@ -836,7 +1137,7 @@ function renderPaymentQrView(order, settings, methods) {
   const accountId = settings.payment_account || '9705985657';
   const amount = Number(order.price || 0);
   const reference = paymentReference(order);
-  const qr = settings.payment_qr_url || 'https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=' + encodeURIComponent('Digi Nepal ' + accountId + ' NPR ' + amount + ' ' + reference);
+  const qr = settings.payment_qr_url || 'https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=' + encodeURIComponent('Digi Prime Nepal ' + accountId + ' NPR ' + amount + ' ' + reference);
   
   $('payment-content').innerHTML = '<div class="payment-flow"><div class="payment-step-label"><span>STEP 1 OF 2</span><strong>Pay via QR, then confirm</strong></div><div class="payment-qr-card"><div class="payment-method-badges">' + methods.map(method => '<span>' + escapeHtml(method) + '</span>').join('') + '</div><img class="payment-qr payment-qr-large" src="' + escapeHtml(qr) + '" alt="Payment QR code for ' + formatMoney(amount) + '"><p class="payment-amount-label">AMOUNT TO PAY</p><strong class="payment-amount">' + formatMoney(amount) + '</strong><p class="payment-account">eSewa / Khalti ID <b>' + escapeHtml(accountId) + '</b></p><p class="payment-reference">Order reference: <b>' + escapeHtml(reference) + '</b></p></div><p class="payment-instructions">' + escapeHtml(settings.payment_instructions || 'Scan the QR, include your order reference, and keep the receipt ready.') + '</p><button class="auth-primary" id="payment-next" type="button"><span>I\'ve paid — enter details</span><span aria-hidden="true">→</span></button><button class="payment-back" id="payment-cancel" type="button">← Back to Payment Options</button></div>';
   $('payment-next').onclick = () => renderPaymentDetails(order, settings, methods);
@@ -845,9 +1146,24 @@ function renderPaymentQrView(order, settings, methods) {
 
 function renderPaymentDetails(order, settings, methods) {
   const reference = paymentReference(order);
-  $('payment-content').innerHTML = '<div class="payment-flow"><div class="payment-step-label"><span>STEP 2 OF 2</span><strong>Confirm your payment</strong></div><p class="form-note">Enter the transaction reference exactly as shown in your payment app and attach the receipt.</p><form class="payment-form" id="payment-form"><label class="auth-field">Your full name<input name="payer_name" autocomplete="name" value="' + escapeHtml(state.user?.name || '') + '" required minlength="2" maxlength="100"></label><label class="auth-field">Payment method<select name="payment_method" required>' + methods.map(method => '<option value="' + escapeHtml(method) + '">' + escapeHtml(method) + '</option>').join('') + '</select></label><label class="auth-field">Transaction / reference ID<input name="transaction_id" autocomplete="off" required minlength="3" maxlength="100" placeholder="For example, TX12345678"></label><label class="auth-field">Phone number <span class="field-optional">Optional</span><input name="phone" type="tel" autocomplete="tel" maxlength="40" placeholder="98xxxxxxxx"></label><label class="auth-field receipt-field">Payment receipt<input name="receipt" type="file" accept="image/png,image/jpeg,image/webp" required><span class="file-help">PNG, JPG, or WebP · maximum 5 MB</span></label><label class="auth-field">Additional note <span class="field-optional">Optional</span><textarea name="note" maxlength="1000" rows="3" placeholder="Anything the payment reviewer should know?"></textarea></label><p class="payment-order-reference">Order reference <b>' + escapeHtml(reference) + '</b></p><p class="auth-alert" id="payment-error" role="alert" hidden></p><button class="auth-primary" type="submit"><span>Submit payment proof</span><span aria-hidden="true">→</span></button></form><button class="payment-back" type="button" id="payment-back">← Back to QR</button></div>';
+  $('payment-content').innerHTML = '<div class="payment-flow"><div class="payment-step-label"><span>STEP 2 OF 2</span><strong>Confirm your payment</strong></div><p class="form-note">Enter the transaction reference exactly as shown in your payment app and attach the receipt.</p><form class="payment-form" id="payment-form"><label class="auth-field">Your full name<input name="payer_name" autocomplete="name" value="' + escapeHtml(state.user?.name || '') + '" required minlength="2" maxlength="100"></label><label class="auth-field">Payment method<select name="payment_method" required>' + methods.map(method => '<option value="' + escapeHtml(method) + '">' + escapeHtml(method) + '</option>').join('') + '</select></label><label class="auth-field">Transaction / reference ID<input name="transaction_id" autocomplete="off" required minlength="3" maxlength="100" placeholder="For example, TX12345678"></label><label class="auth-field">Phone number <span class="field-optional">Optional</span><input name="phone" type="tel" autocomplete="tel" maxlength="40" placeholder="98xxxxxxxx"></label><label class="auth-field receipt-field">Payment receipt<input name="receipt" type="file" accept="image/png,image/jpeg,image/webp" required><span class="file-help">PNG, JPG, or WebP · maximum 15 MB</span></label><label class="auth-field">Additional note <span class="field-optional">Optional</span><textarea name="note" maxlength="1000" rows="3" placeholder="Anything the payment reviewer should know?"></textarea></label><p class="payment-order-reference">Order reference <b>' + escapeHtml(reference) + '</b></p><p class="auth-alert" id="payment-error" role="alert" hidden></p><button class="auth-primary" type="submit"><span>Submit payment proof</span><span aria-hidden="true">→</span></button></form><button class="payment-back" type="button" id="payment-back">← Back to QR</button></div>';
   $('payment-form').onsubmit = event => submitPayment(event, order);
   $('payment-back').onclick = () => renderPaymentQrView(order, settings, methods);
+}
+
+function updateBottomNav() {
+  const map = [['mob-nav-home', false], ['mob-nav-search', false], ['mob-nav-browse', false], ['mob-nav-orders', !!state.user], ['mob-nav-account', !!state.user]];
+  map.forEach(([id]) => {
+    const el = $(id);
+    if (el) el.classList.toggle('active', id === 'mob-nav-home' && window.scrollY < 400);
+  });
+}
+
+/* Client-side guard so oversized receipts fail fast with a clear message
+   instead of a slow failed upload. Server limit is 15 MB. */
+function receiptTooLarge(file) {
+  const max = 15 * 1024 * 1024;
+  return file && file.size > max;
 }
 
 async function submitPayment(event, order) {
@@ -856,6 +1172,11 @@ async function submitPayment(event, order) {
   error.hidden = true;
   if (!(file instanceof File) || !file.size) {
     error.textContent = 'Attach your payment receipt to continue.';
+    error.hidden = false;
+    return;
+  }
+  if (receiptTooLarge(file)) {
+    error.textContent = 'That image is larger than 15 MB. Please choose a smaller screenshot.';
     error.hidden = false;
     return;
   }
@@ -893,6 +1214,7 @@ function renderAccount() {
   if (!holder) return;
   holder.replaceChildren();
   holder.className = 'account-menu';
+  updateBottomNav();
   if (state.user) {
     const orders = document.createElement('button');
     orders.className = 'nav-login';
@@ -933,7 +1255,7 @@ async function initAccount() {
 }
 
 function authFrame(eyebrow, title, description, body) {
-  return '<div class="auth-shell"><aside class="auth-aside" aria-hidden="true"><img src="logo.png" alt=""><div><p class="auth-kicker">DIGI NEPAL ACCOUNT</p><h3>Premium access,<br>kept simple.</h3><p>Manage orders, payment updates, and subscriptions from one protected place.</p></div><span class="auth-aside-mark">Trusted digital subscriptions</span></aside><section class="auth-panel"><p class="eyebrow">' + eyebrow + '</p><h2 id="auth-title">' + title + '</h2><p class="auth-description">' + description + '</p>' + body + '</section></div>';
+  return '<div class="auth-shell"><aside class="auth-aside" aria-hidden="true"><img src="digi-prime-nepal-logo.png" alt="Digi Prime Nepal"><div><p class="auth-kicker">DIGI PRIME NEPAL ACCOUNT</p><h3>Premium access,<br>kept simple.</h3><p>Manage orders, payment updates, and subscriptions from one protected place.</p></div><span class="auth-aside-mark">Trusted digital subscriptions</span></aside><section class="auth-panel"><p class="eyebrow">' + eyebrow + '</p><h2 id="auth-title">' + title + '</h2><p class="auth-description">' + description + '</p>' + body + '</section></div>';
 }
 
 function authAlert(message) {
@@ -1020,7 +1342,7 @@ function openAuth(mode = 'login', data = {}) {
       GOOGLE_ICON_SVG +
       '<span>Sign in with Google</span>' +
     '</a>';
-    $('auth-content').innerHTML = authFrame('ACCOUNT ACCESS', 'Welcome back', 'Sign in to manage your subscriptions, orders, and account.', googleBtnHtml + '<div class="auth-divider"><span>or sign in with email</span></div><form class="auth-form" id="login-form"><label class="auth-field">Email address<input name="email" type="email" autocomplete="email" value="' + email + '" required autofocus></label>' + passwordField('password', 'Password', 'current-password') + '<div class="auth-options"><button type="button" class="auth-link" data-auth-mode="forgot">Forgot password?</button></div><p class="auth-alert" id="auth-error" role="alert" hidden></p><button class="auth-primary" type="submit"><span>Sign in</span><span aria-hidden="true">→</span></button></form><p class="auth-switch">New to Digi Nepal? <button type="button" data-auth-mode="signup">Create account</button></p>');
+    $('auth-content').innerHTML = authFrame('ACCOUNT ACCESS', 'Welcome back', 'Sign in to manage your subscriptions, orders, and account.', googleBtnHtml + '<div class="auth-divider"><span>or sign in with email</span></div><form class="auth-form" id="login-form"><label class="auth-field">Email address<input name="email" type="email" autocomplete="email" value="' + email + '" required autofocus></label>' + passwordField('password', 'Password', 'current-password') + '<div class="auth-options"><button type="button" class="auth-link" data-auth-mode="forgot">Forgot password?</button></div><p class="auth-alert" id="auth-error" role="alert" hidden></p><button class="auth-primary" type="submit"><span>Sign in</span><span aria-hidden="true">→</span></button></form><p class="auth-switch">New to Digi Prime Nepal? <button type="button" data-auth-mode="signup">Create account</button></p>');
     $('login-form').onsubmit = login;
     const directG = $('auth-google-direct');
     if (directG) {
@@ -1326,8 +1648,172 @@ async function loadSettings() {
     if ($('footer-text')) $('footer-text').textContent = settings.footer_text || $('footer-text').textContent;
     if (settings.contact_email && $('contact-email')) { $('contact-email').textContent = settings.contact_email; $('contact-email').href = 'mailto:' + settings.contact_email; }
     if (settings.whatsapp_number && $('contact-whatsapp')) { $('contact-whatsapp').href = 'https://wa.me/' + settings.whatsapp_number; }
-    if (settings.whatsapp_number && $('whatsapp-float')) { $('whatsapp-float').href = 'https://wa.me/' + settings.whatsapp_number + '?text=' + encodeURIComponent('Hello Digi Nepal, I want to order a subscription.'); }
+    if (settings.whatsapp_number && $('whatsapp-float')) { $('whatsapp-float').href = 'https://wa.me/' + settings.whatsapp_number + '?text=' + encodeURIComponent('Hello Digi Prime Nepal, I want to order a subscription.'); }
+    bindFreeFireOrder(settings.whatsapp_number);
   } catch { void 0; }
+}
+
+/* =========================================================
+   FREE FIRE TOP-UP — diamond picker + player ID + WhatsApp checkout
+   ========================================================= */
+function bindFreeFireOrder(waNumber) {
+  const uidInput = $('ff-uid');
+  const uidError = $('ff-uid-error');
+  const buyBtn = $('ff-buy');
+  const packages = $('ff-packages');
+  if (!uidInput || !buyBtn || !packages) return;
+
+  const number = String(waNumber || '9779705985657').replace(/[^0-9]/g, '');
+
+  // Diamond tiers matching OLLASTORE's Free Fire top-up product (NP region pricing)
+  const ffPackages = [
+    { label: '25 Diamond 💎', price: 30 },
+    { label: '50 Diamond 💎', price: 60 },
+    { label: '115 Diamond 💎', price: 115 },
+    { label: '355 Diamond 💎', price: 330 },
+    { label: '610 Diamond 💎', price: 550 },
+    { label: '1090 Diamond 💎', price: 1000 },
+    { label: '1850 Diamond 💎', price: 1650 },
+    { label: '5060 Diamond 💎', price: 4400 },
+    { label: 'Weekly Membership 🏆', price: 220 },
+    { label: 'Monthly Membership 👑', price: 520 }
+  ];
+
+  const selected = { method: 'eSewa', pkg: null };
+  const priceRange = $('ff-price-range');
+  const selectedBox = $('ff-selected');
+  if (priceRange) {
+    const minP = Math.min.apply(null, ffPackages.map(p => p.price));
+    const maxP = Math.max.apply(null, ffPackages.map(p => p.price));
+    priceRange.textContent = 'Rs ' + minP + ' – Rs ' + new Intl.NumberFormat('en-US').format(maxP);
+  }
+
+  const paintPkg = index => {
+    packages.querySelectorAll('[data-ff-pkg]').forEach((other, i) => {
+      other.classList.toggle('is-active', i === index);
+      other.setAttribute('aria-pressed', String(i === index));
+    });
+  };
+
+  const updateSelectedBox = () => {
+    if (!selectedBox) return;
+    if (!selected.pkg) { selectedBox.hidden = true; selectedBox.innerHTML = ''; return; }
+    selectedBox.hidden = false;
+    selectedBox.innerHTML = '<span class="ff-selected-name">' + escapeHtml(selected.pkg.label) + '</span><b class="ff-selected-price">' + formatMoney(selected.pkg.price) + '</b>';
+  };
+
+  const renderFFPackages = () => {
+    packages.innerHTML = ffPackages.map((pkg, index) =>
+      '<button type="button" class="ff-pkg" data-ff-pkg="' + index + '" aria-pressed="false">' +
+      '<span class="ff-pkg-name">' + escapeHtml(pkg.label) + '</span>' +
+      '<span class="ff-pkg-price">' + formatMoney(pkg.price) + '</span>' +
+      '</button>'
+    ).join('');
+    packages.querySelectorAll('[data-ff-pkg]').forEach((button, index) => {
+      button.onclick = () => {
+        selected.pkg = ffPackages[index];
+        paintPkg(index);
+        uidError.hidden = true;
+        updateSelectedBox();
+      };
+    });
+  };
+
+  uidInput.addEventListener('input', () => { uidError.hidden = true; });
+
+  buyBtn.onclick = () => {
+    const uid = uidInput.value.trim();
+    if (!/^\d{6,15}$/.test(uid)) {
+      uidError.hidden = false;
+      uidInput.focus();
+      return;
+    }
+    if (!selected.pkg) {
+      toast('Please select a diamond pack first.', 'error');
+      document.querySelector('.ff-packages') && document.querySelector('.ff-packages').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      return;
+    }
+    const message = 'Hello Digi Prime Nepal, I want a Free Fire top up.\n' +
+      'Player ID (UID): ' + uid + '\n' +
+      'Pack: ' + selected.pkg.label + ' (' + formatMoney(selected.pkg.price) + ')\n' +
+      'Payment: ' + selected.method + '\n' +
+      'Region: NP';
+    window.open('https://wa.me/' + number + '?text=' + encodeURIComponent(message), '_blank', 'noopener');
+  };
+
+  document.querySelectorAll('.ff-pay-btn').forEach(btn => {
+    btn.onclick = () => {
+      selected.method = btn.dataset.method || 'eSewa';
+      document.querySelectorAll('.ff-pay-btn').forEach(other => {
+        other.classList.toggle('is-active', other === btn);
+        other.setAttribute('aria-checked', String(other === btn));
+      });
+    };
+  });
+
+  renderFFPackages();
+  updateSelectedBox();
+
+  const backBtn = $('ff-back-gaming');
+  if (backBtn) {
+    backBtn.onclick = () => closeFreeFireProduct(true);
+  }
+  const crumbGaming = $('ff-crumb-gaming');
+  if (crumbGaming) {
+    crumbGaming.onclick = () => closeFreeFireProduct(true);
+  }
+  const heroLink = $('hero-ff-link');
+  if (heroLink) {
+    heroLink.onclick = (e) => {
+      e.preventDefault();
+      openFreeFireProduct();
+    };
+  }
+}
+
+function openFreeFireProduct() {
+  closeDialog('product-dialog');
+  const ff = $('free-fire');
+  if (ff) {
+    ff.hidden = false;
+    ff.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  try {
+    if (window.location.hash !== '#free-fire' && window.location.hash !== '#product=free-fire') {
+      history.pushState(null, '', '#product=free-fire');
+    }
+  } catch (e) { void e; }
+}
+
+function closeFreeFireProduct(toGaming = false) {
+  const ff = $('free-fire');
+  if (ff) ff.hidden = true;
+  if (toGaming) {
+    const gamingCat = state.categories.find(c => (c.name || '').toLowerCase().includes('gaming'));
+    if (gamingCat) {
+      selectCategory(gamingCat.id);
+    } else {
+      selectCategory('');
+    }
+    const catEl = $('catalog');
+    if (catEl) catEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    try {
+      history.pushState(null, '', '#category=gaming');
+    } catch (e) { void e; }
+  }
+}
+
+function handleRoute() {
+  const hash = (window.location.hash || '').toLowerCase();
+  if (hash === '#free-fire' || hash === '#product=free-fire' || hash.includes('free-fire') || hash.includes('freefire')) {
+    openFreeFireProduct();
+  } else if (hash.includes('category=gaming') || hash === '#gaming') {
+    closeFreeFireProduct();
+    const gamingCat = state.categories.find(c => (c.name || '').toLowerCase().includes('gaming'));
+    if (gamingCat) selectCategory(gamingCat.id);
+  } else if (hash === '#catalog' || hash === '#categories') {
+    closeFreeFireProduct();
+  }
 }
 
 function bindUI() {
@@ -1379,10 +1865,31 @@ function bindUI() {
   const grid = $('product-grid');
   if (grid) {
     grid.addEventListener('click', event => {
-      const waBtn = event.target.closest('[data-whatsapp]');
-      if (waBtn) {
+      const ffBtn = event.target.closest('[data-freefire]');
+      if (ffBtn) {
         event.preventDefault();
-        startWhatsAppOrder(waBtn.dataset.whatsapp);
+        openFreeFireProduct();
+        return;
+      }
+      const groupView = event.target.closest('[data-group-view]');
+      if (groupView) {
+        event.preventDefault();
+        if (groupView.dataset.groupView && groupView.dataset.groupView.toLowerCase().includes('free fire')) {
+          openFreeFireProduct();
+          return;
+        }
+        // If a duration pill was picked on a multi-plan Buy Now, order that variant directly.
+        if (groupView.classList.contains('card-buy') && groupView.dataset.selectedVariant) {
+          openGroupWithPlan(groupView.dataset.groupView, groupView.dataset.selectedVariant);
+          return;
+        }
+        openGroup(groupView.dataset.groupView);
+        return;
+      }
+      const groupBuy = event.target.closest('[data-group-buy]');
+      if (groupBuy) {
+        event.preventDefault();
+        startOrder(groupBuy.dataset.groupBuy);
         return;
       }
       const buyBtn = event.target.closest('[data-buy]');
@@ -1397,6 +1904,19 @@ function bindUI() {
         openProduct(viewBtn.dataset.product);
         return;
       }
+      const card = event.target.closest('.product-card[data-group-key]');
+      if (card) {
+        if (card.dataset.groupKey && card.dataset.groupKey.toLowerCase().includes('free fire')) {
+          openFreeFireProduct();
+          return;
+        }
+        openGroup(card.dataset.groupKey);
+      }
+    });
+    grid.addEventListener('keydown', event => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      const card = event.target.closest('.product-card[data-group-key]');
+      if (card && event.target === card) { event.preventDefault(); openGroup(card.dataset.groupKey); }
     });
   }
 
@@ -1418,18 +1938,6 @@ function setupDiscoveryAutoScroll() {
     if (rail.scrollLeft + rail.clientWidth >= rail.scrollWidth - 2) rail.scrollTo({ left: 0, behavior: 'smooth' });
     else rail.scrollLeft += 1;
   }, 90);
-}
-
-function setupLegacyPaymentActions() {
-  const detail = $('product-detail'); if (!detail) return;
-  const observer = new MutationObserver(() => {
-    const start = $('start-order'); if (!start || detail.querySelector('.payment-shortcuts')) return;
-    const id = start.dataset.id; const wrap = document.createElement('div'); wrap.className = 'payment-shortcuts';
-    const qr = document.createElement('button'); qr.type = 'button'; qr.className = 'payment-alt payment-alt-primary'; qr.textContent = 'Pay via QR / eSewa / Khalti'; qr.onclick = () => startOrder(id);
-    const whatsapp = document.createElement('button'); whatsapp.type = 'button'; whatsapp.className = 'payment-alt payment-alt-whatsapp'; whatsapp.innerHTML = WHATSAPP_ICON_SVG + '<span>Order via WhatsApp</span>'; whatsapp.onclick = () => startWhatsAppOrder(id);
-    wrap.append(qr, whatsapp); start.insertAdjacentElement('afterend', wrap);
-  });
-  observer.observe(detail, { childList: true, subtree: true });
 }
 
 async function startWhatsAppOrder(productId) {
@@ -1459,7 +1967,7 @@ async function startWhatsAppOrder(productId) {
     try {
       const order = await api('/orders', { method: 'POST', body: JSON.stringify({ product_id: productId, request_key: generateUUID() }) });
       const ref = paymentReference(order);
-      const message = 'Hello Digi Nepal, I want to order ' + order.product_name + ' (' + formatMoney(order.price) + '). Order reference: #' + ref;
+      const message = 'Hello Digi Prime Nepal, I want to order ' + order.product_name + ' (' + formatMoney(order.price) + '). Order reference: #' + ref;
       window.open('https://wa.me/' + waNumber + '?text=' + encodeURIComponent(message), '_blank', 'noopener');
       closeDialog('product-dialog');
       toast('Order created! Opening WhatsApp to complete details...', 'success');
@@ -1470,10 +1978,10 @@ async function startWhatsAppOrder(productId) {
   }
 
   // Guest order directly to WhatsApp with zero barrier
-  const guestMsg = 'Hello Digi Nepal, I want to order ' + pName + (pPrice ? ' (' + pPrice + ')' : '') + '. Please share payment details (eSewa / Khalti / QR).';
+  const guestMsg = 'Hello Digi Prime Nepal, I want to order ' + pName + (pPrice ? ' (' + pPrice + ')' : '') + '. Please share payment details (eSewa / Khalti / QR).';
   window.open('https://wa.me/' + waNumber + '?text=' + encodeURIComponent(guestMsg), '_blank', 'noopener');
   closeDialog('product-dialog');
-  toast('Opening WhatsApp to chat with Digi Nepal...', 'success');
+  toast('Opening WhatsApp to chat with Digi Prime Nepal...', 'success');
 }
 
 async function init() {
@@ -1482,8 +1990,9 @@ async function init() {
   setupSearch();
   setupMotion();
   setProductLoading();
-  setupLegacyPaymentActions();
-  await Promise.allSettled([initAccount(), loadProviders(), loadCategories(), loadSettings(), loadProducts()]);
+  await Promise.allSettled([initAccount(), loadProviders(), loadCategories(), loadSettings(), loadCampaign(), loadProducts()]);
+  handleRoute();
+  window.addEventListener('hashchange', handleRoute);
 
   const urlParams = new URLSearchParams(window.location.search);
   const authQuery = urlParams.get('auth');
@@ -1509,3 +2018,51 @@ async function init() {
 }
 
 init();
+
+/* ── Interactive card spotlight (mouse-following brand-colored glow) ──── */
+(function cardSpotlight() {
+  if (window.matchMedia('(pointer: coarse)').matches) return;
+  const grid = document.getElementById('product-grid');
+  const carousel = document.getElementById('flash-carousel');
+
+  const SPOTLIGHT_CSS = `
+    .product-card, .flash-deal-card { --mx: 50%; --my: 50%; }
+    .product-card .card-spotlight, .flash-deal-card .card-spotlight {
+      position: absolute; inset: 0; border-radius: inherit;
+      background: radial-gradient(
+        380px circle at var(--mx) var(--my),
+        hsla(var(--bh, 0), var(--bs, 80%), var(--bl, 50%), .15) 0%,
+        transparent 65%
+      );
+      pointer-events: none; z-index: 1;
+      opacity: 0;
+      transition: opacity .35s ease;
+    }
+    .product-card:hover .card-spotlight, .flash-deal-card:hover .card-spotlight { opacity: 1; }
+  `;
+  const style = document.createElement('style');
+  style.textContent = SPOTLIGHT_CSS;
+  document.head.appendChild(style);
+
+  function ensureSpotlight(card) {
+    if (!card.querySelector('.card-spotlight')) {
+      const el = document.createElement('div');
+      el.className = 'card-spotlight';
+      el.setAttribute('aria-hidden', 'true');
+      card.insertBefore(el, card.firstChild);
+    }
+  }
+
+  function handleMove(e) {
+    const card = e.target.closest('.product-card, .flash-deal-card');
+    if (!card || card.classList.contains('skeleton')) return;
+    ensureSpotlight(card);
+    const rect = card.getBoundingClientRect();
+    card.style.setProperty('--mx', (e.clientX - rect.left) + 'px');
+    card.style.setProperty('--my', (e.clientY - rect.top) + 'px');
+  }
+
+  if (grid) grid.addEventListener('mousemove', handleMove);
+  if (carousel) carousel.addEventListener('mousemove', handleMove);
+})();
+

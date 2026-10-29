@@ -14,6 +14,7 @@ const schema=z.object({
   features:z.array(text(250)).max(30).default([]),
   duration:z.enum([...DURATIONS,'']).nullable().optional().default(null).transform(v=>v||null),
   stock:z.number().int().min(0).nullable().optional().default(null),
+  brand_color:text(30).nullable().optional().default(null),
   sort_order:z.number().int().min(0).max(9999).default(0),
   is_active:flag.default(1)
 }).strict();

@@ -1,0 +1,1381 @@
+/* ==========================================================================
+   Digi Nepal — Auto-Theming Product Card Engine
+   All colors derived from --bh / --bs / --bl CSS custom properties
+   set inline by getBrandTheme() in app.js
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   0. Grid
+   -------------------------------------------------------------------------- */
+.product-grid {
+  gap: 1.4rem !important;
+}
+
+/* --------------------------------------------------------------------------
+   1. Card shell — obsidian glass surface
+   -------------------------------------------------------------------------- */
+.product-card {
+  --bh: 0; --bs: 80%; --bl: 50%;
+  --bh2: 25; --bs2: 80%; --bl2: 55%;
+  position: relative;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 1rem;
+  border: 1px solid rgba(255,255,255,.07);
+  background: linear-gradient(168deg,
+    rgba(17,19,24,.92) 0%,
+    rgba(13,15,20,.95) 50%,
+    rgba(11,13,17,.97) 100%
+  );
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 2px 12px rgba(0,0,0,.35);
+  display: flex;
+  flex-direction: column;
+  will-change: transform;
+  transition:
+    transform .35s cubic-bezier(.22,.68,0,1.1),
+    border-color .35s ease,
+    box-shadow .35s cubic-bezier(.22,.68,0,1.1);
+}
+
+/* Hover — lift + brand border + brand shadow */
+.product-card:hover,
+.product-card:focus-within {
+  transform: translateY(-6px);
+  border-color: hsla(var(--bh), var(--bs), var(--bl), .45);
+  box-shadow:
+    0 20px 50px rgba(0,0,0,.5),
+    0 0 0 1px hsla(var(--bh), var(--bs), var(--bl), .08),
+    0 8px 30px hsla(var(--bh), var(--bs), var(--bl), .12);
+}
+.product-card:active {
+  transform: translateY(-2px);
+  transition-duration: 80ms;
+}
+
+/* --------------------------------------------------------------------------
+   2. Ambient glow blob (behind everything)
+   -------------------------------------------------------------------------- */
+.card-glow {
+  position: absolute;
+  top: -30%; left: -20%; right: -20%;
+  height: 70%;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at 50% 40%,
+    hsla(var(--bh), var(--bs), var(--bl), .18) 0%,
+    hsla(var(--bh2), var(--bs2), var(--bl2), .06) 50%,
+    transparent 80%
+  );
+  filter: blur(28px);
+  pointer-events: none;
+  z-index: 0;
+  opacity: .7;
+  transition: opacity .4s ease, filter .4s ease;
+}
+.product-card:hover .card-glow {
+  opacity: 1;
+  filter: blur(24px);
+}
+
+/* --------------------------------------------------------------------------
+   3. Banner header — product image / squircle logo
+   -------------------------------------------------------------------------- */
+.product-card .card-visual {
+  position: relative;
+  z-index: 1;
+}
+
+.product-card .product-image {
+  position: relative;
+  height: 10rem;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: .92rem .92rem 0 0;
+  background: linear-gradient(
+    145deg,
+    hsla(var(--bh), calc(var(--bs) * .6), 8%, 1) 0%,
+    hsla(var(--bh), calc(var(--bs) * .4), 5%, 1) 50%,
+    rgba(13,13,13,1) 100%
+  );
+}
+
+/* Mesh overlay */
+.product-card .product-image::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 25% 75%, hsla(var(--bh), var(--bs), var(--bl), .06), transparent 50%),
+    radial-gradient(circle at 75% 25%, hsla(var(--bh2), var(--bs2), var(--bl2), .05), transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Bottom fade into card body */
+.product-card .product-image::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 3.5rem;
+  background: linear-gradient(to bottom, transparent 0%, rgba(13,15,20,.95) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Brand logo/image */
+.product-card .product-image img {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 1.8rem 2.5rem;
+  filter: drop-shadow(0 6px 16px hsla(var(--bh), var(--bs), var(--bl), .35));
+  transition: transform .35s cubic-bezier(.22,.68,0,1.15), filter .35s ease;
+}
+.product-card:hover .product-image img {
+  transform: scale(1.08) translateY(-3px) rotate(-2deg);
+  filter: drop-shadow(0 14px 28px hsla(var(--bh), var(--bs), var(--bl), .5));
+}
+
+/* Squircle logo wrapper — floating icon */
+.banner-logo-wrap {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  transition: transform .35s cubic-bezier(.22,.68,0,1.15);
+}
+.product-card:hover .banner-logo-wrap {
+  transform: scale(1.1) translateY(-3px) rotate(-3deg);
+}
+
+/* Squircle icon container */
+.banner-logo-wrap .brand-badge svg {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: rgba(17,19,24,.9);
+  border: 1px solid rgba(255,255,255,.12);
+  box-shadow:
+    0 10px 28px rgba(0,0,0,.5),
+    0 0 0 1px rgba(255,255,255,.06),
+    0 0 20px hsla(var(--bh), var(--bs), var(--bl), .15);
+  transition: box-shadow .35s ease;
+}
+.product-card:hover .banner-logo-wrap .brand-badge svg {
+  box-shadow:
+    0 14px 36px rgba(0,0,0,.6),
+    0 0 0 1px rgba(255,255,255,.1),
+    0 0 30px hsla(var(--bh), var(--bs), var(--bl), .3);
+}
+
+/* Monogram fallback */
+.banner-logo-wrap .product-monogram {
+  width: 3.5rem;
+  height: 3.5rem;
+  font-size: 1.4rem;
+  border-radius: 16px;
+  background: linear-gradient(
+    135deg,
+    hsla(var(--bh), var(--bs), var(--bl), .25),
+    hsla(var(--bh2), var(--bs2), var(--bl2), .15)
+  );
+  border: 1px solid rgba(255,255,255,.12);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.15),
+    0 10px 24px rgba(0,0,0,.5),
+    0 0 20px hsla(var(--bh), var(--bs), var(--bl), .12);
+  color: hsla(var(--bh), var(--bs), calc(var(--bl) + 20%), 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+}
+
+/* --------------------------------------------------------------------------
+   4. Glassmorphism badges
+   -------------------------------------------------------------------------- */
+.card-badges {
+  position: absolute;
+  top: .65rem;
+  left: .65rem;
+  right: .65rem;
+  z-index: 5;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  pointer-events: none;
+}
+.badge-slot-left,
+.badge-slot-right {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+}
+.card-badges .store-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  padding: .22rem .55rem;
+  border-radius: 100px;
+  font-size: .65rem;
+  font-weight: 750;
+  letter-spacing: .03em;
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  border: 1px solid rgba(255,255,255,.12);
+  box-shadow: 0 2px 8px rgba(0,0,0,.3);
+  text-transform: uppercase;
+}
+.card-badges .store-badge-save {
+  background: hsla(var(--bh), var(--bs), var(--bl), .18);
+  color: hsla(var(--bh), var(--bs), calc(var(--bl) + 25%), 1);
+  border-color: hsla(var(--bh), var(--bs), var(--bl), .35);
+  box-shadow: 0 2px 8px hsla(var(--bh), var(--bs), var(--bl), .2);
+}
+
+/* Status & Campaign Tags (Top-Right) with Tailored Micro-Gradients */
+.card-badges .store-badge-campaign {
+  background: rgba(255,255,255,.08);
+  color: #fff;
+  border-color: rgba(255,255,255,.16);
+}
+.card-badges .store-badge-campaign.sb-hot {
+  background: linear-gradient(135deg, rgba(239,68,68,.35), rgba(249,115,22,.25));
+  color: #fecaca;
+  border-color: rgba(239,68,68,.45);
+  box-shadow: 0 0 12px rgba(239,68,68,.3);
+}
+.card-badges .store-badge-campaign.sb-popular {
+  background: linear-gradient(135deg, rgba(59,130,246,.35), rgba(147,51,234,.25));
+  color: #dbeafe;
+  border-color: rgba(96,165,250,.45);
+  box-shadow: 0 0 12px rgba(59,130,246,.3);
+}
+.card-badges .store-badge-campaign.sb-sale {
+  background: linear-gradient(135deg, rgba(245,158,11,.35), rgba(239,68,68,.25));
+  color: #fef3c7;
+  border-color: rgba(245,158,11,.45);
+  box-shadow: 0 0 12px rgba(245,158,11,.3);
+}
+.card-badges .store-badge-campaign.sb-bestseller {
+  background: linear-gradient(135deg, rgba(168,85,247,.35), rgba(236,72,153,.25));
+  color: #f3e8ff;
+  border-color: rgba(192,132,252,.45);
+  box-shadow: 0 0 12px rgba(168,85,247,.3);
+}
+.card-badges .store-badge-campaign.sb-new {
+  background: linear-gradient(135deg, rgba(16,185,129,.35), rgba(6,182,212,.25));
+  color: #d1fae5;
+  border-color: rgba(52,211,153,.45);
+  box-shadow: 0 0 12px rgba(16,185,129,.3);
+}
+.card-badges .store-badge-campaign.sb-dashain {
+  background: linear-gradient(135deg, rgba(190,18,34,.35), rgba(224,34,50,.2));
+  color: #fecdd3;
+  border-color: rgba(244,63,94,.4);
+  box-shadow: 0 0 12px rgba(225,29,72,.25);
+}
+
+/* ── Campaign badge: custom label configured in the admin Sale Campaigns
+   manager. Pill variant uses the campaign accent color (when set); the
+   banner variant renders the campaign banner image as a full-width overlay
+   like the Dashain banner. ── */
+/* Pill badge — key off the card brand theme (hsl vars), with a campaign
+   accent override when the admin sets one. */
+.card-badges .store-badge-campaign.sb-campaign {
+  background: linear-gradient(135deg,
+    hsla(var(--bh, 350), var(--bs, 90%), calc(var(--bl, 55%) - 18%), .35),
+    hsla(var(--bh, 350), var(--bs, 90%), calc(var(--bl, 55%) - 38%), .2));
+  color: #ffd7db;
+  border-color: hsla(var(--bh, 350), var(--bs, 90%), calc(var(--bl, 55%) - 20%), .45);
+  box-shadow: 0 0 12px hsla(var(--bh, 350), var(--bs, 90%), var(--bl, 55%), .25);
+}
+:root { --campaign-accent: #E50914; }
+body.campaign-default .card-badges .store-badge-campaign.sb-campaign,
+body.campaign-festive-red .card-badges .store-badge-campaign.sb-campaign,
+body.campaign-gold-red .card-badges .store-badge-campaign.sb-campaign {
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--campaign-accent, #E50914) 45%, transparent),
+    color-mix(in srgb, var(--campaign-accent, #E50914) 20%, transparent));
+  color: #fff;
+  border-color: color-mix(in srgb, var(--campaign-accent, #E50914) 55%, transparent);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--campaign-accent, #E50914) 35%, transparent);
+}
+body.campaign-dark-premium .card-badges .store-badge-campaign.sb-campaign {
+  background: linear-gradient(135deg, rgba(22,22,26,.9), rgba(40,40,52,.85));
+  color: #f5d780;
+  border-color: rgba(245,215,128,.5);
+  box-shadow: 0 0 12px rgba(245,215,128,.25);
+}
+body.campaign-neon-offer .card-badges .store-badge-campaign.sb-campaign {
+  background: linear-gradient(135deg, rgba(34,211,238,.35), rgba(232,121,249,.3));
+  color: #e0faff;
+  border-color: rgba(34,211,238,.55);
+  box-shadow: 0 0 14px rgba(34,211,238,.35);
+}
+.card-badges .sb-campaign-banner {
+  all: unset;
+  display: block !important;
+  position: absolute;
+  bottom: .5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - .8rem);
+  max-width: 100%;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: .6rem !important;
+  background: transparent !important;
+  box-shadow: 0 3px 16px rgba(120,10,20,.4), 0 0 24px rgba(245,190,60,.15) !important;
+  overflow: hidden;
+  z-index: 6;
+  pointer-events: none;
+}
+.campaign-banner-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: .6rem;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,.4));
+}
+.badge-slot-right:has(.sb-campaign-banner) {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  left: 0;
+  justify-content: center;
+}
+@media (max-width: 639px) {
+  .card-badges .sb-campaign-banner {
+    bottom: .35rem;
+    width: calc(100% - .6rem);
+    border-radius: .5rem !important;
+  }
+  .campaign-banner-img { border-radius: .5rem; }
+}
+
+/* ── Dashain Festive Graphic Emblem (Top-Right Badge Slot) ──
+   Replaces the generic text/star pill badge with the user's authentic
+   transparent festive emblem (Jamara, Tika brass bowl, 3D golden DASHAIN SALE, and kite).
+   Fits cleanly in the badge slot opposite the -X% OFF discount pill. */
+.card-badges .store-badge-festive.sb-dashain-emblem {
+  all: unset;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: flex-end;
+  pointer-events: none;
+  cursor: default;
+  line-height: 1;
+  transition: transform .3s cubic-bezier(.2,.8,.2,1);
+}
+
+.card-badges .dashain-emblem-img {
+  display: block;
+  height: 34px;
+  width: auto;
+  max-width: 130px;
+  object-fit: contain;
+  filter: drop-shadow(0 3px 6px rgba(0,0,0,0.65)) drop-shadow(0 0 10px rgba(245,190,60,0.45));
+  transition: transform .3s cubic-bezier(.2,.8,.2,1), filter .3s ease;
+}
+
+.product-card:hover .dashain-emblem-img {
+  transform: scale(1.08) translateY(-1px) rotate(1deg);
+  filter: drop-shadow(0 5px 12px rgba(0,0,0,0.8)) drop-shadow(0 0 18px rgba(245,190,60,0.8));
+}
+
+/* Festive card glow when Dashain emblem is present */
+.product-card:has(.sb-dashain-emblem) {
+  border-color: rgba(225, 29, 72, 0.4);
+}
+.product-card:has(.sb-dashain-emblem):hover {
+  border-color: rgba(245, 190, 60, 0.65);
+  box-shadow: 0 14px 40px rgba(0,0,0,.6), 0 0 24px rgba(225,29,72,.3), 0 0 16px rgba(245,190,60,.25);
+}
+.product-card:has(.sb-dashain-emblem) .card-glow {
+  background: radial-gradient(
+    circle at 50% 20%,
+    rgba(225, 29, 72, 0.22) 0%,
+    rgba(245, 190, 60, 0.15) 45%,
+    transparent 80%
+  );
+  opacity: .9;
+}
+
+@media (max-width: 639px) {
+  .card-badges .dashain-emblem-img {
+    height: 26px;
+    max-width: 105px;
+  }
+}
+
+.card-badges .store-badge-campaign.sb-tihar {
+  background: linear-gradient(135deg, rgba(217,119,6,.35), rgba(245,158,11,.2));
+  color: #fef3c7;
+  border-color: rgba(245,158,11,.4);
+  box-shadow: 0 0 12px rgba(245,158,11,.25);
+}
+.card-badges .store-badge-campaign.sb-plain {
+  background: linear-gradient(135deg, rgba(99,102,241,.3), rgba(168,85,247,.2));
+  color: #e0e7ff;
+  border-color: rgba(129,140,248,.35);
+}
+
+/* Fallback Initial Monogram Avatar */
+.product-monogram.brand-monogram {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: #fff;
+  background: linear-gradient(
+    135deg,
+    hsla(var(--bh), var(--bs), var(--bl), .85) 0%,
+    hsla(var(--bh2), var(--bs2), var(--bl2), .85) 100%
+  );
+  border: 1px solid rgba(255,255,255,.25);
+  box-shadow: 0 8px 24px hsla(var(--bh), var(--bs), var(--bl), .3);
+  text-shadow: 0 2px 8px rgba(0,0,0,.4);
+}
+
+/* --------------------------------------------------------------------------
+   5. Card body — SaaS typography
+   -------------------------------------------------------------------------- */
+.card-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: .85rem 1rem 1rem;
+  gap: 0;
+  position: relative;
+  z-index: 1;
+}
+
+/* Category with brand-tinted dot */
+.product-card .product-category {
+  margin: 0 0 .4rem;
+  color: hsla(var(--bh), var(--bs), calc(var(--bl) + 15%), .9);
+  font-size: .62rem;
+  font-weight: 750;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+}
+.product-card .product-category::before {
+  content: '';
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 6px currentColor;
+  flex-shrink: 0;
+}
+
+/* Title */
+.product-card h3 {
+  margin: 0 0 .55rem;
+  color: #f1f3f8;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: -.035em;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.product-card:hover h3 { color: #fff; }
+
+/* --------------------------------------------------------------------------
+   6. Metadata chips
+   -------------------------------------------------------------------------- */
+.card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+  margin: 0 0 .75rem;
+}
+.card-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  padding: .2rem .55rem;
+  border-radius: 100px;
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.08);
+  color: rgba(200,205,220,.8);
+  font-size: .65rem;
+  font-weight: 680;
+}
+.card-meta-item svg {
+  opacity: .6;
+  flex-shrink: 0;
+}
+
+/* Stock status with pulsing dot */
+.card-meta-stock {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  padding: .2rem .55rem;
+  border-radius: 100px;
+  background: rgba(74,222,128,.06);
+  border: 1px solid rgba(74,222,128,.2);
+  color: #4ade80;
+  font-size: .65rem;
+  font-weight: 680;
+}
+@keyframes pulse-stock {
+  0%, 100% { opacity: 1; box-shadow: 0 0 4px rgba(74,222,128,.6); }
+  50% { opacity: .4; box-shadow: 0 0 8px rgba(74,222,128,.2); }
+}
+.card-meta-stock::before {
+  content: '';
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: #4ade80;
+  box-shadow: 0 0 4px rgba(74,222,128,.6);
+  flex-shrink: 0;
+  animation: pulse-stock 2s ease-in-out infinite;
+}
+.card-meta-stock.is-out {
+  border-color: rgba(251,191,36,.2);
+  background: rgba(251,191,36,.06);
+  color: #fbbf24;
+}
+.card-meta-stock.is-out::before {
+  background: #fbbf24;
+  box-shadow: 0 0 4px rgba(251,191,36,.5);
+  animation: none;
+}
+
+/* --------------------------------------------------------------------------
+   7. Price — hierarchy with crossed-out original
+   -------------------------------------------------------------------------- */
+.product-card .price-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: .5rem;
+  margin-top: auto;
+  padding: .7rem 0 0;
+  border-top: 1px solid rgba(255,255,255,.06);
+}
+.price-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: .3rem;
+}
+.price-main small {
+  width: 100%;
+  color: rgba(150,155,170,.6);
+  font-size: .58rem;
+  font-weight: 750;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+.product-card .price {
+  color: #fff;
+  font-size: 1.4rem;
+  font-weight: 900;
+  letter-spacing: -.06em;
+  line-height: 1;
+}
+.was-price {
+  color: rgba(160,165,180,.4);
+  font-size: .72rem;
+  font-weight: 500;
+  text-decoration: line-through;
+  text-decoration-color: rgba(160,165,180,.3);
+}
+.price-save {
+  display: inline-flex;
+  align-items: center;
+  padding: .18rem .5rem;
+  border-radius: 100px;
+  background: rgba(74,222,128,.12);
+  border: 1px solid rgba(74,222,128,.25);
+  color: #4ade80;
+  font-size: .62rem;
+  font-weight: 800;
+  white-space: nowrap;
+  align-self: center;
+}
+
+/* --------------------------------------------------------------------------
+   7b. Duration pills — colourful variant picker on product cards
+   -------------------------------------------------------------------------- */
+.duration-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+  margin-top: .55rem;
+  padding-top: .55rem;
+  border-top: 1px solid rgba(255,255,255,.06);
+}
+
+.dur-pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  padding: .4rem .7rem;
+  border: 1.5px solid rgba(255,255,255,.12);
+  border-radius: .65rem;
+  background: rgba(255,255,255,.04);
+  color: var(--text-muted, #a7a7a7);
+  cursor: pointer;
+  font-size: .72rem;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  transition: all .25s cubic-bezier(.2,.8,.2,1);
+}
+
+/* Unique colour per pill position */
+.dur-pill:nth-child(1) { --pill-color: #22d3ee; --pill-glow: rgba(34,211,238,.3); }
+.dur-pill:nth-child(2) { --pill-color: #a78bfa; --pill-glow: rgba(167,139,250,.3); }
+.dur-pill:nth-child(3) { --pill-color: #fbbf24; --pill-glow: rgba(251,191,36,.3); }
+.dur-pill:nth-child(4) { --pill-color: #f472b6; --pill-glow: rgba(244,114,182,.3); }
+.dur-pill:nth-child(5) { --pill-color: #34d399; --pill-glow: rgba(52,211,153,.3); }
+
+/* Top accent gradient stripe */
+.dur-pill::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 15%; right: 15%;
+  height: 2px;
+  border-radius: 0 0 2px 2px;
+  background: linear-gradient(90deg,
+    transparent,
+    var(--pill-color, #ff1f32),
+    transparent
+  );
+  opacity: .35;
+  transition: opacity .25s ease;
+}
+
+/* Hover */
+.dur-pill:hover {
+  border-color: var(--pill-color, rgba(255,255,255,.3));
+  background: rgba(255,255,255,.07);
+  color: var(--white, #fff);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 12px rgba(0,0,0,.25), 0 0 12px var(--pill-glow, rgba(255,31,50,.12));
+}
+.dur-pill:hover::before { opacity: .8; }
+
+/* Active press */
+.dur-pill:active {
+  transform: scale(.95);
+}
+
+/* Selected / active state */
+.dur-pill.active {
+  border-color: var(--pill-color, #ff1f32);
+  background: linear-gradient(150deg,
+    color-mix(in srgb, var(--pill-color, #ff1f32), transparent 82%),
+    color-mix(in srgb, var(--pill-color, #ff1f32), transparent 92%)
+  );
+  color: var(--pill-color, #fff);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--pill-color, #ff1f32), transparent 60%),
+    0 3px 14px var(--pill-glow, rgba(229,9,20,.2));
+}
+.dur-pill.active::before { opacity: 1; }
+
+/* Pulsing dot indicator for selected pill */
+.dur-pill.active::after {
+  content: '';
+  position: absolute;
+  top: .3rem; right: .3rem;
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--pill-color, #ff1f32);
+  box-shadow: 0 0 6px var(--pill-glow, rgba(255,31,50,.5));
+  animation: pill-glow 2s ease-in-out infinite;
+}
+@keyframes pill-glow {
+  0%, 100% { box-shadow: 0 0 4px var(--pill-glow); transform: scale(1); }
+  50% { box-shadow: 0 0 10px var(--pill-glow); transform: scale(1.3); }
+}
+
+/* Label + price inside pill */
+.dur-pill-label {
+  font-weight: 800;
+  font-size: .68rem;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  opacity: .8;
+}
+.dur-pill.active .dur-pill-label {
+  opacity: 1;
+  color: var(--pill-color, #fff);
+}
+
+.dur-pill-price {
+  font-weight: 900;
+  font-size: .76rem;
+  letter-spacing: -.02em;
+}
+.dur-pill.active .dur-pill-price {
+  color: var(--white, #fff);
+}
+
+/* Mobile adjustments */
+@media (max-width: 639px) {
+  .duration-pills { gap: .3rem; margin-top: .4rem; padding-top: .4rem; }
+  .dur-pill { padding: .32rem .55rem; font-size: .65rem; border-radius: .55rem; }
+  .dur-pill-label { font-size: .6rem; }
+  .dur-pill-price { font-size: .68rem; }
+}
+
+/* --------------------------------------------------------------------------
+   8. CTA — asymmetric button bar (70/30)
+   -------------------------------------------------------------------------- */
+.product-card .product-actions {
+  display: grid !important;
+  grid-template-columns: 1fr auto !important;
+  gap: .4rem;
+  margin-top: .75rem;
+}
+.product-card .card-buy {
+  grid-column: auto !important;
+}
+
+/* Primary — brand gradient with sweep */
+.product-card .card-buy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .4rem;
+  min-height: 2.75rem;
+  border: 0;
+  border-radius: .65rem;
+  padding: 0 1rem;
+  font-size: .8rem;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(
+    135deg,
+    hsla(var(--bh), var(--bs), var(--bl), 1) 0%,
+    hsla(var(--bh), var(--bs), calc(var(--bl) - 10%), 1) 100%
+  ) !important;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 16px hsla(var(--bh), var(--bs), var(--bl), .3) !important;
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+.product-card .card-buy svg {
+  transition: transform .25s cubic-bezier(.22,.68,0,1.1);
+  opacity: .8;
+}
+.product-card .card-buy:hover svg {
+  transform: translateX(3px);
+  opacity: 1;
+}
+/* Shimmer sweep */
+.product-card .card-buy::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 60%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.18), transparent) !important;
+  transition: left .45s ease;
+  pointer-events: none;
+}
+.product-card .card-buy:hover::before {
+  left: 150%;
+}
+.product-card .card-buy:hover {
+  box-shadow: 0 8px 28px hsla(var(--bh), var(--bs), var(--bl), .4) !important;
+  background: linear-gradient(
+    135deg,
+    hsla(var(--bh), var(--bs), calc(var(--bl) + 5%), 1) 0%,
+    hsla(var(--bh), var(--bs), var(--bl), 1) 100%
+  ) !important;
+  transform: translateY(-1px);
+}
+.product-card .card-buy:active {
+  transform: translateY(1px);
+  transition-duration: 80ms;
+}
+
+/* Secondary — frosted glass */
+.product-card .card-view {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  border-radius: .65rem;
+  padding: 0 .85rem;
+  font-size: .72rem;
+  font-weight: 700;
+  color: rgba(200,205,220,.85);
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.1);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .2s ease, border-color .2s ease, color .2s ease;
+}
+.product-card .card-view:hover {
+  background: rgba(255,255,255,.08);
+  border-color: hsla(var(--bh), var(--bs), var(--bl), .3);
+  color: #fff;
+}
+
+.card-action:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+  transform: none !important;
+}
+.card-action:focus-visible {
+  outline: 2px solid hsla(var(--bh), var(--bs), var(--bl), .8);
+  outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   9. Skeleton shimmer
+   -------------------------------------------------------------------------- */
+.product-card.skeleton {
+  min-height: 22rem;
+  border-color: rgba(255,255,255,.04);
+}
+.product-card.skeleton .card-glow { display: none; }
+.product-card.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(100deg, #111318 32%, #1a1c24 48%, #111318 64%);
+  background-size: 240% 100%;
+  animation: card-skeleton-shimmer 1.3s ease-in-out infinite;
+}
+@keyframes card-skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* --------------------------------------------------------------------------
+   10. Entrance stagger
+   -------------------------------------------------------------------------- */
+.product-card:not(.skeleton) {
+  animation: card-enter .45s cubic-bezier(.16,1,.3,1) both;
+}
+@keyframes card-enter {
+  from { opacity: 0; transform: translateY(16px) scale(.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.product-card:not(.skeleton):nth-child(2) { animation-delay: 40ms; }
+.product-card:not(.skeleton):nth-child(3) { animation-delay: 80ms; }
+.product-card:not(.skeleton):nth-child(4) { animation-delay: 120ms; }
+.product-card:not(.skeleton):nth-child(5) { animation-delay: 160ms; }
+.product-card:not(.skeleton):nth-child(6) { animation-delay: 200ms; }
+.product-card:not(.skeleton):nth-child(7) { animation-delay: 240ms; }
+.product-card:not(.skeleton):nth-child(8) { animation-delay: 280ms; }
+.product-card:not(.skeleton):nth-child(n+9) { animation-delay: 300ms; }
+
+/* --------------------------------------------------------------------------
+   11. Responsive
+   -------------------------------------------------------------------------- */
+
+/* Tablet */
+@media (min-width: 640px) and (max-width: 1023px) {
+  .product-grid { gap: 1.2rem !important; }
+  .product-card .product-image { height: 8.5rem; }
+  .product-card .product-image img { padding: 1.4rem 2rem; }
+  .card-body { padding: .75rem .85rem .85rem; }
+  .product-card h3 { font-size: .96rem; }
+  .product-card .price { font-size: 1.25rem; }
+  .product-card .card-buy { min-height: 2.6rem; font-size: .78rem; }
+}
+
+/* Mobile */
+@media (max-width: 639px) {
+  .product-grid { gap: .7rem !important; }
+  .product-card { border-radius: .75rem; }
+  .product-card .product-image {
+    height: 7rem;
+    border-radius: .68rem .68rem 0 0;
+  }
+  .product-card .product-image img { padding: 1rem 1.5rem; }
+  .product-card .product-image::after { height: 2rem; }
+  .banner-logo-wrap .brand-badge svg { width: 42px; height: 42px; border-radius: 12px; }
+  .banner-logo-wrap .product-monogram { width: 2.8rem; height: 2.8rem; font-size: 1.15rem; }
+
+  .product-card:hover,
+  .product-card:focus-within {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 32px rgba(0,0,0,.45), 0 4px 12px hsla(var(--bh), var(--bs), var(--bl), .1);
+  }
+
+  .card-glow { filter: blur(20px); }
+
+  .card-body { padding: .6rem .7rem .7rem; }
+  .product-card .product-category { font-size: .56rem; margin-bottom: .25rem; }
+  .product-card .product-category::before { width: 4px; height: 4px; }
+  .product-card h3 { font-size: .82rem; margin-bottom: .35rem; }
+
+  .card-meta { margin: 0 0 .4rem; gap: .25rem; }
+  .card-meta-item, .card-meta-stock { font-size: .58rem; padding: .15rem .4rem; }
+  .card-meta-item svg { width: 10px; height: 10px; }
+
+  .product-card .price-row { padding: .5rem 0 0; }
+  .product-card .price { font-size: 1.05rem; }
+  .price-main small { font-size: .52rem; }
+  .was-price { font-size: .6rem; }
+  .price-save { font-size: .54rem; padding: .12rem .35rem; }
+
+  .product-card .product-actions { grid-template-columns: 1fr; gap: .3rem; }
+  .product-card .card-buy { min-height: 2.5rem; font-size: .76rem; }
+  .product-card .card-view { min-height: 2.2rem; font-size: .68rem; }
+
+  .card-badges { top: .4rem; left: .4rem; right: .4rem; gap: .2rem; }
+  .card-badges .store-badge { font-size: .56rem; padding: .15rem .4rem; }
+
+  .product-card.skeleton { min-height: 16rem; }
+  .product-card:not(.skeleton) { animation-duration: 280ms; }
+}
+
+/* Small mobile */
+@media (max-width: 420px) {
+  .product-card .product-image { height: 5.5rem; }
+  .product-card .product-image img { padding: .7rem 1rem; }
+  .product-card h3 { font-size: .76rem; }
+  .product-card .price { font-size: .95rem; }
+  .product-card .card-buy { font-size: .72rem; min-height: 2.35rem; }
+}
+
+/* --------------------------------------------------------------------------
+   12. Reduced motion
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .product-card, .product-card:hover, .product-card:focus-within {
+    transform: none !important;
+    transition: none !important;
+  }
+  .product-card .product-image img { transition: none !important; }
+  .product-card:hover .product-image img { transform: none !important; }
+  .product-card:not(.skeleton) { animation: none !important; opacity: 1; }
+  .product-card .card-buy::before { display: none; }
+  .card-meta-stock::before { animation: none !important; }
+  .card-glow { transition: none !important; }
+}
+
+/* ==========================================================================
+   13. SpecialOfferCard Variant — Compact Auto-Themed Deal Card
+   ========================================================================== */
+.flash-deal-card.fdc-rich {
+  --bh: 0; --bs: 80%; --bl: 50%;
+  --bh2: 25; --bs2: 80%; --bl2: 55%;
+  position: relative;
+  background: linear-gradient(168deg,
+    rgba(17,19,24,.94) 0%,
+    rgba(13,15,20,.96) 60%,
+    rgba(11,13,17,.98) 100%
+  ) !important;
+  border: 1px solid rgba(255,255,255,.08) !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,.35) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: transform .32s cubic-bezier(.22,.68,0,1.1), border-color .32s ease, box-shadow .32s cubic-bezier(.22,.68,0,1.1) !important;
+  will-change: transform;
+  overflow: hidden;
+}
+
+.flash-deal-card.fdc-rich:hover {
+  transform: translateY(-5px) !important;
+  border-color: hsla(var(--bh), var(--bs), var(--bl), .5) !important;
+  box-shadow:
+    0 16px 36px rgba(0,0,0,.5),
+    0 0 0 1px hsla(var(--bh), var(--bs), var(--bl), .1),
+    0 8px 24px hsla(var(--bh), var(--bs), var(--bl), .15) !important;
+}
+
+.flash-deal-card.fdc-rich .fdc-top {
+  position: relative;
+  height: 6.8rem !important;
+  background: radial-gradient(
+    ellipse at 50% 60%,
+    hsla(var(--bh), var(--bs), var(--bl), .2) 0%,
+    rgba(14,14,18,.95) 85%
+  ) !important;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+
+.flash-deal-card.fdc-rich .fdc-top::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 1.6rem;
+  background: linear-gradient(to bottom, transparent, rgba(13,15,20,.95));
+  pointer-events: none;
+  z-index: 1;
+}
+
+.flash-deal-card.fdc-rich .fdc-save-pill {
+  position: absolute;
+  top: .6rem; right: .6rem;
+  z-index: 3;
+  padding: .22rem .55rem;
+  border-radius: 100px;
+  background: hsla(var(--bh), var(--bs), var(--bl), .22) !important;
+  color: hsla(var(--bh), var(--bs), calc(var(--bl) + 25%), 1) !important;
+  border: 1px solid hsla(var(--bh), var(--bs), var(--bl), .4) !important;
+  font-size: .65rem;
+  font-weight: 850;
+  letter-spacing: .03em;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 3px 10px hsla(var(--bh), var(--bs), var(--bl), .3) !important;
+}
+
+.flash-deal-card.fdc-rich .fdc-body {
+  padding: .85rem 1rem 1rem !important;
+  gap: .2rem !important;
+  position: relative;
+  z-index: 2;
+}
+
+.flash-deal-card.fdc-rich .fdc-name {
+  color: #f1f3f8;
+  font-size: .95rem;
+  font-weight: 800;
+  letter-spacing: -.03em;
+  line-height: 1.3;
+}
+.flash-deal-card.fdc-rich:hover .fdc-name { color: #fff; }
+
+.flash-deal-card.fdc-rich .fdc-dur {
+  color: rgba(180,185,200,.75);
+  font-size: .66rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.flash-deal-card.fdc-rich .fdc-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: .5rem;
+  margin-top: auto;
+  padding-top: .6rem;
+  margin-bottom: .65rem;
+  border-top: 1px solid rgba(255,255,255,.06) !important;
+}
+
+.flash-deal-card.fdc-rich .fdc-price {
+  color: #fff;
+  font-size: 1.3rem;
+  font-weight: 900;
+  letter-spacing: -.05em;
+}
+
+.flash-deal-card.fdc-rich .fdc-was {
+  color: rgba(160,165,180,.4);
+  font-size: .72rem;
+  text-decoration: line-through;
+}
+
+.flash-deal-card.fdc-rich .fdc-actions {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: .4rem;
+}
+
+.flash-deal-card.fdc-rich .fdc-btn-buy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .35rem;
+  padding: .62rem .9rem;
+  border: 0;
+  border-radius: .6rem;
+  background: linear-gradient(
+    135deg,
+    hsla(var(--bh), var(--bs), var(--bl), 1) 0%,
+    hsla(var(--bh), var(--bs), calc(var(--bl) - 10%), 1) 100%
+  ) !important;
+  color: #fff;
+  font-size: .78rem;
+  font-weight: 800;
+  cursor: pointer;
+  letter-spacing: .01em;
+  box-shadow: 0 4px 14px hsla(var(--bh), var(--bs), var(--bl), .35) !important;
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.flash-deal-card.fdc-rich .fdc-btn-buy:hover {
+  transform: translateY(-1px);
+  background: linear-gradient(
+    135deg,
+    hsla(var(--bh), var(--bs), calc(var(--bl) + 6%), 1) 0%,
+    hsla(var(--bh), var(--bs), var(--bl), 1) 100%
+  ) !important;
+  box-shadow: 0 6px 20px hsla(var(--bh), var(--bs), var(--bl), .5) !important;
+}
+
+.flash-deal-card.fdc-rich .fdc-btn-buy svg {
+  transition: transform .25s ease;
+}
+.flash-deal-card.fdc-rich .fdc-btn-buy:hover svg {
+  transform: translateX(3px);
+}
+
+.flash-deal-card.fdc-rich .fdc-btn-detail {
+  padding: .62rem .85rem;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: .6rem;
+  background: rgba(255,255,255,.05);
+  color: rgba(215,220,235,.85);
+  font-size: .76rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .2s ease, color .2s ease, border-color .2s ease;
+}
+
+.flash-deal-card.fdc-rich .fdc-btn-detail:hover {
+  background: rgba(255,255,255,.1);
+  color: #fff;
+  border-color: rgba(255,255,255,.25);
+}
+
+/* ==========================================================================
+   14. Delivery Steps Layout Alignment Fix
+   ========================================================================== */
+.pd-delivery {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: .85rem !important;
+  margin: .4rem 0 0 !important;
+  padding: 0 !important;
+  list-style: none !important;
+  counter-reset: pd-step !important;
+}
+
+.pd-delivery li {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: flex-start !important;
+  gap: .85rem !important;
+  color: var(--text-muted, rgba(200,205,220,.75)) !important;
+  font-size: .88rem !important;
+  line-height: 1.55 !important;
+}
+
+.pd-delivery li::before {
+  counter-increment: pd-step;
+  content: counter(pd-step);
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 1.85rem !important;
+  height: 1.85rem !important;
+  min-width: 1.85rem !important;
+  max-width: 1.85rem !important;
+  flex-shrink: 0 !important;
+  border: 1px solid rgba(239,68,68,.45) !important;
+  border-radius: 50% !important;
+  background: rgba(239,68,68,.14) !important;
+  color: #ff4d5a !important;
+  font-size: .78rem !important;
+  font-weight: 900 !important;
+  box-shadow: 0 0 10px rgba(239,68,68,.2) !important;
+  margin-top: .1rem !important;
+}
+
+.pd-delivery li .pd-step-body,
+.pd-delivery li > div {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  color: rgba(215,220,235,.85) !important;
+  font-size: .88rem !important;
+  line-height: 1.6 !important;
+}
+
+.pd-delivery b {
+  color: #fff !important;
+  font-weight: 800 !important;
+  margin-right: .3rem !important;
+}
+
+/* ==========================================================================
+   15. High-Visibility "Buy Now" Text & Button Typography
+   ========================================================================== */
+
+/* Overrides any legacy .card-action span { float:right; color:var(--red-bright); } rule */
+.card-buy span,
+.card-buy .card-buy-text,
+.product-card .card-buy span,
+.product-card .card-buy .card-buy-text,
+.product-card .card-action.card-buy span,
+.product-card .card-action.card-buy .card-buy-text,
+.flash-deal-card .fdc-btn-buy span,
+.flash-deal-card .fdc-btn-buy .card-buy-text,
+#start-order span,
+#start-order .card-buy-text {
+  color: #ffffff !important;
+  float: none !important;
+  display: inline-block !important;
+  font-weight: 850 !important;
+  font-size: .88rem !important;
+  line-height: 1.25 !important;
+  letter-spacing: .025em !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8), 0 0 2px rgba(0, 0, 0, 0.9) !important;
+  white-space: nowrap !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  text-decoration: none !important;
+}
+
+/* Ensure SVG icon is crisp white, perfectly aligned and not shrunk */
+.card-buy svg,
+.product-card .card-buy svg,
+.flash-deal-card .fdc-btn-buy svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+  flex-shrink: 0 !important;
+  opacity: 0.95 !important;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.7)) !important;
+}
+
+/* Primary Buy Now button: vibrant, high-contrast, perfectly centered */
+.product-card .card-buy {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 2.85rem !important;
+  padding: 0 1.15rem !important;
+  gap: .45rem !important;
+  border: 0 !important;
+  border-radius: .7rem !important;
+  cursor: pointer !important;
+  background: linear-gradient(
+    135deg,
+    hsla(var(--bh), var(--bs), var(--bl), 1) 0%,
+    hsla(var(--bh), var(--bs), calc(var(--bl) - 10%), 1) 100%
+  ) !important;
+  box-shadow: 0 4px 18px hsla(var(--bh), var(--bs), var(--bl), .42), 0 1px 0 rgba(255,255,255,.25) inset !important;
+  transition: transform .2s ease, box-shadow .2s ease !important;
+}
+
+.product-card .card-buy:hover {
+  transform: translateY(-1.5px) !important;
+  box-shadow: 0 8px 26px hsla(var(--bh), var(--bs), var(--bl), .55), 0 1px 0 rgba(255,255,255,.35) inset !important;
+}
+
+/* Secondary Action button: elegant glassmorphic Details / Plans */
+.product-card .card-view {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 2.85rem !important;
+  padding: 0 .95rem !important;
+  border-radius: .7rem !important;
+  font-size: .8rem !important;
+  font-weight: 750 !important;
+  letter-spacing: .01em !important;
+  color: rgba(230, 235, 250, .92) !important;
+  background: rgba(255, 255, 255, .06) !important;
+  border: 1px solid rgba(255, 255, 255, .16) !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  transition: all .18s ease !important;
+}
+
+.product-card .card-view:hover {
+  background: rgba(255, 255, 255, .14) !important;
+  border-color: rgba(255, 255, 255, .32) !important;
+  color: #ffffff !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Flash deals buy now button */
+.flash-deal-card.fdc-rich .fdc-btn-buy {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: .4rem !important;
+  padding: .58rem .95rem !important;
+  min-height: 2.5rem !important;
+  border-radius: .65rem !important;
+  border: 0 !important;
+  color: #ffffff !important;
+  background: linear-gradient(
+    135deg,
+    hsla(var(--bh), var(--bs), var(--bl), 1) 0%,
+    hsla(var(--bh), var(--bs), calc(var(--bl) - 10%), 1) 100%
+  ) !important;
+  box-shadow: 0 4px 16px hsla(var(--bh), var(--bs), var(--bl), .4), 0 1px 0 rgba(255,255,255,.2) inset !important;
+}
+
+/* Product Dialog Main Checkout Button: Bold, unmissable call-to-action */
+#start-order,
+.pd-actions #start-order {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: .6rem !important;
+  width: 100% !important;
+  min-height: 3.25rem !important;
+  padding: .85rem 1.4rem !important;
+  border-radius: .8rem !important;
+  border: 0 !important;
+  background: linear-gradient(135deg, #e5091e 0%, #b8070f 100%) !important;
+  box-shadow: 0 6px 25px rgba(229,9,20,.45), 0 1px 0 rgba(255,255,255,.25) inset !important;
+  cursor: pointer !important;
+  transition: transform .18s ease, box-shadow .18s ease, background .18s ease !important;
+}
+
+#start-order:hover,
+.pd-actions #start-order:hover {
+  background: linear-gradient(135deg, #ff172c 0%, #cb0812 100%) !important;
+  box-shadow: 0 8px 30px rgba(229,9,20,.62), 0 1px 0 rgba(255,255,255,.35) inset !important;
+  transform: translateY(-2px) !important;
+}
+
+#start-order span,
+#start-order .card-buy-text {
+  font-size: .98rem !important;
+  font-weight: 850 !important;
+  letter-spacing: .015em !important;
+}
+
+/* Responsive clarity on mobile screens */
+@media (max-width: 620px) {
+  .product-card .card-buy {
+    min-height: 2.65rem !important;
+    padding: 0 .85rem !important;
+  }
+  .product-card .card-buy span,
+  .product-card .card-buy .card-buy-text {
+    font-size: .84rem !important;
+    font-weight: 850 !important;
+  }
+  .product-card .card-view {
+    min-height: 2.45rem !important;
+    font-size: .76rem !important;
+  }
+}
+
+
+

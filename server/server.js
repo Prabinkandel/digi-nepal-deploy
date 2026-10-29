@@ -1,6 +1,13 @@
+require('./config/dns')();
 const dns = require('node:dns');
 if (!process.env.VERCEL) {
-  try { dns.setServers(['8.8.8.8', '1.1.1.1']); } catch (e) { void e; }
+  // NB: dns.setServers must resolve before it is called, otherwise SRV lookup
+  // starts on the old server list. Delay it until the next event-loop tick.
+  try {
+    setImmediate(() => {
+      try { dns.setServers(['8.8.8.8', '1.1.1.1']); } catch (e) { void e; }
+    });
+  } catch (e) { void e; }
 }
 
 const path = require('path');
@@ -176,6 +183,7 @@ app.use('/api/products',   require('./routes/products'));
 app.use('/api/categories', require('./routes/categories'));
 app.use('/api/orders',     require('./routes/orders'));
 app.use('/api/offers',     require('./routes/offers'));
+app.use('/api/campaigns',  require('./routes/campaigns'));
 app.use('/api/upload',     require('./routes/upload'));
 app.use('/api/users',      require('./routes/users'));
 app.use('/api/payments',   require('./routes/payments'));
@@ -224,7 +232,7 @@ app.use((req, res) => {
 // ── START ─────────────────────────────────────────────────────────────────────
 if (require.main === module) {
   connectDB().then(() => app.listen(PORT, () => {
-    console.log(`\n🚀 Digi Nepal server running at http://localhost:${PORT}`);
+    console.log(`\n🚀 Digi Prime Nepal server running at http://localhost:${PORT}`);
     console.log(`📦 API endpoints at http://localhost:${PORT}/api`);
     console.log(`🖥️  Admin panel at http://localhost:${PORT}/admin`);
   })).catch(() => { console.error('Database startup failed. Check MONGO_URI and network access.'); process.exitCode = 1; });

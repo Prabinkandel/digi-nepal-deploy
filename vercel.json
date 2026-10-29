@@ -1,5 +1,5 @@
 {
-  "name": "digi-nepal-web",
+  "name": "digi-nepal-deploy",
   "version": 2,
   "buildCommand": "npm run build",
   "outputDirectory": "dist",

@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Digi Nepal � Mobile-First UX Improvements
+   Digi Nepal � Mobile-First UX Improvements
    Loaded after all other stylesheets.
    ========================================================================== */
 
@@ -68,6 +68,7 @@
    Mobile (max 639px)
    ============================================================ */
 @media (max-width: 639px) {
+  .container { width: calc(100% - 1.75rem); }
   .product-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: var(--mob-grid-gap);
@@ -76,6 +77,7 @@
     border-radius: var(--card-radius-mob);
     min-height: 0;
     -webkit-tap-highlight-color: transparent;
+    border: 1px solid rgba(255,255,255,.1);
   }
   .product-card:hover,
   .product-card:focus-within {
@@ -96,7 +98,7 @@
   .product-card .price-row small { font-size: .55rem; }
   .price-save { font-size: .56rem; padding: .13rem .38rem; }
   .product-card .product-actions { display: grid; grid-template-columns: 1fr; gap: .3rem; margin-top: .5rem; }
-  .product-card .card-buy { min-height: 2.6rem; font-size: .78rem; font-weight: 800; border-radius: .55rem; grid-column: auto; }
+  .product-card .card-buy { min-height: 2.65rem; font-size: .84rem; font-weight: 850; border-radius: .6rem; grid-column: auto; }
   .product-card .card-view { min-height: 2.2rem; font-size: .72rem; border-radius: .5rem; }
   .product-card .card-whatsapp { min-height: 2.2rem; font-size: .72rem; border-radius: .5rem; padding: 0 .6rem; }
   .product-card.skeleton { min-height: 16rem; }
@@ -174,7 +176,7 @@
   .pd-layout { grid-template-columns: 1fr !important; gap: 1rem; }
   .pd-media { max-width: 100%; margin: 0; }
   .product-detail-image, .pd-media-box { height: 11rem; border-radius: .75rem; }
-  .pd-price-card { padding: .85rem; }
+  .pd-price-card { padding: .95rem; }
   .pd-actions { display: grid; gap: .5rem; }
   .pd-actions .button { min-height: 3rem; width: 100%; justify-content: center; }
   .pd-related { grid-template-columns: 1fr 1fr; gap: .5rem; }
@@ -200,16 +202,175 @@
   body { padding-bottom: calc(var(--mob-bottom-nav) + var(--mob-safe-bottom)); }
 }
 
-/* Very small */
+/* Fix: never collapse to a single card column on phones.
+   The 2-column grid is the core mobile commerce layout. */
 @media (max-width: 420px) {
-  .product-grid { gap: 8px; }
-  .product-card .product-image { height: 6.8rem; }
-  .product-card .price { font-size: .95rem; }
-  .product-card h3 { font-size: .8rem; }
+  .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px; }
+  .product-card .product-image { height: 6.4rem; }
+  .product-card .price { font-size: .98rem; }
+  .product-card h3 { font-size: .78rem; }
   .hero h1 { font-size: clamp(1.7rem, 8.5vw, 2.2rem); }
 }
+@media (max-width: 340px) {
+  .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px; }
+  .product-card h3 { font-size: .72rem; }
+  .product-card .price { font-size: .9rem; }
+  .product-card .card-buy { font-size: .8rem; font-weight: 850; }
+}
 
-/* Bottom nav � hidden by default, shown on mobile only */
+/* Grouped-card actions: single primary + compact secondary. */
+.product-card .product-actions { grid-template-columns: 1fr; }
+.product-card .card-buy { grid-column: 1 / -1; }
+.product-card .card-view { width: 100%; }
+.card-meta-plans { border-style: dashed; }
+.cat-ico { font-size: .85em; margin-right: .3rem; }
+.category { display: inline-flex; align-items: center; }
+
+/* ── Vibrant Plan Selector ── */
+.plan-grid {
+  display: flex; flex-wrap: wrap; gap: .65rem; margin-top: .75rem;
+}
+@media (min-width: 560px) { .plan-grid { gap: .75rem; } }
+
+.plan-option {
+  position: relative;
+  display: flex; flex-direction: column; gap: .25rem;
+  text-align: left;
+  padding: .85rem 1.1rem;
+  border-radius: 1rem;
+  border: 2px solid rgba(255,255,255,.12);
+  background: linear-gradient(145deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+  color: inherit; cursor: pointer;
+  min-height: 52px;
+  min-width: 130px;
+  flex: 1 1 auto;
+  transition: all .3s cubic-bezier(.2,.8,.2,1);
+  overflow: hidden;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+/* Colour identity per plan position */
+.plan-option:nth-child(1) { --plan-hue: 190; --plan-color: #22d3ee; --plan-glow: rgba(34,211,238,.35); }
+.plan-option:nth-child(2) { --plan-hue: 270; --plan-color: #a78bfa; --plan-glow: rgba(167,139,250,.35); }
+.plan-option:nth-child(3) { --plan-hue: 35;  --plan-color: #fbbf24; --plan-glow: rgba(251,191,36,.35); }
+.plan-option:nth-child(4) { --plan-hue: 340; --plan-color: #f472b6; --plan-glow: rgba(244,114,182,.35); }
+.plan-option:nth-child(5) { --plan-hue: 145; --plan-color: #34d399; --plan-glow: rgba(52,211,153,.35); }
+
+/* Gradient top accent line */
+.plan-option::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg,
+    transparent 5%,
+    var(--plan-color, #ff1f32) 30%,
+    color-mix(in srgb, var(--plan-color, #ff1f32), white 40%) 60%,
+    var(--plan-color, #ff1f32) 85%,
+    transparent 95%
+  );
+  opacity: .5;
+  transition: opacity .3s ease;
+  pointer-events: none;
+  border-radius: 1rem 1rem 0 0;
+}
+
+/* Hover: lift + glow + accent brightens */
+.plan-option:hover {
+  border-color: var(--plan-color, rgba(255,255,255,.3));
+  background: linear-gradient(145deg, rgba(255,255,255,.09), rgba(255,255,255,.03));
+  transform: translateY(-2px);
+  box-shadow:
+    0 6px 24px rgba(0,0,0,.3),
+    0 0 20px var(--plan-glow, rgba(255,31,50,.15));
+}
+.plan-option:hover::before { opacity: 1; }
+
+.plan-option:active {
+  transform: scale(.96) translateY(0);
+}
+
+/* ── Selected: vivid glow + gradient border ── */
+.plan-option.selected {
+  border-color: var(--plan-color, #ff1f32);
+  background:
+    linear-gradient(150deg,
+      color-mix(in srgb, var(--plan-color, #ff1f32), transparent 85%),
+      color-mix(in srgb, var(--plan-color, #ff1f32), transparent 94%)
+    );
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--plan-color, #ff1f32), transparent 50%),
+    0 4px 22px var(--plan-glow, rgba(229,9,20,.25)),
+    inset 0 1px 0 rgba(255,255,255,.08);
+}
+.plan-option.selected::before { opacity: 1; height: 3px; }
+
+/* Animated glow ring on selected */
+.plan-option.selected::after {
+  content: '';
+  position: absolute;
+  top: .55rem; right: .55rem;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--plan-color, #ff1f32);
+  box-shadow: 0 0 10px var(--plan-glow, rgba(255,31,50,.6));
+  animation: plan-dot-pulse 2.2s ease-in-out infinite;
+}
+@keyframes plan-dot-pulse {
+  0%, 100% { box-shadow: 0 0 6px var(--plan-glow); transform: scale(1); }
+  50% { box-shadow: 0 0 16px var(--plan-glow); transform: scale(1.2); }
+}
+
+/* Duration label */
+.plan-duration {
+  font-weight: 800; font-size: .76rem;
+  text-transform: uppercase; letter-spacing: .08em;
+  color: var(--text-muted);
+  transition: color .25s ease;
+}
+.plan-option.selected .plan-duration {
+  color: var(--plan-color, rgba(255,150,160,1));
+  text-shadow: 0 0 12px var(--plan-glow, rgba(255,150,160,.3));
+}
+
+/* Price — bold gradient text */
+.plan-price {
+  font-weight: 900; font-size: 1.15rem;
+  letter-spacing: -.03em;
+  color: var(--white);
+  transition: all .25s ease;
+}
+.plan-option.selected .plan-price {
+  color: var(--plan-color, #ffa0a8);
+  text-shadow: 0 0 18px var(--plan-glow, rgba(255,160,168,.3));
+}
+
+/* Strikethrough old price */
+.plan-was {
+  font-size: .66rem; text-decoration: line-through;
+  color: var(--text-faint); opacity: .65;
+}
+/* Save badge inside plan */
+.plan-option .price-save {
+  margin-top: .15rem;
+}
+
+/* Unavailable / out of stock */
+.plan-out {
+  font-size: .66rem; font-weight: 700;
+  color: var(--warn-amber, #fbbf24);
+  display: inline-flex; align-items: center; gap: .25rem;
+}
+.plan-out::before { content: '⚠'; font-size: .6rem; }
+.plan-option:disabled {
+  opacity: .35; cursor: not-allowed;
+  filter: grayscale(.6);
+  pointer-events: none;
+}
+
+.pd-plans { border-top: 0; padding-top: 0; }
+
+/* Bottom nav � hidden by default, shown on mobile only */
 .mob-bottom-nav { display: none; }
 
 @media (max-width: 639px) {

@@ -8,7 +8,7 @@ async function getMailConfig() {
   let port = Number(process.env.SMTP_PORT || process.env.EMAIL_PORT || 465);
   let user = process.env.SMTP_USER || process.env.EMAIL_USER || process.env.GMAIL_USER || '';
   let pass = process.env.SMTP_PASS || process.env.EMAIL_PASS || process.env.GMAIL_PASS || '';
-  let from = process.env.SMTP_FROM || process.env.EMAIL_FROM || (user ? `Digi Nepal <${user}>` : 'Digi Nepal <no-reply@diginepal.com>');
+  let from = process.env.SMTP_FROM || process.env.EMAIL_FROM || (user ? `Digi Prime Nepal <${user}>` : 'Digi Prime Nepal <no-reply@diginepal.com>');
 
   try {
     const Setting = require('../models/Setting');
@@ -21,7 +21,7 @@ async function getMailConfig() {
       port = Number(map.smtp_port || port);
       user = map.smtp_user;
       pass = map.smtp_pass;
-      from = map.smtp_from || `Digi Nepal <${user}>`;
+      from = map.smtp_from || `Digi Prime Nepal <${user}>`;
     }
   } catch (err) {
     void err;
@@ -52,8 +52,8 @@ async function configured() {
 async function sendMail(options) {
   const mailConfig = await getMailConfig();
   const to = options.to;
-  const subject = options.subject || 'Digi Nepal Notification';
-  const html = options.html || `<div style="font-family:sans-serif;padding:20px;background:#141416;color:#ffffff;border-radius:10px;"><h2 style="color:#e50914;">Digi Nepal</h2><p>${options.text || ''}</p></div>`;
+  const subject = options.subject || 'Digi Prime Nepal Notification';
+  const html = options.html || `<div style="font-family:sans-serif;padding:20px;background:#141416;color:#ffffff;border-radius:10px;"><h2 style="color:#e50914;">Digi Prime Nepal</h2><p>${options.text || ''}</p></div>`;
   const text = options.text || html.replace(/<[^>]+>/g, '');
 
   if (mailConfig) {

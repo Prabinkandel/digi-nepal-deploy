@@ -28,7 +28,7 @@ router.post('/', limit('contact', 5, 900), async (req, res) => {
       to: adminEmail,
       subject: `📩 New Contact Message: ${subjectLabels[data.subject]} — from ${data.name}`,
       html: `<div style="font-family:sans-serif;padding:24px;background:#141416;color:#ffffff;border-radius:12px;border:1px solid #2a2a30;">
-        <h2 style="color:#e50914;margin:0 0 16px;">Digi Nepal — Contact Form</h2>
+        <h2 style="color:#e50914;margin:0 0 16px;">Digi Prime Nepal — Contact Form</h2>
         <h3 style="margin:0 0 10px;color:#60a5fa;">New Message Received</h3>
         <div style="background:#1c1c20;padding:16px;border-radius:8px;margin:16px 0;border:1px solid #333;">
           <p style="margin:4px 0;">From: <strong>${data.name}</strong></p>
@@ -44,9 +44,9 @@ router.post('/', limit('contact', 5, 900), async (req, res) => {
   // Send confirmation to the user
   await mailer.sendMail({
     to: data.email,
-    subject: `✅ We received your message — Digi Nepal`,
+    subject: `✅ We received your message — Digi Prime Nepal`,
     html: `<div style="font-family:sans-serif;padding:24px;background:#141416;color:#ffffff;border-radius:12px;border:1px solid #2a2a30;">
-      <h2 style="color:#e50914;margin:0 0 16px;">Digi Nepal</h2>
+      <h2 style="color:#e50914;margin:0 0 16px;">Digi Prime Nepal</h2>
       <h3 style="margin:0 0 10px;color:#4ade80;">Message Received!</h3>
       <p>Hello <strong>${data.name}</strong>,</p>
       <p>Thank you for reaching out. We've received your message and will get back to you within 24 hours during business days.</p>

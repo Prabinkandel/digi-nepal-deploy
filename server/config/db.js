@@ -1,11 +1,14 @@
-const dns = require('node:dns');
-if (!process.env.VERCEL) {
-  try { dns.setServers(['8.8.8.8', '1.1.1.1']); } catch (e) { void e; }
-}
+require('./dns')();
 
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const { randomUUID } = require('node:crypto');
+
+// Load .env as a safety net in case this module is required before dotenv ran.
+try {
+  const path = require('node:path');
+  require('dotenv').config({ path: [path.join(__dirname, '../../.env'), path.join(__dirname, '../.env')], quiet: true });
+} catch (e) { void e; }
 const User = require('../models/User');
 const Category = require('../models/Category');
 const Product = require('../models/Product');
@@ -50,7 +53,8 @@ async function seedCatalogIfEmpty() {
     { id: randomUUID(), name: 'Design & Media', icon: '◈', color: '#DC2626', sort_order: 2, is_active: 1 },
     { id: randomUUID(), name: 'Cloud & Office', icon: '◇', color: '#991B1B', sort_order: 3, is_active: 1 },
     { id: randomUUID(), name: 'Entertainment', icon: '●', color: '#7F1D1D', sort_order: 4, is_active: 1 },
-    { id: randomUUID(), name: 'Security & VPN', icon: '◆', color: '#EF4444', sort_order: 5, is_active: 1 }
+    { id: randomUUID(), name: 'Security & VPN', icon: '◆', color: '#EF4444', sort_order: 5, is_active: 1 },
+    { id: randomUUID(), name: 'Gaming', icon: '🎮', color: '#DC2626', sort_order: 6, is_active: 1 }
   ];
   const existing = await Category.find({}).lean();
   const byName = new Map(existing.map(category => [category.name, category]));
@@ -66,7 +70,8 @@ async function seedCatalogIfEmpty() {
     { id: randomUUID(), name: 'Canva Pro — 1 Year', category_id: idFor('Design & Media'), price: 1500, original_price: 3000, badge: 'Save 50%', description: 'Design tools and premium templates for your next project.', features: ['Premium templates', 'Brand tools', 'Background remover'], sort_order: 2, is_active: 1 },
     { id: randomUUID(), name: 'Microsoft 365 Personal — 1 Year', category_id: idFor('Cloud & Office'), price: 2200, original_price: 3500, badge: '', description: 'Everyday productivity apps and cloud storage.', features: ['Office apps', 'Cloud storage', 'Multi-device access'], sort_order: 3, is_active: 1 },
     { id: randomUUID(), name: 'Netflix Premium — 1 Month', category_id: idFor('Entertainment'), price: 550, original_price: 800, badge: '', description: 'Premium entertainment access with clear order tracking.', features: ['High quality streaming', 'Simple setup', 'Order updates'], sort_order: 4, is_active: 1 },
-    { id: randomUUID(), name: 'ExpressVPN — 1 Year', category_id: idFor('Security & VPN'), price: 1800, original_price: 4000, badge: 'Best value', description: 'Private, reliable access for your connected devices.', features: ['Global locations', 'Device protection', 'Support included'], sort_order: 5, is_active: 1 }
+    { id: randomUUID(), name: 'ExpressVPN — 1 Year', category_id: idFor('Security & VPN'), price: 1800, original_price: 4000, badge: 'Best value', description: 'Private, reliable access for your connected devices.', features: ['Global locations', 'Device protection', 'Support included'], sort_order: 5, is_active: 1 },
+    { id: randomUUID(), name: 'Free Fire Diamonds', category_id: idFor('Gaming'), price: 30, original_price: 35, badge: '🔥 Hot', description: 'Official Free Fire Diamond top-up in Nepal. Direct in-game delivery via Player ID (UID). 25 to 5060 Diamonds, Weekly & Monthly Membership.', features: ['Instant delivery after payment', '100% safe & official top-up (UID only)', 'eSewa, Khalti & Bank QR accepted', '24/7 WhatsApp support in Nepal'], sort_order: 6, is_active: 1 }
   ]);
 }
 
@@ -149,13 +154,30 @@ function connectDB() {
         await healMediaPurposes();
         return conn;
       })
-      .catch(error => {
+      .catch(async error => {
         connecting = null;
-        if (process.env.NODE_ENV !== 'production') {
-          console.warn(`[MongoDB] Remote connection failed (${error.message}). Falling back to local database...`);
-          return startLocalMemory();
+        if (process.env.NODE_ENV === 'production') throw error;
+        if (error.message && error.message.includes('querySrv')) {
+          // ISP DNS often refuses SRV lookups. Switch DNS servers and retry
+          // once before falling back to the local database.
+          console.warn('[MongoDB] SRV lookup failed (' + error.message + '). Retrying with 8.8.8.8 / 1.1.1.1 DNS...');
+          try {
+            const dns = require('node:dns');
+            dns.setServers(['8.8.8.8', '1.1.1.1']);
+            await new Promise(resolve => setImmediate(resolve));
+            const retry = await mongoose.connect(process.env.MONGO_URI, { serverSelectionTimeoutMS: 8000 });
+            await seedAdminIfNeeded();
+            await seedCatalogIfEmpty();
+            await healMediaPurposes();
+            return retry;
+          } catch (retryError) {
+            connecting = null;
+            console.warn('[MongoDB] Retry failed (' + retryError.message + '). Falling back to local database...');
+            return startLocalMemory();
+          }
         }
-        throw error;
+        console.warn(`[MongoDB] Remote connection failed (${error.message}). Falling back to local database...`);
+        return startLocalMemory();
       });
     return connecting;
   }

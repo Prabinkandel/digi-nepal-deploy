@@ -14,6 +14,7 @@ const productSchema = new mongoose.Schema({
   duration: { type: String, default: null }, // e.g. '1 Month', '3 Months', '6 Months', '1 Year', 'Lifetime'
   stock: { type: Number, default: null },
   rating: { type: Number, default: 4.8 },
+  brand_color: { type: String, default: null }, // Optional explicit hex (e.g. #E50914)
   is_active: { type: Number, default: 1 },
   sort_order: { type: Number, default: 0 },
 }, { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } });

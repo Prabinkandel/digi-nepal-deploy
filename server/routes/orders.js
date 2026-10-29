@@ -24,7 +24,7 @@ router.post('/',auth,limit('orders',20,3600,req=>req.user.id),async(req,res)=>{
      to:req.user.email,
      subject:`🛒 Order Confirmation - Ref #${refCode}`,
      html:`<div style="font-family:sans-serif;padding:24px;background:#141416;color:#ffffff;border-radius:12px;border:1px solid #2a2a30;">
-       <h2 style="color:#e50914;margin:0 0 16px;">Digi Nepal</h2>
+       <h2 style="color:#e50914;margin:0 0 16px;">Digi Prime Nepal</h2>
        <h3 style="margin:0 0 10px;color:#4ade80;">Order Placed Successfully!</h3>
        <p>Hello <strong>${req.user.name || 'Customer'}</strong>,</p>
        <p>Thank you for your order of <strong>${order.product_name}</strong>.</p>
@@ -45,7 +45,7 @@ router.post('/',auth,limit('orders',20,3600,req=>req.user.id),async(req,res)=>{
      to:adminEmail,
      subject:`🚨 NEW ORDER PLACED: ${order.product_name} (Ref #${refCode})`,
      html:`<div style="font-family:sans-serif;padding:24px;background:#141416;color:#ffffff;border-radius:12px;border:1px solid #2a2a30;">
-       <h2 style="color:#e50914;margin:0 0 16px;">Digi Nepal Admin Alert</h2>
+       <h2 style="color:#e50914;margin:0 0 16px;">Digi Prime Nepal Admin Alert</h2>
        <h3 style="margin:0 0 10px;color:#38bdf8;">New Customer Order Placed!</h3>
        <div style="background:#1c1c20;padding:16px;border-radius:8px;margin:16px 0;border:1px solid #333;">
          <p style="margin:4px 0;">Customer: <strong>${req.user.name} (${req.user.email})</strong></p>
@@ -125,7 +125,7 @@ router.put('/:id/status',admin,async(req,res)=>{
      to: user.email,
      subject: `📦 Order ${data.status.toUpperCase()}: ${order.product_name} (Ref #${refCode})`,
      html: `<div style="font-family:sans-serif;padding:24px;background:#141416;color:#ffffff;border-radius:12px;border:1px solid #2a2a30;">
-       <h2 style="color:#e50914;margin:0 0 16px;">Digi Nepal</h2>
+       <h2 style="color:#e50914;margin:0 0 16px;">Digi Prime Nepal</h2>
        <h3 style="margin:0 0 10px;color:${statusColors[data.status]};">${statusTitles[data.status] || `Order ${data.status}`}</h3>
        <p>Hello <strong>${user.name}</strong>,</p>
        <p>Your order for <strong>${order.product_name}</strong> has been updated to <strong style="color:${statusColors[data.status]}">${data.status.toUpperCase()}</strong>.</p>
@@ -135,7 +135,7 @@ router.put('/:id/status',admin,async(req,res)=>{
          <p style="margin:4px 0;">Status: <strong style="color:${statusColors[data.status]}">${data.status.toUpperCase()}</strong></p>
          ${data.note ? `<p style="margin:8px 0 0;padding-top:8px;border-top:1px solid #333;color:#d4d4d8;">Note: ${data.note}</p>` : ''}
        </div>
-       <p style="color:#a1a1aa;font-size:13px;margin-top:16px;">You can view your order history anytime by signing into your account on Digi Nepal.</p>
+       <p style="color:#a1a1aa;font-size:13px;margin-top:16px;">You can view your order history anytime by signing into your account on Digi Prime Nepal.</p>
      </div>`
    }).catch(()=>{});
  }
@@ -146,7 +146,7 @@ router.put('/:id/status',admin,async(req,res)=>{
      to: adminEmail,
      subject: `🔔 Admin Update: Order #${refCode} set to ${data.status.toUpperCase()}`,
      html: `<div style="font-family:sans-serif;padding:24px;background:#141416;color:#ffffff;border-radius:12px;border:1px solid #2a2a30;">
-       <h2 style="color:#e50914;margin:0 0 16px;">Digi Nepal Admin Log</h2>
+       <h2 style="color:#e50914;margin:0 0 16px;">Digi Prime Nepal Admin Log</h2>
        <h3 style="margin:0 0 10px;">Order Status Changed</h3>
        <p>Order Reference: <strong>#${refCode}</strong></p>
        <p>Customer: <strong>${user?.name || 'Customer'} (${user?.email || ''})</strong></p>

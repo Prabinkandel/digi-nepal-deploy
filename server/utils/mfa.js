@@ -6,7 +6,7 @@ const key = () => process.env.MFA_ENCRYPTION_KEY || process.env.SESSION_SECRET;
 const seal = value => Iron.seal(value, key(), Iron.defaults);
 const unseal = value => Iron.unseal(value, key(), Iron.defaults);
 const digest = value => createHash('sha256').update(value).digest('hex');
-function totp(secret, email) { return new OTPAuth.TOTP({ issuer: 'Digi Nepal', label: email, secret }); }
+function totp(secret, email) { return new OTPAuth.TOTP({ issuer: 'Digi Prime Nepal', label: email, secret }); }
 async function verify(user, token) {
   if (!user.mfa_enabled) return false;
   if (/^[a-f0-9]{24}$/.test(token)) {

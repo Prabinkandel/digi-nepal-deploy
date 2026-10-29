@@ -14,7 +14,7 @@
   --red-wash: rgba(229,9,20,.15);
   --success: #85d6a1;
   --font: 'Plus Jakarta Sans', system-ui, sans-serif;
-  --container: 1180px;
+  --container: calc(100% - 3rem);
   --space-1: .5rem;
   --space-2: .75rem;
   --space-3: 1rem;

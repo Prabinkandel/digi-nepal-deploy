@@ -37,6 +37,60 @@ test('local development registration creates a usable session', async () => {
     .expect(200);
 
   assert.equal(login.body.user.email, email);
+
+test('admin manages sale campaigns and the public storefront fetches the live one', async () => {
+  const agent = request.agent(app);
+  // The seeded admin session is what the admin panel uses; campaign
+  // management requires the admin role.
+  const login = await agent
+    .post('/api/auth/login')
+    .send({ email: 'admin@diginepal.com', password: 'admin123' })
+    .expect(200);
+  const csrf = login.body.csrf;
+  const catalog = await agent.get('/api/products?limit=1').expect(200);
+  const productId = catalog.body.items[0].id;
+  const csrfHeader = { 'x-csrf-token': csrf };
+
+  const created = await agent
+    .post('/api/campaigns')
+    .set(csrfHeader)
+    .send({
+      name: 'Spring Sale',
+      short_label: 'SPRING SALE',
+      subtitle: 'Curated deals across the store',
+      product_ids: [productId],
+      max_products: 4,
+      show_sale_badge_on_cards: 1,
+      is_active: 1
+    })
+    .expect(201);
+  assert.equal(created.body.status, 'live');
+  assert.equal(created.body.product_count, 1);
+
+  const active = await agent.get('/api/campaigns/active').expect(200);
+  assert.equal(active.body.campaign.id, created.body.id);
+  assert.ok(Array.isArray(active.body.items));
+  assert.equal(active.body.items.length, 1);
+  assert.equal(active.body.items[0].id, productId);
+
+  const restored = await agent
+    .post(`/api/campaigns/${created.body.id}/restore`)
+    .set(csrfHeader)
+    .send({})
+    .expect(200);
+  assert.equal(restored.body.is_active, 1);
+
+  const disabled = await agent
+    .delete(`/api/campaigns/${created.body.id}`)
+    .set(csrfHeader)
+    .expect(200);
+  assert.match(disabled.body.message, /disabled/i);
+
+  const inactiveActive = await agent.get('/api/campaigns/active').expect(200);
+  assert.equal(inactiveActive.body.campaign, null);
+  assert.deepEqual(inactiveActive.body.items, []);
+});
+
 });
 
 test('customer can create an order and submit payment proof for verification', async () => {

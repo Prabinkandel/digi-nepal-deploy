@@ -55,7 +55,7 @@ router.post('/',auth,limit('payments',15,3600,req=>req.user.id),async(req,res)=>
      to: req.user.email,
      subject: `💳 Payment Receipt Submitted - Ref #${refCode}`,
      html: `<div style="font-family:sans-serif;padding:24px;background:#141416;color:#ffffff;border-radius:12px;border:1px solid #2a2a30;">
-       <h2 style="color:#e50914;margin:0 0 16px;">Digi Nepal</h2>
+       <h2 style="color:#e50914;margin:0 0 16px;">Digi Prime Nepal</h2>
        <h3 style="margin:0 0 10px;color:#60a5fa;">Payment Proof Received!</h3>
        <p>Hello <strong>${req.user.name}</strong>,</p>
        <p>We received your payment proof for <strong>${payment.product_name}</strong>.</p>
@@ -77,7 +77,7 @@ router.post('/',auth,limit('payments',15,3600,req=>req.user.id),async(req,res)=>
      to: adminEmail,
      subject: `🚨 NEW PAYMENT PROOF SUBMITTED: Rs ${payment.amount} (Ref #${refCode})`,
      html: `<div style="font-family:sans-serif;padding:24px;background:#141416;color:#ffffff;border-radius:12px;border:1px solid #2a2a30;">
-       <h2 style="color:#e50914;margin:0 0 16px;">Digi Nepal Admin Alert</h2>
+       <h2 style="color:#e50914;margin:0 0 16px;">Digi Prime Nepal Admin Alert</h2>
        <h3 style="margin:0 0 10px;color:#fbbf24;">New Payment Submitted for Review!</h3>
        <div style="background:#1c1c20;padding:16px;border-radius:8px;margin:16px 0;border:1px solid #333;">
          <p style="margin:4px 0;">Customer: <strong>${req.user.name} (${req.user.email})</strong></p>
@@ -137,7 +137,7 @@ router.put('/:id/status',admin,async(req,res)=>{
      to: user.email,
      subject: `💳 Payment Update: ${data.status.toUpperCase()} - ${result.product_name}`,
      html: `<div style="font-family:sans-serif;padding:24px;background:#141416;color:#ffffff;border-radius:12px;border:1px solid #2a2a30;">
-       <h2 style="color:#e50914;margin:0 0 16px;">Digi Nepal</h2>
+       <h2 style="color:#e50914;margin:0 0 16px;">Digi Prime Nepal</h2>
        <h3 style="margin:0 0 10px;color:${data.status==='verified'?'#4ade80':'#f87171'};">Payment ${data.status.toUpperCase()}</h3>
        <p>Hello <strong>${user.name}</strong>,</p>
        <p>Your payment of <strong>Rs ${Number(result.amount).toLocaleString()}</strong> for <strong>${result.product_name}</strong> has been <strong style="color:${data.status==='verified'?'#4ade80':'#f87171'}">${data.status.toUpperCase()}</strong>.</p>
@@ -157,7 +157,7 @@ router.put('/:id/status',admin,async(req,res)=>{
      to: adminEmail,
      subject: `🔔 Admin Log: Payment #${refCode} ${data.status.toUpperCase()}`,
      html: `<div style="font-family:sans-serif;padding:24px;background:#141416;color:#ffffff;border-radius:12px;border:1px solid #2a2a30;">
-       <h2 style="color:#e50914;margin:0 0 16px;">Digi Nepal Admin Log</h2>
+       <h2 style="color:#e50914;margin:0 0 16px;">Digi Prime Nepal Admin Log</h2>
        <h3 style="margin:0 0 10px;">Payment Status Reviewed</h3>
        <p>Order Reference: <strong>#${refCode}</strong></p>
        <p>Customer: <strong>${user?.name || 'Customer'} (${user?.email || ''})</strong></p>

@@ -54,7 +54,7 @@
 .button { transition-duration: var(--motion-base); transition-timing-function: var(--motion-ease); }
 .button span, .text-link span, .card-action span { transition: transform var(--motion-fast) var(--motion-ease); }
 .button:hover span, .text-link:hover span { transform: translateX(3px); }
-.card-action:hover span { transform: translateX(-3px); }
+.card-action:not(.card-buy):not(.card-view):hover span { transform: translateX(-3px); }
 
 dialog[open] { animation: dialog-enter var(--motion-base) var(--motion-emphasis) both; }
 dialog::backdrop { animation: backdrop-enter var(--motion-base) ease both; }

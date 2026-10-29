@@ -1,0 +1,245 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Responsive Resolution Fix — Proper sizing for ALL screen resolutions
+   ═══════════════════════════════════════════════════════════════════════════
+   Constrains layout to readable widths and ensures cards/text are
+   comfortably sized on every display from phones to ultra-wide monitors.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Constrained layout — readable content width ── */
+.container {
+  width: min(1400px, calc(100% - 2.5rem)) !important;
+  max-width: 1400px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+/* Navbar: constrain to same max-width */
+.nav-shell {
+  width: min(1400px, calc(100% - 1rem)) !important;
+  max-width: 1400px !important;
+}
+
+/* ── Logo: show full horizontal logo at natural aspect ratio ── */
+.brand {
+  display: inline-flex !important;
+  align-items: center !important;
+  line-height: 1 !important;
+}
+.brand img {
+  width: auto !important;
+  height: 38px !important;
+  min-height: 0;
+  max-height: 42px !important;
+  max-width: 220px !important;
+  flex-shrink: 1;
+  object-fit: contain !important;
+  filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.45));
+  transition: transform .2s ease;
+}
+.brand img:hover {
+  transform: scale(1.02);
+}
+/* Hide duplicate text since logo already has wordmark */
+.brand span {
+  display: none !important;
+}
+/* Footer brand */
+.footer .brand img {
+  height: 32px !important;
+  max-width: 180px !important;
+}
+/* Admin sidebar brand logo */
+.sidebar-brand {
+  display: flex !important;
+  align-items: center !important;
+}
+.sidebar-brand img {
+  width: auto !important;
+  height: 30px !important;
+  min-height: 0;
+  max-width: calc(100% - 8px);
+  flex-shrink: 1;
+  object-fit: contain !important;
+  filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.45));
+}
+.sidebar-brand span {
+  display: none !important;
+}
+/* Admin login logo */
+.login-logo {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
+.login-logo img {
+  width: auto !important;
+  height: 42px !important;
+  min-height: 0;
+  max-width: 100%;
+  flex-shrink: 1;
+  object-fit: contain !important;
+  filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.45));
+}
+.login-logo span {
+  display: none !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PRODUCT GRID — 4 columns max on desktop, larger readable cards
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.product-grid {
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
+  gap: 1.25rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ULTRA-WIDE / 4K (1920px+) — Center content, don't stretch
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (min-width: 1920px) {
+  .container { width: min(1500px, calc(100% - 4rem)) !important; max-width: 1500px !important; }
+  .nav-shell { width: min(1500px, calc(100% - 2rem)) !important; max-width: 1500px !important; }
+  .product-grid { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)) !important; gap: 1.5rem; }
+  .hero { min-height: 700px; padding: 9rem 0 6rem; }
+  .hero h1 { font-size: 4.8rem; max-width: 1000px; }
+  .hero-intro { font-size: 1.2rem; max-width: 640px; }
+  .hero-art { height: 500px; }
+  .service-card { width: 260px; padding: 1.5rem; }
+  .product-card .product-image { height: 12rem; }
+  .product-card h3 { font-size: 1.12rem; }
+  .price { font-size: 1.5rem; }
+  .section { padding: 6rem 0; }
+  .section-heading h2 { font-size: clamp(3rem, 3.5vw, 4.2rem); }
+  .final-cta { padding: 9rem 0; }
+  .flash-deal-card { flex: 0 0 18rem; }
+  .discovery-rail { grid-auto-columns: minmax(18rem, 24rem); gap: 1.1rem; }
+  .steps { gap: 2rem; }
+  .reason-layout, .faq-layout { gap: 8rem; }
+  .trustbar div { padding: 1.65rem 2rem; }
+  .trustbar b { font-size: .95rem; }
+  .footer-grid { gap: 3.5rem; }
+}
+
+/* Extra-large 4K */
+@media (min-width: 2560px) {
+  .container { width: min(1600px, calc(100% - 6rem)) !important; max-width: 1600px !important; }
+  .nav-shell { width: min(1600px, calc(100% - 4rem)) !important; max-width: 1600px !important; }
+  .product-grid { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)) !important; gap: 1.5rem; }
+  .hero h1 { font-size: 5.5rem; }
+  body { font-size: 1.05rem; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LARGE DESKTOPS (1440px – 1919px)
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (min-width: 1440px) and (max-width: 1919px) {
+  .container { width: min(1380px, calc(100% - 3.5rem)) !important; max-width: 1380px !important; }
+  .nav-shell { width: min(1380px, calc(100% - 2rem)) !important; max-width: 1380px !important; }
+  .product-grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important; gap: 1.25rem; }
+  .hero-grid { gap: 3rem; }
+  .hero h1 { font-size: clamp(3.5rem, 4.2vw, 5rem); }
+  .hero-intro { font-size: 1.12rem; }
+  .hero-art { height: 440px; }
+  .steps { grid-template-columns: repeat(4, 1fr); gap: 1.5rem; }
+  .trustbar div { padding: 1.45rem 1.8rem; }
+  .footer-grid { gap: 3rem; }
+  .flash-deal-card { flex: 0 0 16.5rem; }
+  .discovery-rail { grid-auto-columns: minmax(17rem, 22rem); gap: 1rem; }
+  .section-heading h2 { font-size: clamp(2.5rem, 3.5vw, 3.8rem); }
+  .reason-layout, .faq-layout { gap: 5rem; }
+  .dialog { max-width: 680px; }
+  .product-dialog { max-width: 820px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   STANDARD DESKTOPS (1200px – 1439px)
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (min-width: 1200px) and (max-width: 1439px) {
+  .container { width: min(1180px, calc(100% - 3rem)) !important; max-width: 1180px !important; }
+  .nav-shell { width: min(1180px, calc(100% - 2rem)) !important; max-width: 1180px !important; }
+  .product-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)) !important; gap: 1.15rem; }
+  .hero-art { height: 400px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SMALL LAPTOPS (900px – 1199px)
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (min-width: 900px) and (max-width: 1199px) {
+  .container { width: calc(100% - 3rem) !important; max-width: 100% !important; }
+  .nav-shell { width: calc(100% - 1.5rem) !important; max-width: 100% !important; }
+  .product-grid { grid-template-columns: repeat(3, 1fr) !important; gap: 1rem; }
+  .hero-grid { grid-template-columns: 1.1fr .9fr; gap: 1.5rem; }
+  .hero h1 { font-size: clamp(2.4rem, 4.5vw, 3.5rem); }
+  .hero-art { height: 340px; }
+  .nav-links { gap: 1rem; }
+  .nav-links a { font-size: .82rem; }
+  .steps { grid-template-columns: repeat(2, 1fr); }
+  .reason-layout, .faq-layout { gap: 3rem; }
+  .footer-grid { grid-template-columns: 2fr 1fr 1fr; gap: 1.5rem; }
+  .footer-grid > div:last-child { display: none; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TABLETS (640px – 899px)
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (min-width: 640px) and (max-width: 899px) {
+  .container { width: calc(100% - 2rem) !important; max-width: 100% !important; }
+  .nav-shell { width: calc(100% - 1rem) !important; max-width: 100% !important; }
+  .nav-links { display: none; }
+  .nav-actions { margin-left: auto; }
+  .menu-button { display: grid; }
+  .hero-grid { grid-template-columns: 1fr; }
+  .hero-art { height: 280px; }
+  .hero { padding-top: 5.5rem; }
+  .product-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 1rem; }
+  .steps { grid-template-columns: repeat(2, 1fr); }
+  .reason-layout, .faq-layout { grid-template-columns: 1fr; gap: 2.5rem; }
+  .footer-grid { grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+  .footer-grid > div:first-child { grid-column: 1 / -1; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PHONES (max 639px) — 2 columns always
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 639px) {
+  .container { width: calc(100% - 1.5rem) !important; max-width: 100% !important; }
+  .nav-shell { width: calc(100% - .75rem) !important; max-width: 100% !important; }
+  .product-grid { grid-template-columns: repeat(2, 1fr) !important; gap: .6rem; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DISCOVERY RAIL + FLASH DEALS — Scale properly
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 899px) {
+  .discovery-rail { grid-auto-columns: minmax(13.5rem, 16rem); }
+}
+@media (min-width: 1200px) {
+  .flash-deal-card { flex: 0 0 16rem; }
+  .flash-carousel { gap: 1rem; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PRODUCT DIALOG — Scale with viewport
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (min-width: 1440px) {
+  .product-dialog { max-width: 900px; }
+  .product-detail { grid-template-columns: 280px 1fr; gap: 2.5rem; }
+  .product-detail-image { height: 280px; }
+  .pd-layout { grid-template-columns: 320px 1fr; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LANDSCAPE PHONES
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 899px) and (orientation: landscape) {
+  .hero { min-height: auto; padding: 4.5rem 0 2rem; }
+  .hero h1 { font-size: clamp(2rem, 5vw, 3rem); }
+  .hero-art { display: none; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HIGH DPI / RETINA
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .product-image img { image-rendering: -webkit-optimize-contrast; }
+}

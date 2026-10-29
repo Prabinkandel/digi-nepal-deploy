@@ -89,10 +89,10 @@ document.querySelectorAll('.nav-item').forEach(a=>{
   });
 });
 
-const pageTitles={dashboard:'Dashboard',products:'Products',categories:'Categories',orders:'Orders',offers:'Flash Offers',payments:'Payments',users:'Users',settings:'Settings'};
+const pageTitles={dashboard:'Dashboard',products:'Products',categories:'Categories',orders:'Orders',offers:'Flash Offers',campaigns:'Sale Campaigns',payments:'Payments',users:'Users',settings:'Settings'};
 function navigate(page){
   $('page-title').textContent=pageTitles[page]||page;
-  const pages={dashboard:renderDashboard,products:renderProducts,categories:renderCategories,orders:renderOrders,offers:renderOffers,payments:renderPayments,users:renderUsers,settings:renderSettings};
+  const pages={dashboard:renderDashboard,products:renderProducts,categories:renderCategories,orders:renderOrders,offers:renderOffers,campaigns:renderCampaigns,payments:renderPayments,users:renderUsers,settings:renderSettings};
   if(pages[page])pages[page]();
 }
 
@@ -177,7 +177,7 @@ function renderProductRows(products,catMap){
       <td>${catMap[p.category_id]?.name||'-'}</td>
       <td>${p.duration?`<span class="badge badge-active" style="font-size:.72rem;padding:.15rem .45rem">${p.duration}</span>`:'—'}</td>
       <td>${fmt(p.price)}${p.original_price?`<br/><span style="color:var(--text3);text-decoration:line-through;font-size:.8rem">${fmt(p.original_price)}</span>`:''}</td>
-      <td>${p.badge?`<span class="badge badge-${p.badge==='sale'?'pending':p.badge==='popular'||p.badge==='hot'?'verified':'active'}">${p.badge}</span>`:'—'}</td>
+      <td>${p.badge?`<span class="badge badge-${(String(p.badge).toLowerCase().includes('dashain'))?'danger':p.badge==='sale'?'pending':p.badge==='popular'||p.badge==='hot'?'verified':'active'}">${(String(p.badge).toLowerCase().includes('dashain'))?'Dashain Sale 🌾':p.badge}</span>`:'—'}</td>
       <td><span class="badge ${p.is_active?'badge-active':'badge-inactive'}">${p.is_active?'Active':'Hidden'}</span></td>
       <td><div class="td-actions">
         <button class="btn-outline btn-sm edit-prod" data-id="${p.id}">Edit</button>
@@ -215,7 +215,15 @@ function openProductForm(p,cats){
       <div class="form-group"><label>Badge</label>
         <select id="f-badge">
           <option value="">None</option>
-          ${['sale','popular','hot','cheap','new'].map(b=>`<option value="${b}" ${p?.badge===b?'selected':''}>${b}</option>`).join('')}
+          ${[
+            { value: 'dashain', label: '🌾 Dashain Sale' },
+            { value: 'popular', label: '★ Popular' },
+            { value: 'hot', label: '🔥 Hot' },
+            { value: 'sale', label: '🏷️ Sale' },
+            { value: 'bestseller', label: '🏆 Bestseller' },
+            { value: 'new', label: '✨ New' },
+            { value: 'cheap', label: '💰 Budget' }
+          ].map(b=>`<option value="${b.value}" ${(p?.badge||'').toLowerCase()===b.value?'selected':''}>${b.label}</option>`).join('')}
         </select>
       </div>
     </div>
@@ -230,8 +238,9 @@ function openProductForm(p,cats){
     </div>
     <div class="form-row">
       <div class="form-group"><label>Rating</label><input id="f-rating" type="number" step="0.1" min="1" max="5" value="${p?.rating||4.8}"/></div>
-      <div class="form-group"><label>Sort Order</label><input id="f-sort" type="number" value="${p?.sort_order||0}"/></div>
+      <div class="form-group"><label>Brand Hex Color (Optional)</label><input id="f-brand-color" placeholder="e.g. #E50914 (Auto if blank)" value="${p?.brand_color||''}"/></div>
     </div>
+    <div class="form-group"><label>Sort Order</label><input id="f-sort" type="number" value="${p?.sort_order||0}"/></div>
     <div class="form-group"><label>Description</label><textarea id="f-desc">${p?.description||''}</textarea></div>
     <div class="form-group"><label>Features (one per line)</label><textarea id="f-feats" style="min-height:100px">${feats.join('\n')}</textarea></div>
     <div class="form-group"><label>Product Image</label>
@@ -292,11 +301,13 @@ function openProductForm(p,cats){
       
       const featsArr=$('f-feats').value.split('\n').map(x=>x.trim()).filter(Boolean);
       const stockVal = $('f-stock').value.trim();
+      const brandColorVal = $('f-brand-color')?.value?.trim() || null;
       const body={name, category_id:catId, price,
         original_price:+$('f-orig').value||null,
         badge:$('f-badge').value||'',
         duration:$('f-duration').value||null,
         stock: stockVal !== '' ? +stockVal : null,
+        brand_color: brandColorVal,
         description:$('f-desc').value,features:featsArr,image_url:imgUrl,
         is_active: p ? p.is_active : 1, sort_order: +$('f-sort').value || 0};
         
@@ -526,6 +537,184 @@ window.openOfferForm=function(o,products){
 window.toggleOffer=async function(id,active){
   await api(`/offers/${id}`,{method:'PUT',body:JSON.stringify({is_active:active?0:1,label:'',discount_pct:0})});
   toast('Offer updated');renderOffers();
+};
+
+// ── SALE CAMPAIGNS ────────────────────────────────────────────
+const CAMPAIGN_THEMES=[['default','Default (brand red)'],['festive-red','Festive red'],['gold-red','Gold & red'],['dark-premium','Dark premium'],['neon-offer','Neon offer']];
+const CAMPAIGN_STATUSES={live:['badge-active','Live'],scheduled:['badge-pending','Scheduled'],expired:['badge-inactive','Expired'],draft:['badge-user','Draft']};
+
+function fmtDateInput(value){
+  if(!value)return '';
+  const d=new Date(value);if(Number.isNaN(d.getTime()))return '';
+  const p=n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+async function renderCampaigns(){
+  const result=await api('/campaigns/all?limit=100');
+  const items=list(result);
+  $('page-content').innerHTML=`
+    <div class="section-header"><h2>Sale Campaigns <span style="color:var(--text3);font-weight:400;font-size:1rem">(${items.length})</span></h2><button class="btn-primary" id="add-campaign-btn">+ New Campaign</button></div>
+    <p style="color:var(--text3);font-size:.85rem;margin:-12px 0 20px">The live campaign with the lowest order number appears on the storefront. When none is live, the top discounts show automatically.</p>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Campaign</th><th>Label</th><th>Dates</th><th>Products</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody>${items.map(c=>{
+        const [cls,label]=CAMPAIGN_STATUSES[c.status]||CAMPAIGN_STATUSES.draft;
+        const dates=[c.start_date?new Date(c.start_date).toLocaleDateString():'—',c.end_date?new Date(c.end_date).toLocaleDateString():'—'].join(' → ');
+        return `<tr>
+          <td><div class="td-name">${c.name}</div><div class="td-sub">/${c.slug} · order ${c.display_order} · ${c.theme_variant}</div></td>
+          <td>${c.short_label||'—'}</td>
+          <td style="font-size:.82rem;color:var(--text3)">${dates}</td>
+          <td>${c.product_count??(c.product_ids||[]).length}</td>
+          <td><span class="badge ${cls}">${label}</span></td>
+          <td><div class="td-actions">
+            <button class="btn-outline btn-sm edit-campaign" data-id="${c.id}">Edit</button>
+            <button class="btn-outline btn-sm preview-campaign" data-id="${c.id}">Preview</button>
+            <button class="btn-danger btn-sm toggle-campaign" data-id="${c.id}">${c.is_active?'Disable':'Enable'}</button>
+          </div></td>
+        </tr>`;}).join('')||'<tr class="empty-row"><td colspan="6">No campaigns yet. Create one for the next sale.</td></tr>'}
+      </tbody>
+    </table></div>`;
+  $('add-campaign-btn').onclick=()=>openCampaignForm(null);
+  document.querySelectorAll('.edit-campaign').forEach(b=>b.onclick=async()=>{
+    const full=await api(`/campaigns/all?limit=100`).then(r=>list(r).find(x=>x.id===b.dataset.id));
+    openCampaignForm(full||items.find(x=>x.id===b.dataset.id));
+  });
+  document.querySelectorAll('.preview-campaign').forEach(b=>b.onclick=()=>previewCampaign(b.dataset.id));
+  document.querySelectorAll('.toggle-campaign').forEach(b=>b.onclick=async()=>{
+    const c=items.find(x=>x.id===b.dataset.id);if(!c)return;
+    confirm(c.is_active?'Disable this campaign?':'Enable this campaign?',async()=>{
+      await api(`/campaigns/${c.id}`,{method:'PUT',body:JSON.stringify({is_active:c.is_active?0:1})});
+      toast('Campaign updated');renderCampaigns();
+    });
+  });
+}
+
+async function previewCampaign(id){
+  try{
+    const {campaign,items}=await api(`/campaigns/${encodeURIComponent(id)}`);
+    openDrawer(`Preview — ${campaign.name}`,`
+      <div style="border:1px solid var(--border);border-radius:12px;overflow:hidden">
+        ${campaign.banner_image_url?`<img src="${campaign.banner_image_url}" alt="" style="width:100%;max-height:180px;object-fit:cover;display:block"/>`:''}
+        <div style="padding:16px">
+          <span class="badge badge-active">${campaign.short_label||'ON SALE'}</span>
+          <h3 style="margin:8px 0 4px">${campaign.name}</h3>
+          <p style="color:var(--text3);font-size:.85rem">${campaign.subtitle||''}</p>
+          <p style="color:var(--text3);font-size:.8rem;margin-top:8px">${items.length} product${items.length===1?'':'s'} · ${campaign.auto_rotate?'auto-rotates every '+campaign.rotation_interval_seconds+'s':'manual browsing'}</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">
+            ${items.slice(0,4).map(p=>`<div style="border:1px solid var(--border);border-radius:8px;padding:8px;font-size:.78rem"><div style="font-weight:700">${p.name}</div><div style="color:var(--success);font-weight:800">Rs ${Number(p.price).toLocaleString()}</div></div>`).join('')||'<p style="color:var(--text3);font-size:.82rem">No eligible products right now.</p>'}
+          </div>
+        </div>
+      </div>
+      <div class="form-actions"><button class="btn-outline" onclick="closeDrawer()">Close</button></div>`,()=>closeDrawer());
+  }catch(e){toast(e.message,'error');}
+}
+
+async function openCampaignForm(c){
+  const products=list(await api('/products/all?limit=100'));
+  const selected=[...(c?.product_ids||[])];
+  const iso=v=>v?new Date(v).toISOString().slice(0,16):'';
+  openDrawer(c?'Edit Campaign':'New Campaign',`
+    <div class="form-group"><label>Campaign Name *</label><input id="c-name" value="${c?.name||''}" placeholder="e.g. Dashain Sale"/></div>
+    <div class="form-row">
+      <div class="form-group"><label>URL Slug</label><input id="c-slug" value="${c?.slug||''}" placeholder="auto from name"/></div>
+      <div class="form-group"><label>Order (lowest shows first)</label><input id="c-order" type="number" min="0" max="9999" value="${c?.display_order??0}"/></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Badge Label</label><input id="c-label" value="${c?.short_label||'ON SALE'}" placeholder="ON SALE"/></div>
+      <div class="form-group"><label>CTA Text</label><input id="c-cta" value="${c?.cta_text||'View all'}" placeholder="View all"/></div>
+    </div>
+    <div class="form-group"><label>Subtitle</label><input id="c-sub" value="${c?.subtitle||''}" placeholder="Best festive subscription deals right now" maxlength="200"/></div>
+    <div class="form-group"><label>Banner Image</label>
+      <div class="upload-zone" id="c-banner-zone"><p>Click to upload a festive banner (PNG/JPG/WebP, max 15 MB)</p><input type="file" id="c-banner-file" accept="image/png,image/jpeg,image/webp" style="display:none"/></div>
+      <div style="margin:12px 0"><input id="c-banner-url" placeholder="…or paste an image URL" style="width:100%" value="${c?.banner_image_url||''}"/></div>
+      <div class="upload-preview" id="c-banner-preview">${c?.banner_image_url?`<img src="${c.banner_image_url}" alt=""/><span style="font-size:.82rem;color:var(--text3)">Current banner</span>`:''}</div>
+    </div>
+    <div class="form-group"><label>Theme</label><select id="c-theme">${CAMPAIGN_THEMES.map(([v,l])=>`<option value="${v}" ${c?.theme_variant===v?'selected':''}>${l}</option>`).join('')}</select></div>
+    <div class="form-row">
+      <div class="form-group"><label>Starts</label><input id="c-start" type="datetime-local" value="${iso(c?.start_date)}"/></div>
+      <div class="form-group"><label>Ends</label><input id="c-end" type="datetime-local" value="${iso(c?.end_date)}"/></div>
+    </div>
+    <div class="form-group"><label>Products in this sale (checked items show first, in order)</label>
+      <div id="c-products" style="max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;padding:8px">
+        ${products.map(p=>`<label style="display:flex;align-items:center;gap:8px;padding:6px 4px;font-size:.85rem;font-weight:400"><input type="checkbox" value="${p.id}" ${selected.includes(p.id)?'checked':''} style="width:auto"/> <span style="flex:1">${p.name} <span style="color:var(--text3)">· Rs ${Number(p.price).toLocaleString()}</span></span></label>`).join('')||'<p style="color:var(--text3)">No products yet.</p>'}
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Max Products</label><input id="c-max" type="number" min="1" max="24" value="${c?.max_products??8}"/></div>
+      <div class="form-group"><label>Badge Text ({pct} = %)</label><input id="c-badge" value="${c?.badge_text||'-{pct}'}" maxlength="40"/></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Rotation (seconds)</label><input id="c-interval" type="number" min="2" max="30" value="${c?.rotation_interval_seconds??5}"/></div>
+      <div class="form-group"><label>Enabled</label><select id="c-active"><option value="1" ${c?.is_active!==0?'selected':''}>Yes — show when live</option><option value="0" ${c?.is_active===0?'selected':''}>No — draft</option></select></div>
+    </div>
+    <div class="form-group" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <label style="font-weight:400"><input type="checkbox" id="c-rotate" ${c?.auto_rotate!==0?'checked':''} style="width:auto"/> Auto-rotate</label>
+      <label style="font-weight:400"><input type="checkbox" id="c-dots" ${c?.show_progress_indicators!==0?'checked':''} style="width:auto"/> Dots</label>
+      <label style="font-weight:400"><input type="checkbox" id="c-arrows" ${c?.show_navigation_arrows!==0?'checked':''} style="width:auto"/> Arrows</label>
+      <label style="font-weight:400"><input type="checkbox" id="c-cardbadge" ${c?.show_sale_badge_on_cards!==0?'checked':''} style="width:auto"/> Card badges</label>
+      <label style="font-weight:400"><input type="checkbox" id="c-fallback" ${c?.fallback_to_discounts!==0?'checked':''} style="width:auto"/> Fallback to discounts</label>
+    </div>
+    <div class="form-actions">
+      <button class="btn-outline" onclick="closeDrawer()">Cancel</button>
+      <button class="btn-primary" id="drawer-save">Save Campaign</button>
+    </div>`,
+    async()=>{
+      const name=$('c-name').value.trim();
+      if(name.length<2)return toast('Give the campaign a name.','error');
+      let bannerUrl=$('c-banner-url').value.trim();
+      const bannerFile=$('c-banner-file').files[0];
+      if(bannerFile){
+        if(bannerFile.size>15*1024*1024)return toast('Banner is larger than 15 MB.','error');
+        try{
+          const fd=new FormData();fd.append('image',bannerFile);fd.append('purpose','catalog');
+          const h={'x-csrf-token':csrf};
+          const r=await fetch(API+'/upload',{method:'POST',credentials:'same-origin',headers:h,body:fd});
+          const d=await r.json();
+          if(!r.ok)throw new Error(d?.error||'Upload failed');
+          bannerUrl=d.url;
+        }catch(e){return toast('Banner upload failed: '+e.message,'error');}
+      }
+      const picked=[...document.querySelectorAll('#c-products input:checked')].map(i=>i.value);
+      const toIso=v=>v?new Date(v).toISOString():null;
+      const body={
+        name,
+        slug:$('c-slug').value.trim()||undefined,
+        short_label:$('c-label').value.trim()||'ON SALE',
+        cta_text:$('c-cta').value.trim()||'View all',
+        subtitle:$('c-sub').value.trim(),
+        banner_image_url:bannerUrl,
+        theme_variant:$('c-theme').value,
+        start_date:toIso($('c-start').value),
+        end_date:toIso($('c-end').value),
+        display_order:+$('c-order').value||0,
+        product_ids:picked,
+        max_products:Math.min(24,Math.max(1,+$('c-max').value||8)),
+        badge_text:$('c-badge').value.trim()||'-{pct}',
+        rotation_interval_seconds:Math.min(30,Math.max(2,+$('c-interval').value||5)),
+        is_active:+$('c-active').value,
+        auto_rotate:$('c-rotate').checked?1:0,
+        show_progress_indicators:$('c-dots').checked?1:0,
+        show_navigation_arrows:$('c-arrows').checked?1:0,
+        show_sale_badge_on_cards:$('c-cardbadge').checked?1:0,
+        fallback_to_discounts:$('c-fallback').checked?1:0,
+      };
+      try{
+        if(c)await api(`/campaigns/${c.id}`,{method:'PUT',body:JSON.stringify(body)});
+        else await api('/campaigns',{method:'POST',body:JSON.stringify(body)});
+        closeDrawer();toast('Campaign saved!');renderCampaigns();
+      }catch(e){toast(e.message,'error');}
+    }
+  );
+  $('c-banner-zone').onclick=()=>$('c-banner-file').click();
+  $('c-banner-file').onchange=e=>{
+    const f=e.target.files[0];if(!f)return;
+    $('c-banner-preview').innerHTML=`<img src="${URL.createObjectURL(f)}" alt=""/><span style="font-size:.82rem;color:var(--text3)">${f.name}</span>`;
+  };
+  $('c-banner-url').oninput=e=>{
+    const v=e.target.value.trim();
+    if(v)$('c-banner-preview').innerHTML=`<img src="${v}" alt="" onerror="this.remove()"/><span style="font-size:.82rem;color:var(--text3)">URL preview</span>`;
+  };
 };
 
 // PAYMENTS
@@ -778,7 +967,7 @@ async function renderSettings(){
           smtp_port:$('s-smtp-port').value.trim(),
           smtp_user:$('s-smtp-user').value.trim(),
           smtp_pass:$('s-smtp-pass').value.trim(),
-          smtp_from:$('s-smtp-user').value.trim()?`Digi Nepal <${$('s-smtp-user').value.trim()}>`:''
+          smtp_from:$('s-smtp-user').value.trim()?`Digi Prime Nepal <${$('s-smtp-user').value.trim()}>`:''
         };
         await api('/settings',{method:'PUT',body:JSON.stringify(updates)});
         toast('Settings saved!'); renderSettings();
