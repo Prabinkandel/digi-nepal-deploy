@@ -1255,7 +1255,7 @@ async function initAccount() {
 }
 
 function authFrame(eyebrow, title, description, body) {
-  return '<div class="auth-shell"><aside class="auth-aside" aria-hidden="true"><img src="digi-prime-nepal-logo.png" alt="Digi Prime Nepal"><div><p class="auth-kicker">DIGI PRIME NEPAL ACCOUNT</p><h3>Premium access,<br>kept simple.</h3><p>Manage orders, payment updates, and subscriptions from one protected place.</p></div><span class="auth-aside-mark">Trusted digital subscriptions</span></aside><section class="auth-panel"><p class="eyebrow">' + eyebrow + '</p><h2 id="auth-title">' + title + '</h2><p class="auth-description">' + description + '</p>' + body + '</section></div>';
+  return '<div class="auth-shell"><aside class="auth-aside" aria-hidden="true"><img src="digi-prime-nepal-logo.png?v=2" alt="Digi Prime Nepal"><div><p class="auth-kicker">DIGI PRIME NEPAL ACCOUNT</p><h3>Premium access,<br>kept simple.</h3><p>Manage orders, payment updates, and subscriptions from one protected place.</p></div><span class="auth-aside-mark">Trusted digital subscriptions</span></aside><section class="auth-panel"><p class="eyebrow">' + eyebrow + '</p><h2 id="auth-title">' + title + '</h2><p class="auth-description">' + description + '</p>' + body + '</section></div>';
 }
 
 function authAlert(message) {

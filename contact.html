@@ -13,8 +13,8 @@
 </head>
 <body>
   <header class="page-header"><div class="page-nav-shell">
-    <a href="/" class="brand"><img src="digi-prime-nepal-logo.png" alt="Digi Prime Nepal"><span>Digi Prime Nepal</span></a>
-    <nav class="page-nav-links"><a href="/#catalog">Subscriptions</a><a href="/about">About</a><a href="/#support">Support</a></nav>
+    <a href="/" class="brand"><img src="digi-prime-nepal-logo.png?v=2" alt="Digi Prime Nepal"><span>Digi Prime Nepal</span></a>
+    <nav class="page-nav-links"><a href="/">Home</a><a href="/#catalog">Subscriptions</a><a href="/about">About</a><a href="/#support">Support</a></nav>
     <a href="/" class="back-to-home">← Back to home</a>
   </div></header>
 
@@ -96,79 +96,15 @@
   <footer class="page-footer">
     <div class="container">
       <div class="page-footer-grid">
-        <div><a href="/" class="brand"><img src="digi-prime-nepal-logo.png" alt="Digi Prime Nepal"><span>Digi Prime Nepal</span></a><p>Nepal's All-in-One Digital Subscription &amp; Gaming Hub.</p></div>
+        <div><a href="/" class="brand"><img src="digi-prime-nepal-logo.png?v=2" alt="Digi Prime Nepal"><span>Digi Prime Nepal</span></a><p>Nepal's All-in-One Digital Subscription &amp; Gaming Hub.</p></div>
         <div><h3>Explore</h3><a href="/#catalog">Subscriptions</a><a href="/#categories">Categories</a><a href="/#how-it-works">How it works</a></div>
         <div><h3>Company</h3><a href="/about">About us</a><a href="/contact">Contact</a><a href="/admin">Administration</a></div>
         <div><h3>Legal</h3><a href="/privacy">Privacy Policy</a><a href="/terms">Terms of Service</a><a href="/refund">Refund Policy</a></div>
       </div>
-      <div class="page-footer-bottom"><span>© <script>document.write(new Date().getFullYear())</script> Digi Prime Nepal</span><span>Prices shown in NPR</span></div>
+      <div class="page-footer-bottom"><span>© <span id="year">2026</span> Digi Prime Nepal</span><span>Prices shown in NPR</span></div>
     </div>
   </footer>
 
-  <script>
-    const form = document.getElementById('contact-form');
-    const success = document.getElementById('contact-success');
-    form.addEventListener('submit', async function(e) {
-      e.preventDefault();
-      const btn = form.querySelector('.contact-submit');
-      btn.disabled = true;
-      btn.innerHTML = '<span class="btn-spinner"></span><span>Sending...</span>';
-      try {
-        const data = {
-          name: form.elements.name.value.trim(),
-          email: form.elements.email.value.trim(),
-          subject: form.elements.subject.value,
-          message: form.elements.message.value.trim()
-        };
-        let csrf = '';
-        try {
-          const csrfRes = await fetch('/api/auth/csrf', { credentials: 'same-origin' });
-          if (csrfRes.ok) {
-            const csrfData = await csrfRes.json();
-            csrf = csrfData.csrf || '';
-          }
-        } catch (_) {}
-
-        const res = await fetch('/api/contact', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'x-csrf-token': csrf
-          },
-          credentials: 'same-origin',
-          body: JSON.stringify(data)
-        });
-        const result = await res.json();
-        if (!res.ok) throw new Error(result.error || 'Something went wrong.');
-        form.hidden = true;
-        form.previousElementSibling.hidden = true;
-        form.parentElement.querySelector('h2').hidden = true;
-        success.hidden = false;
-      } catch (err) {
-        btn.disabled = false;
-        btn.innerHTML = 'Send message <span aria-hidden="true">→</span>';
-        const errorDiv = document.createElement('p');
-        errorDiv.className = 'contact-error';
-        errorDiv.textContent = err.message;
-        errorDiv.style.cssText = 'color:#f87171;font-size:.85rem;margin-top:.5rem;padding:.65rem .8rem;border:1px solid rgba(248,113,113,.2);border-radius:.5rem;background:rgba(248,113,113,.08);';
-        const existing = form.querySelector('.contact-error');
-        if (existing) existing.remove();
-        btn.insertAdjacentElement('afterend', errorDiv);
-      }
-    });
-    // Load contact email and WhatsApp from settings
-    fetch('/api/settings').then(r => r.json()).then(s => {
-      if (s.contact_email) {
-        const el = document.getElementById('contact-email-link');
-        el.textContent = s.contact_email;
-        el.href = 'mailto:' + s.contact_email;
-      }
-      if (s.whatsapp_number) {
-        const wa = document.querySelector('[href*="wa.me"]');
-        if (wa) wa.href = 'https://wa.me/' + s.whatsapp_number;
-      }
-    }).catch(() => {});
-  </script>
+  <script src="pages.js?v=1"></script>
 </body>
 </html>
