@@ -2339,7 +2339,7 @@ body > * { position: relative; z-index: 1; }
   box-shadow: 0 1px 0 rgba(255,255,255,.03), var(--elevation-2);
 }
 .brand img { transition: transform var(--motion-base) var(--motion-ease); }
-.brand:hover img { transform: rotate(-6deg) scale(1.06); }
+.brand:hover img { transform: scale(1.04); }
 
 /* 20c. Gradient hairline. Gives cards a lit top edge like real glass. */
 .product-card, .deal-card, .pd-price-card, .payment-option-card, .catalog-toolbar {
