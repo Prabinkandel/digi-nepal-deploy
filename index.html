@@ -235,7 +235,12 @@
   <dialog class="dialog payment-dialog" id="payment-dialog" aria-labelledby="payment-title"><button class="icon-button dialog-close" data-close="payment-dialog" aria-label="Close payment">×</button><div id="payment-content"></div></dialog>
   <dialog class="dialog order-dialog" id="orders-dialog" aria-labelledby="orders-title"><button class="icon-button dialog-close" data-close="orders-dialog" aria-label="Close orders">×</button><div id="orders-content"></div></dialog>
   <div class="toast-region" id="toast-region" aria-live="polite" aria-atomic="true"></div>
-  <script src="app.js?v=3"></script>
+  <aside class="proof-bubble" id="proof-bubble" hidden aria-live="polite">
+    <span class="proof-dot" aria-hidden="true"></span>
+    <div class="proof-text"><strong id="proof-name"></strong> from <span id="proof-city"></span> just ordered <strong id="proof-item"></strong> · <span id="proof-time"></span></div>
+    <button class="proof-close" id="proof-close" type="button" aria-label="Dismiss purchase notifications">×</button>
+  </aside>
+  <script src="app.js?v=4"></script>
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",

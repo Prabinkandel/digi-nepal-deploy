@@ -60,3 +60,4 @@ coverage/
 
 .vercel
 .env*
+catalog-snapshot.txt

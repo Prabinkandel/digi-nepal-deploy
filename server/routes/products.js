@@ -2,7 +2,7 @@ const {z,text,money,id,flag,image,fail}=require('../utils/validation');
 const Product=require('../models/Product');
 const Category=require('../models/Category');
 const {decorate}=require('../utils/catalog');
-const DURATIONS=['1 Month','2 Months','3 Months','6 Months','1 Year','2 Years','Lifetime'];
+const DURATIONS=['1 Month','2 Months','3 Months','6 Months','18 Months','1 Year','2 Years','Lifetime'];
 const schema=z.object({
   name:text(120).min(2),
   category_id:id,

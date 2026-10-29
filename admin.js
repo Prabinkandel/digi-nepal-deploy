@@ -231,7 +231,7 @@ function openProductForm(p,cats){
       <div class="form-group"><label>Validity / Duration</label>
         <select id="f-duration">
           <option value="">Not specified</option>
-          ${['1 Month','2 Months','3 Months','6 Months','1 Year','2 Years','Lifetime'].map(d=>`<option value="${d}" ${p?.duration===d?'selected':''}>${d}</option>`).join('')}
+          ${['1 Month','2 Months','3 Months','6 Months','18 Months','1 Year','2 Years','Lifetime'].map(d=>`<option value="${d}" ${p?.duration===d?'selected':''}>${d}</option>`).join('')}
         </select>
       </div>
       <div class="form-group"><label>Stock (blank = unlimited)</label><input id="f-stock" type="number" placeholder="Leave blank for unlimited" value="${p?.stock!=null?p.stock:''}"/></div>

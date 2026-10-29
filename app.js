@@ -4,7 +4,7 @@ if (['localhost','127.0.0.1'].includes(window.location.hostname) && ['5500', '55
 const API = '/api';
 const WHATSAPP_ICON_SVG = '<svg class="whatsapp-icon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>';
 const GOOGLE_ICON_SVG = '<svg class="google-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>';
-const state = { user: null, csrf: localStorage.getItem('dn_csrf') || '', category: '', categoryName: '', sort: 'newest', search: '', page: 1, total: 0, catalog: [], allCatalog: [], categories: [], campaign: null, campaignItems: [], searchTimer: null, catalogSearchTimer: null, searchController: null, catalogController: null, providers: { google: false }, pendingAction: null };
+const state = { user: null, csrf: localStorage.getItem('dn_csrf') || '', category: '', categoryName: '', sort: 'newest', search: '', page: 1, total: 0, catalog: [], allCatalog: [], categories: [], campaign: null, campaignItems: [], searchTimer: null, catalogSearchTimer: null, searchController: null, catalogController: null, providers: { google: false }, pendingAction: null, proofDismissed: false, proofShowTimer: null, proofHideTimer: null };
 const $ = id => document.getElementById(id);
 const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, char => ({ '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;' }[char]));
 const formatMoney = amount => new Intl.NumberFormat('en-NP',{style:'currency',currency:'NPR',maximumFractionDigits:0}).format(Number(amount || 0));
@@ -79,6 +79,73 @@ async function api(path, options = {}) {
 function showDialog(id) { const dialog = $(id); if (dialog && !dialog.open) dialog.showModal(); }
 function closeDialog(id) { const dialog = $(id); if (dialog && dialog.open) dialog.close(); }
 function toast(message, type = '') { const item = document.createElement('div'); item.className = 'toast ' + type; item.textContent = message; $('toast-region').append(item); setTimeout(() => item.remove(), 4500); }
+
+/* ── Social proof: "just ordered" purchase notification bubble ─────────
+   Rotates realistic activity (random name + city, live catalog item) so the
+   storefront feels busy. Fully client-side; × permanently silences via localStorage. */
+const PROOF_NAMES = ['Aarav','Sita','Rohan','Anaya','Kabir','Puja','Nishan','Ishita','Dev','Aashiya','Milan','Rima','Sajal','Kiran','Aanchal','Bibek'];
+const PROOF_CITIES = ['Kathmandu','Patan','Bhaktapur','Pokhara','Butwal','Chitwan','Biratnagar','Lalitpur'];
+const PROOF_FALLBACK_ITEMS = ['Netflix 4K (1 Month)','Spotify Premium (3 Months)','ChatGPT Plus (1 Month)','Prime Video (3 Months)'];
+const PROOF_TIMES = ['2 min ago','5 min ago','8 min ago','12 min ago','15 min ago'];
+const pickRandom = arr => arr[Math.floor(Math.random() * arr.length)];
+
+function proofItemLabel() {
+  const items = (state.allCatalog && state.allCatalog.length) ? state.allCatalog : (state.catalog || []);
+  if (!items.length) return pickRandom(PROOF_FALLBACK_ITEMS);
+  const p = pickRandom(items);
+  return p.name + (p.duration ? ' (' + p.duration + ')' : '');
+}
+
+function scheduleNextProof() {
+  if (state.proofDismissed) return;
+  clearTimeout(state.proofShowTimer);
+  state.proofShowTimer = setTimeout(() => {
+    if (state.proofDismissed || $('proof-bubble').hidden) return;
+    const gen = (window.__proofGen = (window.__proofGen || 0) + 1);
+    showProofBubble(gen);
+  }, 55000 + Math.floor(Math.random() * 40000));
+}
+
+function showProofBubble(gen) {
+  if (state.proofDismissed) return;
+  const bubble = $('proof-bubble');
+  if (!bubble || document.visibilityState !== 'visible') return;
+  $('proof-name').textContent = pickRandom(PROOF_NAMES);
+  $('proof-city').textContent = pickRandom(PROOF_CITIES);
+  $('proof-item').textContent = proofItemLabel();
+  $('proof-time').textContent = pickRandom(PROOF_TIMES);
+  bubble.classList.remove('is-out');
+  bubble.removeAttribute('hidden');
+  clearTimeout(state.proofHideTimer);
+  state.proofHideTimer = setTimeout(() => {
+    if (state.proofDismissed || window.__proofGen !== gen) return;
+    const b = $('proof-bubble');
+    b.classList.add('is-out');
+    setTimeout(() => { if (!state.proofDismissed) b.hidden = true; b.classList.remove('is-out'); }, 350);
+    scheduleNextProof();
+  }, 9000);
+}
+
+function setupProofBubble() {
+  const bubble = $('proof-bubble');
+  if (!bubble) return;
+  if (localStorage.getItem('dn_proof_off') === '1') { state.proofDismissed = true; return; }
+  if ($('proof-close')) $('proof-close').onclick = () => {
+    state.proofDismissed = true;
+    localStorage.setItem('dn_proof_off', '1');
+    window.__proofGen = (window.__proofGen || 0) + 1;
+    clearTimeout(state.proofShowTimer);
+    clearTimeout(state.proofHideTimer);
+    bubble.classList.add('is-out');
+    setTimeout(() => { bubble.hidden = true; bubble.classList.remove('is-out'); }, 350);
+  };
+  // First notification ~6s after load, then at random 55–95s intervals.
+  state.proofShowTimer = setTimeout(() => {
+    if (state.proofDismissed || bubble.hidden === false) return;
+    const gen = (window.__proofGen = (window.__proofGen || 0) + 1);
+    showProofBubble(gen);
+  }, 6000);
+}
 
 function productSkeletons(count = 8) { return Array.from({length:count}, () => '<article class="product-card skeleton"><div></div></article>').join(''); }
 function setProductLoading() { $('product-grid').innerHTML = productSkeletons(); $('catalog-empty').hidden = true; $('pagination').replaceChildren(); if ($('catalog-status')) $('catalog-status').innerHTML = '<span>Loading subscriptions…</span>'; }
@@ -1991,6 +2058,7 @@ async function init() {
   setupMotion();
   setProductLoading();
   await Promise.allSettled([initAccount(), loadProviders(), loadCategories(), loadSettings(), loadCampaign(), loadProducts()]);
+  setupProofBubble();
   handleRoute();
   window.addEventListener('hashchange', handleRoute);
 
