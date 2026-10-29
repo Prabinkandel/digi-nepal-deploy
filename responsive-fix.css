@@ -33,6 +33,7 @@
   max-width: 220px !important;
   flex-shrink: 1;
   object-fit: contain !important;
+  filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.45));
   /* Hover + transition live in store-ui.css (.brand:hover img) to avoid
      later-sheet override conflicts; kept single source of truth there. */
 }
