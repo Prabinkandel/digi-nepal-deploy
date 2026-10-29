@@ -2305,6 +2305,8 @@ body { overflow-x: hidden; }
 @media (prefers-reduced-motion: reduce) {
   .product-card:hover, .deal-card:hover, .pd-related-card:hover, .discovery-card:hover { transform: none; }
   .product-card:hover .product-image img { transform: none; }
+  .brand img { transition: none; }
+  .brand:hover img { transform: none; }
   .deal-card:hover .deal-cta span { transform: none; }
   .nav-links a::after { transition: none; }
 }
