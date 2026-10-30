@@ -209,6 +209,12 @@ function getBrandEmblem(name) {
   if (n.includes('microsoft') || n.includes('office') || n.includes('365')) {
     return '<span class="brand-badge brand-microsoft" aria-hidden="true"><svg viewBox="0 0 40 40" width="48" height="48" fill="none"><rect width="40" height="40" rx="9" fill="#18181b"/><rect x="11" y="11" width="8" height="8" rx="1.2" fill="#F25022"/><rect x="21" y="11" width="8" height="8" rx="1.2" fill="#7FBA00"/><rect x="11" y="21" width="8" height="8" rx="1.2" fill="#00A4EF"/><rect x="21" y="21" width="8" height="8" rx="1.2" fill="#FFB900"/></svg></span>';
   }
+  if (n.includes('gemini')) {
+    return '<span class="brand-badge brand-gemini" aria-hidden="true"><svg viewBox="0 0 40 40" width="48" height="48" fill="none"><defs><linearGradient id="gemini-grad" x1="20" y1="5" x2="20" y2="35" gradientUnits="userSpaceOnUse"><stop stop-color="#4B9BE8"/><stop offset="0.35" stop-color="#8E5CE6"/><stop offset="0.7" stop-color="#E44FA0"/><stop offset="1" stop-color="#FFB000"/></linearGradient></defs><rect width="40" height="40" rx="9" fill="#0d0b1e"/><path d="M20 5C21.5 13.5 24.5 17.5 32 20C24.5 22.5 21.5 26.5 20 35C18.5 26.5 15.5 22.5 8 20C15.5 17.5 18.5 13.5 20 5Z" fill="url(#gemini-grad)"/></svg></span>';
+  }
+  if (n.includes('capcut')) {
+    return '<span class="brand-badge brand-capcut" aria-hidden="true"><svg viewBox="0 0 40 40" width="48" height="48" fill="none"><rect width="40" height="40" rx="9" fill="#000"/><rect x="10" y="10" width="20" height="20" rx="2.5" fill="none" stroke="#fff" stroke-width="3.4"/><rect x="10" y="10" width="10" height="10" fill="#000" stroke="#fff" stroke-width="3.4" stroke-linejoin="round"/><path d="M25 14L27.5 16.5M14 25L11.5 27.5" stroke="#E44FA0" stroke-width="2" stroke-linecap="round"/></svg></span>';
+  }
   if (n.includes('google')) {
     return '<span class="brand-badge" style="background:#fff" aria-hidden="true"><svg viewBox="0 0 40 40" width="48" height="48" fill="none"><rect width="40" height="40" rx="9" fill="#fff"/><path d="M30 20.2C30 19.5 29.9 18.8 29.8 18.2H20V22H25.6C25.3 23.4 24.5 24.5 23.4 25.3V27.6H26.8C28.8 25.8 30 23.2 30 20.2Z" fill="#4285F4"/><path d="M20 30C22.7 30 25 29.1 26.8 27.6L23.4 25.3C22.5 25.9 21.4 26.3 20 26.3C17.4 26.3 15.2 24.5 14.4 22H10.9V24.4C12.7 27.9 16.1 30 20 30Z" fill="#34A853"/><path d="M14.4 22C14.2 21.4 14.1 20.7 14.1 20C14.1 19.3 14.2 18.6 14.4 18V15.6H10.9C10.3 16.8 10 18.4 10 20C10 21.6 10.3 23.2 10.9 24.4L14.4 22Z" fill="#FBBC04"/><path d="M20 13.7C21.5 13.7 22.9 14.2 24 15.3L26.9 12.4C25 10.6 22.7 9.5 20 9.5C16.1 9.5 12.7 11.6 10.9 15.1L14.4 17.5C15.2 15 17.4 13.7 20 13.7Z" fill="#EA4335"/></svg></span>';
   }
@@ -274,6 +280,7 @@ function hexToHSL(hex) {
 const BRAND_COLORS = {
   netflix:['#E50914','#FF6B6B'], spotify:['#1DB954','#1ED760'], youtube:['#FF0000','#FF4444'],
   chatgpt:['#10A37F','#1ED4A8'], openai:['#10A37F','#1ED4A8'], gpt:['#10A37F','#1ED4A8'],
+  gemini:['#4B9BE8','#E44FA0'], capcut:['#E44FA0','#fff'],
   claude:['#E8843C','#F5A05A'], anthropic:['#E8843C','#F5A05A'],
   canva:['#00C4CC','#7D2AE8'], figma:['#A259FF','#0ACF83'], adobe:['#FA0F00','#FF6B6B'],
   microsoft:['#00A4EF','#FFB900'], office:['#00A4EF','#FFB900'], '365':['#00A4EF','#FFB900'],
@@ -430,7 +437,15 @@ function campaignBadge(product, saving) {
 
 /* Group duration variants (e.g. "ChatGPT Plus" 1 Month / 1 Year) into one
    browsable card. All values come from the live catalogue. */
-function baseKey(name) { return String(name || '').trim().toLowerCase(); }
+function baseKey(name) {
+  const k = String(name || '').trim().toLowerCase();
+  // CapCut Pro + its pre-activated variant are one product family -> one card.
+  if (k === 'capcut pro' || k === 'capcut pro (pre-activated, 2 devices)') return 'capcut pro';
+  return k;
+}
+/* Family-level display names: variants of a shared family get one short
+   card title instead of inheriting whichever variant was created last. */
+const GROUP_DISPLAY_NAMES = { 'capcut pro': 'CapCut Pro' };
 
 function groupProducts(products) {
   const map = new Map();
@@ -449,10 +464,11 @@ function groupProducts(products) {
     g.bestSaving = withSaving.length ? withSaving[0].s : null;
     const dashainVariant = g.variants.find(v => (v.badge && v.badge.toLowerCase().includes('dashain')) || (v.offer_label && v.offer_label.toLowerCase().includes('dashain')));
     g.offer_label = dashainVariant ? (dashainVariant.badge || dashainVariant.offer_label) : ((withSaving.length && withSaving[0].v.offer_label) || g.variants.find(v => v.badge)?.badge || g.variants[0].badge || '');
-    const durs = g.variants.map(v => durationOf(v)).filter(Boolean);
+    const durs = [...new Set(g.variants.map(v => durationOf(v)).filter(Boolean))];
     g.durationLabel = durs.length > 1 ? durs[0] + ' – ' + durs[durs.length - 1] : (durs[0] || '');
     g.inStock = g.variants.some(v => v.stock === undefined || v.stock === null || Number(v.stock) > 0);
     g.rep = g.variants[0];
+    if (g.variants.length > 1 && GROUP_DISPLAY_NAMES[g.key]) g.name = GROUP_DISPLAY_NAMES[g.key];
     g.maxPrice = withSaving.length ? withSaving[0].v.original_price || withSaving[0].v.compare_price : null;
     return g;
   });
@@ -470,16 +486,39 @@ function durationPillLabel(variant) {
   return n + (unit === 'Year' ? 'Yr' : unit.charAt(0));
 }
 
+/* Counts how many variants of a family share the same duration. When two
+   plans have identical durations (e.g. two 1-month CapCut Pro tiers),
+   duration alone cannot tell them apart. */
+function duplicateDurations(variants) {
+  const counts = new Map();
+  variants.forEach(v => {
+    const d = durationOf(v) || v.name;
+    counts.set(d, (counts.get(d) || 0) + 1);
+  });
+  return counts;
+}
+
+/* Short distinguishing tail for a variant that shares its duration with
+   siblings: "Standard" for the plain tier, "Pre-activated, 2 Devices" for
+   the parenthesized variant. */
+function planVariantTail(variant) {
+  const m = String(variant.name || '').match(/\(([^)]+)\)/);
+  return m ? m[1].trim() : 'Standard';
+}
+
 /* Builds the clickable duration pill row for a multi-variant group.
-   Each pill maps to one duration variant; the cheapest is selected by default. */
+   Each pill maps to one duration variant; the cheapest is selected by default.
+   When two variants share a duration the pill falls back to the variant's
+   distinguishing tail ("Standard", "2 Devices") instead of a duplicate "1M". */
 function durationPills(group) {
   const variants = selectedGroupVariants(group).filter(v => {
     const inStock = v.stock === undefined || v.stock === null || Number(v.stock) > 0;
     return inStock;
   });
   if (!variants.length) return '';
+  const dupes = duplicateDurations(variants);
   const pills = variants.map(v => {
-    const label = durationPillLabel(v) || v.name;
+    const label = dupes.get(durationOf(v) || v.name) > 1 ? planVariantTail(v) : (durationPillLabel(v) || v.name);
     return '<button type="button" class="dur-pill" data-pill-variant="' + escapeHtml(v.id) + '" aria-pressed="false">' +
       '<span class="dur-pill-label">' + escapeHtml(label) + '</span>' +
       '<span class="dur-pill-price">' + formatMoney(v.price) + '</span>' +
@@ -968,17 +1007,25 @@ function selectedGroupVariants(group) {
   return (group?.variants || []).slice().sort((a, b) => Number(a.price) - Number(b.price));
 }
 
-function planOptionCard(variant, selected) {
+function planOptionCard(variant, selected, duplicateDuration = false) {
   const duration = durationOf(variant);
   const saving = savingsOf(variant);
   const inStock = variant.stock === undefined || variant.stock === null || Number(variant.stock) > 0;
+  const variantTail = !duplicateDuration ? '' : ('<span class="plan-tail"> · ' + escapeHtml(planVariantTail(variant)) + '</span>');
   return '<button type="button" class="plan-option' + (selected ? ' selected' : '') + '" data-plan="' + escapeHtml(variant.id) + '"' + (inStock ? '' : ' disabled') + ' aria-pressed="' + (selected ? 'true' : 'false') + '">' +
-    '<span class="plan-duration">' + escapeHtml(duration || variant.name) + '</span>' +
+    '<span class="plan-duration">' + escapeHtml(duration || variant.name) + variantTail + '</span>' +
     '<span class="plan-price">' + formatMoney(variant.price) + '</span>' +
     (variant.original_price && Number(variant.original_price) > Number(variant.price) ? '<span class="plan-was">' + formatMoney(variant.original_price) + '</span>' : '') +
     (saving ? '<span class="price-save">Save ' + saving.percent + '%</span>' : '') +
     (!inStock ? '<span class="plan-out">Unavailable</span>' : '') +
   '</button>';
+}
+
+/* Price-card label for the chosen plan: the duration, with a distinguishing
+   tail appended when two plans share a duration. */
+function planLabelFor(variant, dupes) {
+  const duration = durationOf(variant) || 'SELECTED PLAN';
+  return dupes && dupes.get(durationOf(variant) || variant.name) > 1 ? duration + ' · ' + planVariantTail(variant) : duration;
 }
 
 function renderGroupDetail(group, preselectVariantId) {
@@ -987,6 +1034,7 @@ function renderGroupDetail(group, preselectVariantId) {
   const chosen = preIndex >= 0 ? variants[preIndex] : null;
   const fallback = chosen || variants.find(v => v.stock === undefined || v.stock === null || Number(v.stock) > 0) || variants[0];
   const features = (fallback.features || []).map(feature => '<li>' + escapeHtml(feature) + '</li>').join('');
+  const dupes = duplicateDurations(variants);
   $('product-detail').innerHTML = '<div class="pd-layout">' +
     '<div class="pd-media">' +
       '<div class="product-detail-image">' + detailVisual({ name: group.name, image_url: group.image_url || fallback.image_url }) + '</div>' +
@@ -998,11 +1046,11 @@ function renderGroupDetail(group, preselectVariantId) {
         '<p class="pd-summary">' + escapeHtml(fallback.description || 'Choose a plan, then start your order.') + '</p>' +
       '</div>' +
       '<section class="pd-block pd-plans" aria-label="Choose a plan"><h2>Choose a plan · ' + variants.length + ' options</h2><div class="plan-grid" id="plan-grid">' +
-        variants.map((v, i) => planOptionCard(v, preIndex >= 0 ? v.id === chosen.id : i === 0)).join('') +
+        variants.map((v, i) => planOptionCard(v, preIndex >= 0 ? v.id === chosen.id : i === 0, dupes.get(durationOf(v) || v.name) > 1)).join('') +
       '</div></section>' +
       '<div class="pd-price-card">' +
         '<div class="pd-price-top">' +
-          '<span class="pd-price-main"><small id="pd-plan-label">' + escapeHtml((durationOf(fallback) || 'SELECTED PLAN').toUpperCase()) + '</small><b id="pd-plan-price">' + formatMoney(fallback.price) + '</b></span>' +
+          '<span class="pd-price-main"><small id="pd-plan-label">' + escapeHtml(planLabelFor(fallback, dupes).toUpperCase()) + '</small><b id="pd-plan-price">' + formatMoney(fallback.price) + '</b></span>' +
         '</div>' +
         '<div class="pd-actions">' +
           '<button type="button" class="button" id="start-order" data-id="' + escapeHtml(fallback.id) + '"><span class="card-buy-text">Buy now with eSewa / Khalti / QR</span> <span aria-hidden="true">→</span></button>' +
@@ -1024,7 +1072,7 @@ function renderGroupDetail(group, preselectVariantId) {
       const v = byId.get(btn.dataset.plan);
       if (!v) return;
       $('plan-grid').querySelectorAll('[data-plan]').forEach(b => { b.classList.toggle('selected', b === btn); b.setAttribute('aria-pressed', String(b === btn)); });
-      $('pd-plan-label').textContent = (durationOf(v) || 'SELECTED PLAN').toUpperCase();
+      $('pd-plan-label').textContent = planLabelFor(v, dupes).toUpperCase();
       $('pd-plan-price').textContent = formatMoney(v.price);
       $('start-order').dataset.id = v.id;
       $('start-whatsapp-order').dataset.id = v.id;

@@ -4,6 +4,8 @@ let cachedTransporter = null;
 let cachedKey = '';
 
 async function getMailConfig() {
+  // Tests must never send real mail: force the dev-mode (console log) path.
+  if (process.env.NODE_ENV === 'test') return null;
   let host = process.env.SMTP_HOST || process.env.EMAIL_HOST || 'smtp.gmail.com';
   let port = Number(process.env.SMTP_PORT || process.env.EMAIL_PORT || 465);
   let user = process.env.SMTP_USER || process.env.EMAIL_USER || process.env.GMAIL_USER || '';

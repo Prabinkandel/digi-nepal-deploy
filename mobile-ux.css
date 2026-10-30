@@ -332,6 +332,11 @@
   color: var(--plan-color, rgba(255,150,160,1));
   text-shadow: 0 0 12px var(--plan-glow, rgba(255,150,160,.3));
 }
+/* Distinguishing suffix when two plans share a duration (e.g. two 1M CapCut tiers) */
+.plan-tail {
+  font-weight: 600; font-size: .62rem; letter-spacing: .06em;
+  opacity: .7; margin-left: .15rem;
+}
 
 /* Price — bold gradient text */
 .plan-price {
