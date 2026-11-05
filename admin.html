@@ -26,6 +26,11 @@
           <label>Password</label>
           <input type="password" id="l-pass" placeholder="••••••••" required/>
         </div>
+        <div class="form-group" id="l-mfa-group" hidden>
+          <label>Authenticator code</label>
+          <input type="text" id="l-mfa-code" placeholder="6-digit code or recovery code" autocomplete="one-time-code" inputmode="numeric"/>
+          <p style="font-size:.72rem;color:var(--text3);margin:6px 0 0">Two-step verification is enabled for this account. Enter the code from your authenticator app (or a recovery code) to sign in.</p>
+        </div>
         <button type="submit" class="btn-primary full" id="login-btn">Login to Admin</button>
       </form>
     </div>

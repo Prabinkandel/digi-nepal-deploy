@@ -231,4 +231,13 @@ router.post('/mfa/confirm',auth,limit('mfa-confirm',10,900,req=>req.user.id),asy
   await Audit.create({actor_id:req.user.id,action:'MFA_ENABLED',target:'account',outcome:'completed',status:200});
   res.json({...signed,recovery_codes:recovery});
 });
+router.post('/mfa/verify',auth,limit('mfa-verify',10,900,req=>req.user.id),async(req,res)=>{
+  const data=z.object({code:z.string().min(1).max(64)}).strict().parse(req.body);
+  const user=await User.findOne({id:req.user.id}).select('+mfa_secret +recovery_codes');
+  if(!user||!user.mfa_enabled) return res.json({verified:false});
+  if(!await mfa.verify(user,data.code)) fail(400,'Verification code is incorrect.');
+  req.session.mfaVerified=true;
+  await Audit.create({actor_id:user.id,action:'MFA_VERIFY',target:'account',outcome:'completed',status:200});
+  res.json({verified:true});
+});
 module.exports=router;

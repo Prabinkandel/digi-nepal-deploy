@@ -27,7 +27,7 @@ async function api(path,opts={}){
   const contentType = r.headers.get('content-type');
   if (contentType && contentType.includes('application/json')) {
     const d = await r.json();
-    if(!r.ok) throw new Error(getErrorMessage(d));
+    if(!r.ok){const err=new Error(getErrorMessage(d));if(d&&d.code)err.code=d.code;if(d&&d.status)err.status=d.status;throw err;}
     return d;
   } else {
     const text = await r.text();
@@ -48,6 +48,12 @@ function confirm(msg,cb){
   $('confirm-no').onclick=()=>$('confirm-overlay').hidden=true;
 }
 
+const escapeHtml=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+async function refreshCreds(){
+  const u=await api('/auth/me');
+  const c=await api('/auth/csrf');
+  adminUser=u;csrf=c.csrf||'';
+}
 function openDrawer(title,html,onSave){
   $('drawer-title').textContent=title;
   $('drawer-body').innerHTML=html;
@@ -64,7 +70,9 @@ $('login-form').addEventListener('submit',async e=>{
   e.preventDefault();
   const btn=$('login-btn');btn.disabled=true;btn.textContent='Signing in...';
   try{
-    const d=await api('/auth/login',{method:'POST',body:JSON.stringify({email:$('l-email').value,password:$('l-pass').value})});
+    const code=$('l-mfa-code')?.value.trim()||undefined;
+    const d=await api('/auth/login',{method:'POST',body:JSON.stringify({email:$('l-email').value,password:$('l-pass').value,code})});
+    if(d.requires_mfa){$('l-mfa-group').hidden=false;$('l-mfa-code').focus();$('login-error').textContent='Enter your authenticator code to continue.';$('login-error').hidden=false;return;}
     if(d.user.role!=='admin')throw new Error('Admin access required');
     csrf=d.csrf||d.token||'';adminUser=d.user;
     $('login-screen').hidden=true;$('admin-app').hidden=false;
@@ -120,7 +128,107 @@ async function renderDashboard(){
             </div>
           </div>`).join('')}
       </div>`;
-  }catch(e){$('page-content').innerHTML=`<div style="color:var(--sale);padding:20px">${e.message}</div>`;}
+  }catch(e){
+    if(e.code==='MFA_REQUIRED'){renderMfaSetup();return;}
+    $('page-content').innerHTML=`<div style="color:var(--sale);padding:20px">${e.message}</div>`;
+  }
+}
+
+// ACCOUNT SECURITY (two-step verification)
+async function renderMfaSetup(){
+  $('page-content').innerHTML=`<div style="color:var(--text3);text-align:center;padding:40px">Loading...</div>`;
+  let me;
+  try{ me=await api('/auth/me'); }
+  catch(e){ $('page-content').innerHTML=`<div style="color:var(--sale);padding:20px">${escapeHtml(e.message)}</div>`; return; }
+  if(me.mfa_enabled){ renderMfaVerify(); return; }
+  $('page-content').innerHTML=`
+    <div class="table-wrap" style="max-width:560px;margin:0 auto;padding:30px">
+      <h3 style="margin-bottom:8px">🔐 Account Security — Two-Step Verification</h3>
+      <p style="color:var(--text3);font-size:.85rem;margin:0 0 20px">Administration is locked until two-step verification is set up. Confirm your password to start, then add your authenticator app.</p>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="mfa-setup-pass" placeholder="Your account password" autocomplete="current-password"/>
+      </div>
+      <div id="mfa-setup-err" style="color:var(--sale);font-size:.82rem;margin-bottom:14px" hidden></div>
+      <button class="btn-primary full" id="mfa-setup-btn">Start setup</button>
+    </div>`;
+  $('mfa-setup-btn').onclick=async()=>{
+    const pass=$('mfa-setup-pass').value;const errEl=$('mfa-setup-err');
+    if(!pass){errEl.textContent='Enter your password to start.';errEl.hidden=false;return;}
+    try{ const s=await api('/auth/mfa/setup',{method:'POST',body:JSON.stringify({password:pass})}); showMfaConfirm(s); }
+    catch(e){ errEl.textContent=escapeHtml(e.message);errEl.hidden=false; }
+  };
+  $('mfa-setup-pass').focus();
+}
+
+function renderMfaVerify(){
+  $('page-content').innerHTML=`
+    <div class="table-wrap" style="max-width:520px;margin:0 auto;padding:30px">
+      <h3 style="margin-bottom:8px">🔐 Account Security — Verify</h3>
+      <p style="color:var(--text3);font-size:.85rem;margin:0 0 20px">Two-step verification is enabled for this account. Enter a code from your authenticator app (or a recovery code) to unlock the dashboard.</p>
+      <div class="form-group">
+        <label>Authenticator / recovery code</label>
+        <input id="mfa-verify-code" placeholder="6-digit code or recovery code" autocomplete="one-time-code" inputmode="numeric"/>
+      </div>
+      <div id="mfa-verify-err" style="color:var(--sale);font-size:.82rem;margin-bottom:14px" hidden></div>
+      <button class="btn-primary full" id="mfa-verify-btn">Verify &amp; continue</button>
+    </div>`;
+  $('mfa-verify-btn').onclick=async()=>{
+    const code=$('mfa-verify-code').value.trim();const errEl=$('mfa-verify-err');
+    if(!code){errEl.textContent='Enter your code.';errEl.hidden=false;return;}
+    try{
+      await api('/auth/mfa/verify',{method:'POST',body:JSON.stringify({code})});
+      await refreshCreds();
+      toast('Verified! Welcome back.');
+      renderDashboard();
+    }catch(e){ errEl.textContent=escapeHtml(e.message);errEl.hidden=false; }
+  };
+  $('mfa-verify-code').focus();
+}
+
+function showMfaConfirm(s){
+  const qrSrc='https://api.qrserver.com/v1/create-qr-code/?size=240x240&data='+encodeURIComponent(s.uri||'');
+  $('page-content').innerHTML=`
+    <div class="table-wrap" style="max-width:560px;margin:0 auto;padding:30px">
+      <h3 style="margin-bottom:8px">🔐 Scan to add your authenticator app</h3>
+      <p style="color:var(--text3);font-size:.85rem;margin:0 0 18px">Use Google Authenticator, Authy, or any TOTP app. If you can't scan, add the secret manually, then enter the 6-digit code.</p>
+      <div style="text-align:center;margin-bottom:18px">
+        <img src="${escapeHtml(qrSrc)}" alt="QR code for two-step verification" style="width:200px;height:200px;border:1px solid var(--border);border-radius:10px;background:#fff;padding:6px"/>
+      </div>
+      <div class="form-group">
+        <label>Manual secret <span style="color:var(--text3);font-weight:400;font-size:.75rem">(copy if you can't scan)</span></label>
+        <input id="mfa-secret" value="${escapeHtml(s.secret||'')}" readonly style="font-family:monospace"/>
+      </div>
+      <div class="form-group">
+        <label>6-digit code from your app</label>
+        <input id="mfa-confirm-code" placeholder="123456" autocomplete="one-time-code" inputmode="numeric" maxlength="6"/>
+      </div>
+      <div id="mfa-confirm-err" style="color:var(--sale);font-size:.82rem;margin-bottom:14px" hidden></div>
+      <button class="btn-primary full" id="mfa-confirm-btn">Enable two-step verification</button>
+    </div>`;
+  $('mfa-secret').addEventListener('focus',function(){this.select();});
+  $('mfa-confirm-btn').onclick=async()=>{
+    const code=$('mfa-confirm-code').value.trim();const errEl=$('mfa-confirm-err');
+    if(!/^\d{6}$/.test(code)){errEl.textContent='Enter the 6-digit code from your app.';errEl.hidden=false;return;}
+    try{
+      const r=await api('/auth/mfa/confirm',{method:'POST',body:JSON.stringify({code})});
+      showRecoveryCodes(r.recovery_codes||[]);
+    }catch(e){ errEl.textContent=escapeHtml(e.message);errEl.hidden=false; }
+  };
+  $('mfa-confirm-code').focus();
+}
+
+function showRecoveryCodes(codes){
+  $('page-content').innerHTML=`
+    <div class="table-wrap" style="max-width:560px;margin:0 auto;padding:30px">
+      <h3 style="margin-bottom:8px;color:var(--success)">✅ Two-step verification enabled</h3>
+      <p style="color:var(--text3);font-size:.85rem;margin:0 0 16px">Save these recovery codes somewhere safe — each one can unlock your account if you lose your phone. This is your only chance to see them.</p>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:18px;font-family:monospace;font-size:.85rem;line-height:1.9;word-break:break-all;color:var(--text)">
+        ${codes.length?codes.map(c=>`<div>${escapeHtml(c)}</div>`).join(''):'<em>No recovery codes</em>'}
+      </div>
+      <button class="btn-primary full" id="mfa-finish-btn">Got it — open the dashboard</button>
+    </div>`;
+  $('mfa-finish-btn').onclick=async()=>{ await refreshCreds(); toast('You are all set!'); renderDashboard(); };
 }
 
 // PRODUCTS
