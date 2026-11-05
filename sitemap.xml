@@ -1,32 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://diginepalnp.com/</loc>
+    <loc>https://www.diginepalnp.com/</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://diginepalnp.com/about</loc>
+    <loc>https://www.diginepalnp.com/about</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://diginepalnp.com/contact</loc>
+    <loc>https://www.diginepalnp.com/contact</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://diginepalnp.com/privacy</loc>
+    <loc>https://www.diginepalnp.com/privacy</loc>
     <changefreq>yearly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
-    <loc>https://diginepalnp.com/terms</loc>
+    <loc>https://www.diginepalnp.com/terms</loc>
     <changefreq>yearly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
-    <loc>https://diginepalnp.com/refund</loc>
+    <loc>https://www.diginepalnp.com/refund</loc>
     <changefreq>yearly</changefreq>
     <priority>0.4</priority>
   </url>

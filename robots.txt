@@ -4,4 +4,4 @@ Disallow: /admin
 Disallow: /api/
 Disallow: /uploads/
 
-Sitemap: https://diginepalnp.com/sitemap.xml
+Sitemap: https://www.diginepalnp.com/sitemap.xml
