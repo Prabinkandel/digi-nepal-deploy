@@ -1467,3 +1467,9 @@ body.campaign-neon-offer .card-badges .store-badge-campaign.sb-campaign {
   border-color: rgba(245,158,11,.55);
   box-shadow: 0 0 12px rgba(245,158,11,.35);
 }
+
+/* Stock-out banner — shown when the admin stock_out flag is on */
+.stock-out-banner{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-8deg);z-index:6;background:linear-gradient(135deg,#dc2626,#7f1d1d);color:#fff;font-weight:800;font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;padding:.5rem 1.15rem;border-radius:.55rem;box-shadow:0 12px 32px rgba(220,38,38,.5);white-space:nowrap;pointer-events:none}
+.product-card.is-out .card-visual img{filter:grayscale(.55) brightness(.72)}
+.product-detail-image{position:relative}
+.product-detail-image .stock-out-banner{font-size:.92rem}
