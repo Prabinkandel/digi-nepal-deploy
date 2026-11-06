@@ -338,10 +338,24 @@ function themeVarsString(theme) {
     '%;--bh2:' + theme.secondary[0] + ';--bs2:' + theme.secondary[1] + '%;--bl2:' + theme.secondary[2] + '%';
 }
 
+/* Official brand logo banners bundled with the site (/logos/*.svg, composed
+   at the exact 1200x600 product-image fit). Used only when a product has no
+   image of its own — an image uploaded in the admin always wins. */
+const BRAND_LOGOS = {
+  'netflix 4k': '/logos/netflix.svg',
+  'spotify premium': '/logos/spotify.svg',
+  'canva pro': '/logos/canva.svg',
+  'chatgpt plus': '/logos/chatgpt.svg',
+  'gemini ai pro': '/logos/gemini.svg'
+};
+function brandLogoFor(name) { return BRAND_LOGOS[baseKey(name || '')] || ''; }
+
 function productVisual(product, compact = false) {
   const brandVisual = getBrandEmblem(product.name);
   const cls = 'product-image' + (compact ? ' compact-product-image' : '');
   if (!product.image_url) {
+    const logo = brandLogoFor(product.name);
+    if (logo) return '<div class="' + cls + '"><img src="' + logo + '" alt="' + escapeHtml(product.name || '') + '" loading="lazy" decoding="async" onload="this.classList.add(\'loaded\')"></div>';
     return '<div class="' + cls + '"><div class="banner-logo-wrap">' + brandVisual + '</div></div>';
   }
   const img = '<img src="' + escapeHtml(product.image_url) + '" alt="' + escapeHtml(product.name || '') + '" loading="lazy" decoding="async" onload="this.classList.add(\'loaded\')" onerror="this.style.display=\'none\';if(this.nextElementSibling)this.nextElementSibling.style.display=\'flex\';">';
@@ -988,6 +1002,8 @@ function selectCategory(category) {
 function detailVisual(product) {
   const brandVisual = getBrandEmblem(product.name);
   if (!product.image_url) {
+    const logo = brandLogoFor(product.name);
+    if (logo) return '<img src="' + logo + '" alt="' + escapeHtml(product.name) + '" loading="eager" decoding="async" onload="this.classList.add(\'loaded\')">';
     return '<div class="brand-detail-emblem">' + brandVisual + '</div>';
   }
   return '<img src="' + escapeHtml(product.image_url) + '" alt="' + escapeHtml(product.name) + '" loading="eager" decoding="async" onload="this.classList.add(\'loaded\')" onerror="this.style.display=\'none\';if(this.nextElementSibling)this.nextElementSibling.style.display=\'flex\';">' +

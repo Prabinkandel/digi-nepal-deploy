@@ -116,6 +116,18 @@ async function main() {
       }
     }
   }
+  // Copy bundled brand logo banners to dist if present
+  const logosSource = path.join(root, 'logos');
+  const logosDest = path.join(output, 'logos');
+  if (fs.existsSync(logosSource)) {
+    fs.mkdirSync(logosDest, { recursive: true });
+    for (const item of fs.readdirSync(logosSource)) {
+      const srcFile = path.join(logosSource, item);
+      if (fs.statSync(srcFile).isFile()) {
+        fs.copyFileSync(srcFile, path.join(logosDest, item));
+      }
+    }
+  }
   console.log('Public site build complete. Server source and private data are excluded.');
 }
 
