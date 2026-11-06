@@ -461,6 +461,7 @@ function groupProducts(products) {
     g.variants.sort((a, b) => Number(a.price) - Number(b.price));
     g.minPrice = Math.min(...g.variants.map(v => Number(v.price || 0)));
     g.featured = g.variants.some(v => Number(v.featured) === 1);
+    g.stockOut = g.variants.some(v => Number(v.stock_out) === 1);
     const withSaving = g.variants.map(v => ({ v, s: savingsOf(v) })).filter(x => x.s).sort((a, b) => b.s.percent - a.s.percent);
     g.bestSaving = withSaving.length ? withSaving[0].s : null;
     const dashainVariant = g.variants.find(v => (v.badge && v.badge.toLowerCase().includes('dashain')) || (v.offer_label && v.offer_label.toLowerCase().includes('dashain')));
@@ -567,6 +568,7 @@ function productCard(group) {
     .map(v => campaignBadge(v, saving))
     .find(Boolean) || '';
   const featuredBadge = group.featured ? '<span class="store-badge store-badge-featured">⭐ Featured</span>' : '';
+  const stockOutBanner = group.stockOut ? '<span class="stock-out-banner">Out of Stock</span>' : '';
   const statusBadge = group.offer_label ? saleBadge(group.offer_label) : campaignBadgeHtml;
   const badgesHtml = (discountBadge || statusBadge || featuredBadge)
     ? '<div class="card-badges">' +
@@ -581,9 +583,9 @@ function productCard(group) {
 
   const crossedPrice = group.maxPrice ? '<s class="was-price">' + formatMoney(group.maxPrice) + '</s>' : '';
 
-  return '<article class="product-card" data-group-key="' + escapeHtml(group.key) + '" style="' + tvars + '" tabindex="0" role="button" aria-label="View ' + escapeHtml(group.name) + ' plans">' +
+  return '<article class="product-card' + (group.stockOut ? ' is-out' : '') + '" data-group-key="' + escapeHtml(group.key) + '" style="' + tvars + '" tabindex="0" role="button" aria-label="View ' + escapeHtml(group.name) + ' plans">' +
     '<div class="card-glow" aria-hidden="true"></div>' +
-    '<div class="card-visual">' + visual + badgesHtml + '</div>' +
+    '<div class="card-visual">' + visual + badgesHtml + stockOutBanner + '</div>' +
     '<div class="card-body">' +
       '<p class="product-category">' + escapeHtml(group.category_name || 'DIGITAL SERVICE') + '</p>' +
       '<h3>' + escapeHtml(group.name) + '</h3>' +
@@ -1039,7 +1041,7 @@ function renderGroupDetail(group, preselectVariantId) {
   const dupes = duplicateDurations(variants);
   $('product-detail').innerHTML = '<div class="pd-layout">' +
     '<div class="pd-media">' +
-      '<div class="product-detail-image">' + detailVisual({ name: group.name, image_url: group.image_url || fallback.image_url }) + '</div>' +
+      '<div class="product-detail-image">' + detailVisual({ name: group.name, image_url: group.image_url || fallback.image_url }) + (group.stockOut ? '<span class="stock-out-banner">Out of Stock</span>' : '') + '</div>' +
     '</div>' +
     '<div class="pd-main">' +
       '<div class="pd-head">' +
@@ -1127,7 +1129,7 @@ async function openProduct(id) {
     const features = (product.features || []).map(feature => '<li>' + escapeHtml(feature) + '</li>').join('');
     $('product-detail').innerHTML = '<div class="pd-layout">' +
       '<div class="pd-media">' +
-        '<div class="product-detail-image">' + detailVisual(product) + '</div>' +
+        '<div class="product-detail-image">' + detailVisual(product) + (Number(product.stock_out) === 1 ? '<span class="stock-out-banner">Out of Stock</span>' : '') + '</div>' +
         (badges.length ? '<div class="pd-badges">' + badges.join('') + '</div>' : '') +
       '</div>' +
       '<div class="pd-main">' +

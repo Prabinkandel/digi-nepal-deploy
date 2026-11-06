@@ -285,7 +285,7 @@ function renderProductRows(products,catMap){
       <td>${catMap[p.category_id]?.name||'-'}</td>
       <td>${p.duration?`<span class="badge badge-active" style="font-size:.72rem;padding:.15rem .45rem">${p.duration}</span>`:'—'}</td>
       <td>${fmt(p.price)}${p.original_price?`<br/><span style="color:var(--text3);text-decoration:line-through;font-size:.8rem">${fmt(p.original_price)}</span>`:''}</td>
-      <td><input class="stock-input" type="number" min="0" data-id="${p.id}" value="${p.stock!=null?p.stock:''}" placeholder="∞" title="Stock — blank = unlimited. Click away to save."/></td>
+      <td><input class="stock-input" type="number" min="0" data-id="${p.id}" value="${p.stock!=null?p.stock:''}" placeholder="∞" title="Stock — blank = unlimited. Click away to save."/><button type="button" class="stockout-btn${p.stock_out?' is-out':''}" data-id="${p.id}" title="Show or hide the OUT OF STOCK banner on the storefront">${p.stock_out?'🚫 Out of stock':'In stock'}</button></td>
       <td>${p.badge?`<span class="badge badge-${(String(p.badge).toLowerCase().includes('dashain'))?'danger':p.badge==='sale'?'pending':p.badge==='popular'||p.badge==='hot'?'verified':'active'}">${(String(p.badge).toLowerCase().includes('dashain'))?'Dashain Sale 🌾':p.badge}</span>`:'—'}</td>
       <td><span class="badge ${p.is_active?'badge-active':'badge-inactive'}">${p.is_active?'Active':'Hidden'}</span></td>
       <td><div class="td-actions">
@@ -316,6 +316,19 @@ function attachProductActions(products,cats){
         inp.classList.add('stock-saved');setTimeout(()=>inp.classList.remove('stock-saved'),1200);
         toast('Stock updated');
       }catch(e){toast(e.message||'Could not update stock','error');}
+    };
+  });
+  document.querySelectorAll('.stockout-btn').forEach(b=>{
+    b.onclick=async()=>{
+      const prod=products.find(x=>x.id===b.dataset.id);if(!prod)return;
+      const next=prod.stock_out?0:1;
+      try{
+        await api(`/products/${prod.id}`,{method:'PUT',body:JSON.stringify({stock_out:next})});
+        prod.stock_out=next;
+        b.classList.toggle('is-out',!!next);
+        b.textContent=next?'🚫 Out of stock':'In stock';
+        toast(next?'Stock-out banner ON — customers will see it':'Stock-out banner OFF');
+      }catch(e){toast(e.message||'Could not update','error');}
     };
   });
 }
@@ -361,7 +374,7 @@ function openProductForm(p,cats){
       <div class="form-group"><label>Rating</label><input id="f-rating" type="number" step="0.1" min="1" max="5" value="${p?.rating||4.8}"/></div>
       <div class="form-group"><label>Brand Hex Color (Optional)</label><input id="f-brand-color" placeholder="e.g. #E50914 (Auto if blank)" value="${p?.brand_color||''}"/></div>
     </div>
-    <div class="form-group"><label>Sort Order</label><input id="f-sort" type="number" value="${p?.sort_order||0}"/></div><div class="form-group"><label>⭐ Featured — pin to top of catalog</label><input id="f-featured" type="checkbox" ${p?.featured?'checked':''}/></div>
+    <div class="form-group"><label>Sort Order</label><input id="f-sort" type="number" value="${p?.sort_order||0}"/></div><div class="form-group"><label>⭐ Featured — pin to top of catalog</label><input id="f-featured" type="checkbox" ${p?.featured?'checked':''}/></div><div class="form-group"><label>🚫 Stock Out — banner on storefront image</label><input id="f-stock-out" type="checkbox" ${p?.stock_out?'checked':''}/></div>
     <div class="form-group"><label>Description</label><textarea id="f-desc">${p?.description||''}</textarea></div>
     <div class="form-group"><label>Features (one per line)</label><textarea id="f-feats" style="min-height:100px">${feats.join('\n')}</textarea></div>
     <div class="form-group"><label>Product Image</label>
@@ -430,7 +443,7 @@ function openProductForm(p,cats){
         stock: stockVal !== '' ? +stockVal : null,
         brand_color: brandColorVal,
         description:$('f-desc').value,features:featsArr,image_url:imgUrl,
-        is_active: p ? p.is_active : 1, sort_order: +$('f-sort').value || 0, featured: $('f-featured')?.checked ? 1 : 0};
+        is_active: p ? p.is_active : 1, sort_order: +$('f-sort').value || 0, featured: $('f-featured')?.checked ? 1 : 0, stock_out: $('f-stock-out')?.checked ? 1 : 0};
         
       try{
         if(p)await api(`/products/${p.id}`,{method:'PUT',body:JSON.stringify(body)});

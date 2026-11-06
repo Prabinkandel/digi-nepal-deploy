@@ -777,3 +777,7 @@ tr:hover td { background: rgba(99,102,241,.03); }
 .stock-input{width:78px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:#fff;padding:.35rem .5rem;font:inherit;font-size:.85rem}
 .stock-input:focus{outline:none;border-color:var(--violet)}
 .stock-input.stock-saved{border-color:#2fbf71;box-shadow:0 0 0 3px rgba(47,191,113,.18)}
+
+/* Stock-out quick toggle on the products page */
+.stockout-btn{display:block;margin-top:.35rem;background:transparent;border:1px solid var(--border);border-radius:999px;color:#9aa3b2;padding:.18rem .55rem;font-size:.7rem;cursor:pointer}
+.stockout-btn.is-out{background:rgba(220,38,38,.16);border-color:rgba(220,38,38,.55);color:#fca5a5;font-weight:700}
