@@ -280,7 +280,7 @@ function renderProductRows(products,catMap){
     <tr data-id="${p.id}">
       <td><div style="display:flex;align-items:center;gap:10px">
         ${p.image_url?`<img src="${p.image_url}" class="td-img" alt=""/>`:`<div class="td-icon">${p.category_icon||'📦'}</div>`}
-        <div><div class="td-name">${p.name}</div><div class="td-sub">${fmt(p.price)}</div></div>
+        <div><div class="td-name">${p.featured?'⭐ ':''}${p.name}</div><div class="td-sub">${fmt(p.price)}</div></div>
       </div></td>
       <td>${catMap[p.category_id]?.name||'-'}</td>
       <td>${p.duration?`<span class="badge badge-active" style="font-size:.72rem;padding:.15rem .45rem">${p.duration}</span>`:'—'}</td>
@@ -348,7 +348,7 @@ function openProductForm(p,cats){
       <div class="form-group"><label>Rating</label><input id="f-rating" type="number" step="0.1" min="1" max="5" value="${p?.rating||4.8}"/></div>
       <div class="form-group"><label>Brand Hex Color (Optional)</label><input id="f-brand-color" placeholder="e.g. #E50914 (Auto if blank)" value="${p?.brand_color||''}"/></div>
     </div>
-    <div class="form-group"><label>Sort Order</label><input id="f-sort" type="number" value="${p?.sort_order||0}"/></div>
+    <div class="form-group"><label>Sort Order</label><input id="f-sort" type="number" value="${p?.sort_order||0}"/></div><div class="form-group"><label>⭐ Featured — pin to top of catalog</label><input id="f-featured" type="checkbox" ${p?.featured?'checked':''}/></div>
     <div class="form-group"><label>Description</label><textarea id="f-desc">${p?.description||''}</textarea></div>
     <div class="form-group"><label>Features (one per line)</label><textarea id="f-feats" style="min-height:100px">${feats.join('\n')}</textarea></div>
     <div class="form-group"><label>Product Image</label>
@@ -417,7 +417,7 @@ function openProductForm(p,cats){
         stock: stockVal !== '' ? +stockVal : null,
         brand_color: brandColorVal,
         description:$('f-desc').value,features:featsArr,image_url:imgUrl,
-        is_active: p ? p.is_active : 1, sort_order: +$('f-sort').value || 0};
+        is_active: p ? p.is_active : 1, sort_order: +$('f-sort').value || 0, featured: $('f-featured')?.checked ? 1 : 0};
         
       try{
         if(p)await api(`/products/${p.id}`,{method:'PUT',body:JSON.stringify(body)});
