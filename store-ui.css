@@ -2533,3 +2533,6 @@ body > * { position: relative; z-index: 1; }
 
 
 
+
+/* Loading placeholders for the flash-sale carousel: they hold the section's height while deals load, so the page does not jump when the real cards swap in (renderDeals replaces the carousel contents). */
+.flash-deal-skeleton{height:302px;pointer-events:none}
