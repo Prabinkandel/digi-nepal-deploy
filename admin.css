@@ -772,3 +772,8 @@ tr:hover td { background: rgba(99,102,241,.03); }
   .drawer-close { width: 40px; height: 40px; }
   .filter-select, .search-box { min-height: 44px; }
 }
+
+/* Inline stock editing on the products page */
+.stock-input{width:78px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:#fff;padding:.35rem .5rem;font:inherit;font-size:.85rem}
+.stock-input:focus{outline:none;border-color:var(--violet)}
+.stock-input.stock-saved{border-color:#2fbf71;box-shadow:0 0 0 3px rgba(47,191,113,.18)}
