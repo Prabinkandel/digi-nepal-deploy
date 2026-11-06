@@ -91,5 +91,6 @@ details[open] summary { color: #fff; }
 
 @media (prefers-reduced-motion: reduce) {
   .header, .hero .enter, .hero-art, .service-card, .art-orbit, .motion-visible, .product-card:not(.skeleton), dialog[open], dialog::backdrop, .toast, details[open] p, .cat-explorer-card { animation: none !important; opacity: 1; transform: none; }
+  .gt-item, .gt-item::before, .review-card, .flash-deal-card, .flash-deal-card::after, .flash-deal-card .deal-thumb, .flash-deal-card .product-monogram { animation: none !important; transition: none !important; }
   html.motion-ready .section-heading, html.motion-ready .reason-copy, html.motion-ready .reason-list, html.motion-ready .faq-layout > div, html.motion-ready .steps li, html.motion-ready .trustbar, html.motion-ready .final-cta .container { opacity: 1; transform: none; }
 }
