@@ -437,11 +437,22 @@ function campaignBadge(product, saving) {
 
 /* Group duration variants (e.g. "ChatGPT Plus" 1 Month / 1 Year) into one
    browsable card. All values come from the live catalogue. */
+/* Strip a trailing duration phrase ("1 months", "2 Months", "1 Year") from a
+   product name, so duration variants of one product share a single card.
+   "CapCut Pro 1 months" -> "CapCut Pro"; names without a duration are untouched. */
+function stripDurationSuffix(name) {
+  return String(name || '').trim().replace(/[\s\-\u2013\u2014]*\b\d+\s*(months?|years?|days?|weeks?)\s*$/i, '').trim();
+}
+function displayNameOf(name) {
+  const raw = String(name || '').trim();
+  return stripDurationSuffix(raw) || raw;
+}
 function baseKey(name) {
   const k = String(name || '').trim().toLowerCase();
   // CapCut Pro + its pre-activated variant are one product family -> one card.
   if (k === 'capcut pro' || k === 'capcut pro (pre-activated, 2 devices)') return 'capcut pro';
-  return k;
+  const stripped = stripDurationSuffix(k);
+  return stripped || k;
 }
 /* Family-level display names: variants of a shared family get one short
    card title instead of inheriting whichever variant was created last. */
@@ -451,7 +462,7 @@ function groupProducts(products) {
   const map = new Map();
   for (const p of (products || [])) {
     const key = baseKey(p.name);
-    if (!map.has(key)) map.set(key, { key, name: p.name, category_name: p.category_name, category_id: p.category_id, image_url: p.image_url, brand_color: p.brand_color || p.brandColor, variants: [] });
+    if (!map.has(key)) map.set(key, { key, name: displayNameOf(p.name), category_name: p.category_name, category_id: p.category_id, image_url: p.image_url, brand_color: p.brand_color || p.brandColor, variants: [] });
     const g = map.get(key);
     g.variants.push(p);
     if (!g.image_url && p.image_url) g.image_url = p.image_url;
