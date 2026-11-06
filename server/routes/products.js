@@ -16,6 +16,7 @@ const schema=z.object({
   stock:z.number().int().min(0).nullable().optional().default(null),
   brand_color:text(30).nullable().optional().default(null),
   sort_order:z.number().int().min(0).max(9999).default(0),
-  is_active:flag.default(1)
+  is_active:flag.default(1),
+  featured:flag.default(0)
 }).strict();
 module.exports=require('./catalogFactory')(Product,schema,{decorate,validate:async data=>{if(data.category_id&&!await Category.exists({id:data.category_id,is_active:1}))fail(400,'Choose an active category.');}});

@@ -1459,3 +1459,11 @@ body.campaign-neon-offer .card-badges .store-badge-campaign.sb-campaign {
   .product-card:hover, .product-card:focus-within,
   .flash-deal-card.fdc-rich:hover { transform: none !important; }
 }
+
+/* Featured pin badge — gold pill in the left badge slot */
+.card-badges .store-badge-featured {
+  background: linear-gradient(135deg, rgba(245,158,11,.42), rgba(234,88,12,.3));
+  color: #fde68a;
+  border-color: rgba(245,158,11,.55);
+  box-shadow: 0 0 12px rgba(245,158,11,.35);
+}

@@ -10,7 +10,7 @@ function fail(status, message) { const err = new Error(message); err.status = st
 function query(req) {
   return z.object({ page: z.coerce.number().int().min(1).max(100000).default(1), limit: z.coerce.number().int().min(1).max(100).default(12), search: text(100).default(''), sort: z.enum(['newest','oldest','name','price-asc','price-desc']).default('newest'), status: text(30).default(''), category: text(100).default('') }).parse(req.query);
 }
-const sorts = { newest: { created_at: -1, id: 1 }, oldest: { created_at: 1, id: 1 }, name: { name: 1, id: 1 }, 'price-asc': { price: 1, id: 1 }, 'price-desc': { price: -1, id: 1 } };
+const sorts = { newest: { featured: -1, created_at: -1, id: 1 }, oldest: { featured: -1, created_at: 1, id: 1 }, name: { featured: -1, name: 1, id: 1 }, 'price-asc': { featured: -1, price: 1, id: 1 }, 'price-desc': { featured: -1, price: -1, id: 1 } };
 function searchFilter(value, fields) { return value ? { $or: fields.map(field => ({ [field]: { $regex: value.replace(/[.*+?^$(){}|[\]\\]/g, '\\$&'), $options: 'i' } })) } : {}; }
 async function page(Model, filter, q, projection) {
   const [items,total] = await Promise.all([Model.find(filter).select(projection || '-__v -_id').sort(sorts[q.sort]).skip((q.page-1)*q.limit).limit(q.limit).lean(), Model.countDocuments(filter)]);

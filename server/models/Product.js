@@ -16,6 +16,7 @@ const productSchema = new mongoose.Schema({
   rating: { type: Number, default: 4.8 },
   brand_color: { type: String, default: null }, // Optional explicit hex (e.g. #E50914)
   is_active: { type: Number, default: 1 },
+  featured: { type: Number, default: 0 }, // 1 = pinned to the top of the catalog with a Featured badge
   sort_order: { type: Number, default: 0 },
 }, { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } });
 

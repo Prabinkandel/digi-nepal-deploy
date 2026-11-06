@@ -460,6 +460,7 @@ function groupProducts(products) {
   return [...map.values()].map(g => {
     g.variants.sort((a, b) => Number(a.price) - Number(b.price));
     g.minPrice = Math.min(...g.variants.map(v => Number(v.price || 0)));
+    g.featured = g.variants.some(v => Number(v.featured) === 1);
     const withSaving = g.variants.map(v => ({ v, s: savingsOf(v) })).filter(x => x.s).sort((a, b) => b.s.percent - a.s.percent);
     g.bestSaving = withSaving.length ? withSaving[0].s : null;
     const dashainVariant = g.variants.find(v => (v.badge && v.badge.toLowerCase().includes('dashain')) || (v.offer_label && v.offer_label.toLowerCase().includes('dashain')));
@@ -565,10 +566,11 @@ function productCard(group) {
   const campaignBadgeHtml = group.variants
     .map(v => campaignBadge(v, saving))
     .find(Boolean) || '';
+  const featuredBadge = group.featured ? '<span class="store-badge store-badge-featured">⭐ Featured</span>' : '';
   const statusBadge = group.offer_label ? saleBadge(group.offer_label) : campaignBadgeHtml;
-  const badgesHtml = (discountBadge || statusBadge)
+  const badgesHtml = (discountBadge || statusBadge || featuredBadge)
     ? '<div class="card-badges">' +
-        '<div class="badge-slot-left">' + discountBadge + '</div>' +
+        '<div class="badge-slot-left">' + discountBadge + featuredBadge + '</div>' +
         '<div class="badge-slot-right">' + statusBadge + '</div>' +
       '</div>'
     : '';
