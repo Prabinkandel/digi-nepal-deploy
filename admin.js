@@ -72,7 +72,7 @@ $('login-form').addEventListener('submit',async e=>{
   try{
     const code=$('l-mfa-code')?.value.trim()||undefined;
     const d=await api('/auth/login',{method:'POST',body:JSON.stringify({email:$('l-email').value,password:$('l-pass').value,code})});
-    if(d.requires_mfa){$('l-mfa-group').hidden=false;$('l-mfa-code').focus();$('login-error').textContent='Enter your authenticator code to continue.';$('login-error').hidden=false;return;}
+    if(d.requires_mfa){$('l-mfa-group').hidden=false;$('l-mfa-code').focus();$('login-error').textContent='Enter your authenticator code to continue.';$('login-error').hidden=false;btn.disabled=false;btn.textContent='Login to Admin';return;}
     if(d.user.role!=='admin')throw new Error('Admin access required');
     csrf=d.csrf||d.token||'';adminUser=d.user;
     $('login-screen').hidden=true;$('admin-app').hidden=false;
