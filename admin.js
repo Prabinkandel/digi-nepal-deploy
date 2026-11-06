@@ -254,7 +254,7 @@ async function renderProducts(){
         </div>
       </div>
       <div style="overflow-x:auto"><table>
-        <thead><tr><th>Product</th><th>Category</th><th>Duration</th><th>Price</th><th>Badge</th><th>Status</th><th>Actions</th></tr></thead>
+        <thead><tr><th>Product</th><th>Category</th><th>Duration</th><th>Price</th><th>Stock</th><th>Badge</th><th>Status</th><th>Actions</th></tr></thead>
         <tbody id="prod-tbody">${renderProductRows(products,catMap)}</tbody>
       </table></div>
     </div>`;
@@ -275,7 +275,7 @@ async function renderProducts(){
 }
 
 function renderProductRows(products,catMap){
-  if(!products.length)return`<tr class="empty-row"><td colspan="7">No products found</td></tr>`;
+  if(!products.length)return`<tr class="empty-row"><td colspan="8">No products found</td></tr>`;
   return products.map(p=>`
     <tr data-id="${p.id}">
       <td><div style="display:flex;align-items:center;gap:10px">
@@ -285,6 +285,7 @@ function renderProductRows(products,catMap){
       <td>${catMap[p.category_id]?.name||'-'}</td>
       <td>${p.duration?`<span class="badge badge-active" style="font-size:.72rem;padding:.15rem .45rem">${p.duration}</span>`:'—'}</td>
       <td>${fmt(p.price)}${p.original_price?`<br/><span style="color:var(--text3);text-decoration:line-through;font-size:.8rem">${fmt(p.original_price)}</span>`:''}</td>
+      <td><input class="stock-input" type="number" min="0" data-id="${p.id}" value="${p.stock!=null?p.stock:''}" placeholder="∞" title="Stock — blank = unlimited. Click away to save."/></td>
       <td>${p.badge?`<span class="badge badge-${(String(p.badge).toLowerCase().includes('dashain'))?'danger':p.badge==='sale'?'pending':p.badge==='popular'||p.badge==='hot'?'verified':'active'}">${(String(p.badge).toLowerCase().includes('dashain'))?'Dashain Sale 🌾':p.badge}</span>`:'—'}</td>
       <td><span class="badge ${p.is_active?'badge-active':'badge-inactive'}">${p.is_active?'Active':'Hidden'}</span></td>
       <td><div class="td-actions">
@@ -304,6 +305,18 @@ function attachProductActions(products,cats){
       await api(`/products/${p.id}`,{method:p.is_active?'DELETE':'PUT',body:JSON.stringify({...p,is_active:1})});
       toast('Product updated'); renderProducts();
     });
+  });
+  document.querySelectorAll('.stock-input').forEach(inp=>{
+    inp.onchange=async()=>{
+      const raw=inp.value.trim();
+      const val=raw===''?null:Math.max(0,parseInt(raw,10)||0);
+      try{
+        await api(`/products/${inp.dataset.id}`,{method:'PUT',body:JSON.stringify({stock:val})});
+        const prod=products.find(x=>x.id===inp.dataset.id);if(prod)prod.stock=val;
+        inp.classList.add('stock-saved');setTimeout(()=>inp.classList.remove('stock-saved'),1200);
+        toast('Stock updated');
+      }catch(e){toast(e.message||'Could not update stock','error');}
+    };
   });
 }
 
