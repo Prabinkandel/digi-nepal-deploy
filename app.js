@@ -1732,7 +1732,8 @@ function setupMotion() {
 
   const sectionTargets = document.querySelectorAll(
     '.section-heading, .reason-copy, .reason-list, .faq-layout > div, ' +
-    '.steps li, .final-cta .container, .trustbar'
+    '.steps li, .final-cta .container, .trustbar, ' +
+    '.gt-item, .review-card, .cat-explorer-card, .flash-sale-header, .catalog-heading'
   );
   sectionTargets.forEach(t => revealObs.observe(t));
 }

@@ -89,8 +89,47 @@ details[open] summary { color: #fff; }
 @keyframes answer-enter { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:none; } }
 @keyframes fadeInUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
 
+/* --- Refinement pass: wider reveals, link/button micro-interactions --- */
+/* Stagger delays for the newly revealed groups (used by .motion-visible). */
+.gt-item:nth-child(2), .review-card:nth-child(2), .cat-explorer-card:nth-child(2) { animation-delay: 70ms; }
+.gt-item:nth-child(3), .review-card:nth-child(3), .cat-explorer-card:nth-child(3) { animation-delay: 140ms; }
+.gt-item:nth-child(4), .cat-explorer-card:nth-child(4) { animation-delay: 210ms; }
+.gt-item:nth-child(n + 5), .cat-explorer-card:nth-child(n + 5) { animation-delay: 280ms; }
+
+/* Nav links: underline grows from the left on hover/focus. */
+.nav-links a { position: relative; }
+.nav-links a::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: -6px; height: 2px;
+  border-radius: 2px; background: var(--red-bright);
+  transform: scaleX(0); transform-origin: left center;
+  transition: transform var(--motion-base) var(--motion-ease);
+}
+.nav-links a:hover::after, .nav-links a:focus-visible::after { transform: scaleX(1); }
+
+/* Buttons: soft sheen sweeps across on hover. */
+.button { position: relative; overflow: hidden; }
+.button::after {
+  content: ''; position: absolute; top: 0; bottom: 0; left: -80%; width: 55%;
+  background: linear-gradient(100deg, transparent, rgba(255,255,255,.22), transparent);
+  transform: skewX(-18deg); pointer-events: none;
+  transition: left .6s var(--motion-ease);
+}
+.button:hover::after { left: 130%; }
+
+/* Hero art: the red ring slowly breathes (opacity only, cannot overflow). */
+.hero-art::after { animation: ring-breathe 7s ease-in-out infinite alternate; }
+@keyframes ring-breathe { from { opacity: .45; } to { opacity: .95; } }
+
+/* Category pills: a small pop when a pill becomes active. */
+.category.active { animation: pill-pop 280ms var(--motion-emphasis); }
+@keyframes pill-pop { 0% { transform: scale(.92); } 60% { transform: scale(1.04); } 100% { transform: scale(1); } }
+
+/* Anchor jumps land clear of the sticky header. */
+section[id] { scroll-margin-top: 6.5rem; }
+
 @media (prefers-reduced-motion: reduce) {
-  .header, .hero .enter, .hero-art, .service-card, .art-orbit, .motion-visible, .product-card:not(.skeleton), dialog[open], dialog::backdrop, .toast, details[open] p, .cat-explorer-card { animation: none !important; opacity: 1; transform: none; }
+  .header, .hero .enter, .hero-art, .hero-art::after, .service-card, .art-orbit, .motion-visible, .product-card:not(.skeleton), dialog[open], dialog::backdrop, .toast, details[open] p, .cat-explorer-card, .category.active { animation: none !important; opacity: 1; transform: none; }
   .gt-item, .gt-item::before, .review-card, .flash-deal-card, .flash-deal-card::after, .flash-deal-card .deal-thumb, .flash-deal-card .product-monogram { animation: none !important; transition: none !important; }
+  .button::after, .nav-links a::after { display: none; }
   html.motion-ready .section-heading, html.motion-ready .reason-copy, html.motion-ready .reason-list, html.motion-ready .faq-layout > div, html.motion-ready .steps li, html.motion-ready .trustbar, html.motion-ready .final-cta .container { opacity: 1; transform: none; }
 }
