@@ -24,9 +24,9 @@
   border-radius: 1rem;
   border: 1px solid rgba(255,255,255,.07);
   background: linear-gradient(168deg,
-    rgba(17,19,24,.92) 0%,
-    rgba(13,15,20,.95) 50%,
-    rgba(11,13,17,.97) 100%
+    rgba(20,20,23,.92) 0%,
+    rgba(15,15,18,.95) 50%,
+    rgba(11,11,13,.97) 100%
   );
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -988,9 +988,9 @@ body.campaign-neon-offer .card-badges .store-badge-campaign.sb-campaign {
   --bh2: 25; --bs2: 80%; --bl2: 55%;
   position: relative;
   background: linear-gradient(168deg,
-    rgba(17,19,24,.94) 0%,
-    rgba(13,15,20,.96) 60%,
-    rgba(11,13,17,.98) 100%
+    rgba(20,20,23,.94) 0%,
+    rgba(15,15,18,.96) 60%,
+    rgba(11,11,13,.98) 100%
   ) !important;
   border: 1px solid rgba(255,255,255,.08) !important;
   border-radius: 1rem !important;
@@ -1379,3 +1379,83 @@ body.campaign-neon-offer .card-badges .store-badge-campaign.sb-campaign {
 
 
 
+
+/* ==========================================================================
+   16. BOLD CARD LOOK — vivid brand presence at rest, stronger hover drama
+   ========================================================================== */
+
+/* Resting state: brand-tinted edge, brand aura, brand top line */
+.product-card {
+  border-color: hsla(var(--bh), var(--bs), var(--bl), .28);
+  box-shadow:
+    inset 0 2px 0 hsla(var(--bh), var(--bs), var(--bl), .55),
+    0 10px 30px rgba(0,0,0,.45),
+    0 6px 24px hsla(var(--bh), var(--bs), var(--bl), .16);
+}
+
+/* Banner header: rich two-tone brand gradient instead of near-black */
+.product-card .product-image {
+  background: linear-gradient(
+    150deg,
+    hsla(var(--bh), calc(var(--bs) * .85), 17%, 1) 0%,
+    hsla(var(--bh2), calc(var(--bs2) * .7), 9%, 1) 55%,
+    rgba(10,10,12,1) 100%
+  );
+}
+
+/* Price: bigger, with a soft brand glow */
+.product-card .price {
+  font-size: 1.55rem;
+  text-shadow: 0 0 22px hsla(var(--bh), var(--bs), var(--bl), .45);
+}
+
+/* Hover: higher lift, slight zoom, full brand border and deep glow */
+.product-card:hover,
+.product-card:focus-within {
+  transform: translateY(-8px) scale(1.012);
+  border-color: hsla(var(--bh), var(--bs), var(--bl), .65);
+  box-shadow:
+    inset 0 2px 0 hsla(var(--bh), var(--bs), calc(var(--bl) + 10%), .8),
+    0 26px 55px rgba(0,0,0,.55),
+    0 14px 38px hsla(var(--bh), var(--bs), var(--bl), .3);
+}
+
+/* Deal cards: the same bold treatment */
+.flash-deal-card.fdc-rich {
+  border-color: hsla(var(--bh), var(--bs), var(--bl), .35) !important;
+  box-shadow:
+    inset 0 2px 0 hsla(var(--bh), var(--bs), var(--bl), .5),
+    0 10px 28px rgba(0,0,0,.45),
+    0 6px 22px hsla(var(--bh), var(--bs), var(--bl), .18) !important;
+}
+.flash-deal-card.fdc-rich .fdc-top {
+  background: radial-gradient(
+    ellipse at 50% 60%,
+    hsla(var(--bh), var(--bs), var(--bl), .34) 0%,
+    rgba(12,12,15,.96) 85%
+  ) !important;
+}
+.flash-deal-card.fdc-rich .fdc-price {
+  font-size: 1.45rem;
+  text-shadow: 0 0 20px hsla(var(--bh), var(--bs), var(--bl), .45);
+}
+.flash-deal-card.fdc-rich:hover {
+  transform: translateY(-7px) scale(1.012) !important;
+  border-color: hsla(var(--bh), var(--bs), var(--bl), .7) !important;
+  box-shadow:
+    inset 0 2px 0 hsla(var(--bh), var(--bs), calc(var(--bl) + 10%), .8),
+    0 22px 48px rgba(0,0,0,.55),
+    0 12px 34px hsla(var(--bh), var(--bs), var(--bl), .32) !important;
+}
+
+@media (max-width: 639px) {
+  .product-card .price { font-size: 1.2rem; }
+  .flash-deal-card.fdc-rich .fdc-price { font-size: 1.25rem; }
+  .product-card:hover, .product-card:focus-within { transform: translateY(-4px); }
+  .flash-deal-card.fdc-rich:hover { transform: translateY(-4px) !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .product-card:hover, .product-card:focus-within,
+  .flash-deal-card.fdc-rich:hover { transform: none !important; }
+}

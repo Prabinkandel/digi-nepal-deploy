@@ -241,3 +241,33 @@
   .gt-item { padding: 1.4rem 1.3rem 1.3rem; }
   .gaming-reviews .review-card { padding: 1.4rem 1.3rem 1.2rem; }
 }
+/* Card harmony: review cards get the same top light line as product and
+   explorer cards, and keyboard focus gets the same lift/glow as hover. */
+.review-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 1.2rem; right: 1.2rem; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.16) 30%, rgba(255,255,255,.16) 70%, transparent);
+  pointer-events: none;
+}
+.gt-item:focus-within {
+  transform: translateY(-5px);
+  border-color: color-mix(in srgb, var(--acc, #e50914) 45%, rgba(255,255,255,.1));
+  box-shadow:
+    0 18px 44px rgba(0,0,0,.5),
+    0 0 0 1px color-mix(in srgb, var(--acc, #e50914) 14%, transparent),
+    0 10px 34px color-mix(in srgb, var(--acc, #e50914) 14%, transparent);
+}
+.review-card:focus-within {
+  transform: translateY(-6px);
+  border-color: rgba(229,9,20,.38);
+  box-shadow: 0 22px 50px rgba(0,0,0,.5), 0 0 0 1px rgba(229,9,20,.12);
+}
+
+/* Bold look: trust and review cards carry more colour at rest. */
+.gt-item { border-color: color-mix(in srgb, var(--acc, #e50914) 24%, rgba(255,255,255,.06)); }
+.gt-icon {
+  background: color-mix(in srgb, var(--acc, #e50914) 20%, rgba(255,255,255,.02));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 6px 18px color-mix(in srgb, var(--acc, #e50914) 22%, transparent);
+}
+.review-card { border-color: rgba(229,9,20,.18); }
