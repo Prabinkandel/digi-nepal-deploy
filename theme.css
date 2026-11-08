@@ -1,0 +1,653 @@
+/* ==========================================================================
+   Digi Nepal — UI Refinement Layer (theme.css)
+   Loaded LAST on every page (after card-clean.css on the storefront, after
+   admin-mobile.css in the admin panel), so these rules win on equal
+   specificity. Nothing in the existing stylesheets is modified.
+
+   Contents:
+   1. Refinement for BOTH themes — declutter, animation diet, calmer motion
+      tokens, small typography/spacing tidy-ups.
+   2. Toggle button styling (sun/moon, 44px touch target).
+   3. LIGHT THEME — [data-theme="light"] on <html>: token redefinition from
+      tokens.css / admin.css plus targeted fixes for hard-coded dark
+      surfaces that tokens cannot flip. Brand colours (--red, per-brand
+      card rings, badges, logo banners) are identical in both themes.
+   4. Global prefers-reduced-motion support.
+
+   The theme attribute is set before first paint by an inline snippet in
+   each page's <head> (localStorage 'dn-theme', dark default) and flipped
+   by theme.js via the .theme-toggle buttons.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Refinement — both themes
+   -------------------------------------------------------------------------- */
+
+/* Calmer motion scale: no transition or intro runs longer than 200ms. */
+:root {
+  --motion-base: 200ms;
+  --motion-slow: 200ms;
+  --motion-intro: 200ms;
+  color-scheme: dark;
+}
+
+/* Declutter: purely decorative layers never render. The mouse-follow glow
+   and the per-card ambient glow carry no information; the brand ring on
+   each card (card-clean.css) keeps the colour. */
+.card-glow,
+.mouse-light {
+  display: none !important;
+}
+
+/* Animation diet — decorative loops off. One-shot entrances, skeleton
+   shimmers and loading spinners are functional and stay. */
+.card-a { animation: card-a-intro 450ms var(--motion-emphasis) both; }
+.card-b { animation: card-b-intro 450ms var(--motion-emphasis) both; }
+.card-c { animation: card-c-intro 450ms var(--motion-emphasis) both; }
+.hero-art::before,
+.hero-art::after { animation: none; }
+.whatsapp-float { animation: none; }
+.proof-dot { animation: none; }
+.sp-live-dot { animation: none; }
+.card-meta-stock::before { animation: none; box-shadow: none; }
+.dur-pill.active::after { animation: none; }
+.plan-option.selected::after { animation: none; }
+.pd-price-card::before { animation: none; }
+.product-card:hover::before,
+.product-card:focus-within::before { animation: none; }
+.login-card::before { animation: none; }
+
+/* Spacing tidy: the oversized final CTA and footer top padding come down
+   one step on the existing --space scale for a calmer page rhythm. */
+.final-cta { padding-block: var(--space-7); }
+.footer { padding-top: var(--space-6); }
+
+/* Typography tidy: body copy keeps a comfortable measure, product
+   descriptions get the same line-height as the rest of the body text. */
+.product-desc { line-height: 1.5; }
+
+@media (max-width: 640px) {
+  /* Hero headline is oversized on phones — cap it slightly. */
+  .hero h1 {
+    font-size: clamp(1.8rem, 8.4vw, 2.35rem);
+    line-height: 1.08;
+  }
+  /* Section rhythm on mobile follows the --space scale exactly. */
+  .section { padding-block: var(--space-6); }
+}
+
+/* --------------------------------------------------------------------------
+   2. Theme toggle button
+   Sun shows in dark mode (tap for light), moon in light mode (tap for
+   dark). Icon visibility is driven by [data-theme] so it is correct
+   before theme.js runs.
+   -------------------------------------------------------------------------- */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  padding: 0;
+  border: 1px solid var(--line, rgba(255, 255, 255, .12));
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted, #a7a7a7);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background var(--ease, 200ms ease), color var(--ease, 200ms ease), border-color var(--ease, 200ms ease);
+}
+.theme-toggle:hover {
+  background: rgba(127, 127, 140, .14);
+  color: var(--text, #f4f4f5);
+}
+.theme-toggle:focus-visible {
+  outline: 2px solid var(--red-bright, #ff1f32);
+  outline-offset: 2px;
+}
+.theme-toggle svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+.theme-toggle .icon-moon { display: none; }
+[data-theme="light"] .theme-toggle .icon-sun { display: none; }
+[data-theme="light"] .theme-toggle .icon-moon { display: block; }
+
+/* Admin sidebar: the toggle sits at the right of the brand row. The brand
+   uses gradient-clipped text; the button is an SVG control, so it only
+   needs its own surface and the inherited text colour reset. */
+.sidebar-brand .theme-toggle {
+  margin-left: auto;
+  border-color: var(--border, rgba(255, 255, 255, .12));
+  background: var(--surface2, rgba(255, 255, 255, .06));
+  color: var(--text2, #94a3b8);
+  -webkit-text-fill-color: currentColor;
+}
+
+/* --------------------------------------------------------------------------
+   3. Light theme — tokens
+   -------------------------------------------------------------------------- */
+[data-theme="light"] {
+  color-scheme: light;
+
+  /* Storefront tokens (tokens.css) */
+  --black: #f6f6f8;
+  --surface: #ffffff;
+  --surface-raised: #f0f0f3;
+  --card: #ffffff;
+  --card-hover: #f6f6f8;
+  --text: #16161a;
+  --text-muted: #55565c;
+  --text-faint: #8a8b91;
+  --line: rgba(0, 0, 0, .09);
+  --line-strong: rgba(0, 0, 0, .16);
+  --red-wash: rgba(229, 9, 20, .08);
+  --success: #177245;
+  --save-green: #0b8a5f;
+  --info-blue: #2f6fd0;
+  --warn-amber: #b45309;
+  --shadow: 0 18px 50px rgba(0, 0, 0, .13);
+  --elevation-1: 0 1px 2px rgba(0, 0, 0, .06);
+  --elevation-2: 0 6px 18px rgba(0, 0, 0, .08);
+  --elevation-3: 0 16px 42px rgba(0, 0, 0, .12);
+  --elevation-brand: 0 14px 38px rgba(229, 9, 20, .14);
+  --bg-soft: #f6f6f8;
+
+  /* Admin-only token names (admin.css) — unused on storefront pages.
+     --shadow is shared, so the admin value lives in the body:has() block
+     below where it cannot leak into storefront dialogs. */
+  --bg: #f4f5f7;
+  --bg2: #ffffff;
+  --surface2: #f1f2f6;
+  --surface3: #e6e8ef;
+  --border: rgba(15, 18, 30, .1);
+  --border-hover: rgba(99, 102, 241, .45);
+  --text2: #4b5265;
+  --text3: #7c8499;
+  --blue-light: #4f46e5;
+  --violet-light: #7c3aed;
+  --amber-light: #d97706;
+  --pink-light: #db2777;
+  --cyan: #0891b2;
+  --grad-cool: linear-gradient(135deg, #0891b2, #6366f1);
+
+  /* Auth dialog shadow (auth.css) */
+  --auth-shadow: 0 1.75rem 5rem rgba(0, 0, 0, .18), 0 .35rem 1.4rem rgba(229, 9, 20, .06);
+}
+
+/* Admin panel shadow token (admin.css --shadow on the shared name). */
+[data-theme="light"] body:has(#admin-app) {
+  --shadow: 0 8px 32px rgba(15, 18, 30, .1);
+}
+
+/* --------------------------------------------------------------------------
+   3a. Light theme — storefront surfaces
+   -------------------------------------------------------------------------- */
+[data-theme="light"] body {
+  background: #f6f6f8;
+}
+
+/* Header / navigation */
+[data-theme="light"] .nav-shell {
+  background: rgba(255, 255, 255, .86);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, .08);
+}
+[data-theme="light"] .page-nav-shell {
+  background: rgba(255, 255, 255, .86);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, .08);
+}
+[data-theme="light"] .nav-links a:hover,
+[data-theme="light"] .footer a:hover,
+[data-theme="light"] .footer-link:hover,
+[data-theme="light"] .page-footer a:hover,
+[data-theme="light"] .page-nav-shell .page-nav-links a:hover {
+  color: var(--text);
+}
+[data-theme="light"] .icon-button:hover {
+  background: rgba(0, 0, 0, .06);
+  color: var(--text);
+}
+[data-theme="light"] .menu-button span {
+  background: var(--text);
+}
+[data-theme="light"] .text-link {
+  color: var(--text);
+}
+[data-theme="light"] .ticker-strip {
+  background: rgba(0, 0, 0, .02);
+  border-top-color: rgba(0, 0, 0, .08);
+  border-bottom-color: rgba(0, 0, 0, .08);
+}
+
+/* Headings that were hard-coded white */
+[data-theme="light"] .hero h1,
+[data-theme="light"] .section-heading h2,
+[data-theme="light"] .reason-copy h2,
+[data-theme="light"] .faq-layout h2,
+[data-theme="light"] .final-cta h2,
+[data-theme="light"] .catalog-heading h2,
+[data-theme="light"] .dialog h2,
+[data-theme="light"] summary,
+[data-theme="light"] .page-hero h1,
+[data-theme="light"] .page-content-grid h2,
+[data-theme="light"] .page-content-grid h3,
+[data-theme="light"] .page-content-grid strong,
+[data-theme="light"] .legal-content h2,
+[data-theme="light"] .legal-content h3,
+[data-theme="light"] .legal-content strong,
+[data-theme="light"] .about-card h3,
+[data-theme="light"] .team-member h4,
+[data-theme="light"] .contact-item h3,
+[data-theme="light"] .contact-form-wrapper h2,
+[data-theme="light"] .contact-success h3,
+[data-theme="light"] .account-user-info h3,
+[data-theme="light"] .account-panel h2,
+[data-theme="light"] .mfa-step h4,
+[data-theme="light"] .auth-panel h2 {
+  color: var(--text);
+}
+[data-theme="light"] .hero h1 em,
+[data-theme="light"] .page-hero h1 em,
+[data-theme="light"] .final-cta em {
+  color: #6d6d74;
+}
+
+/* Hero + section bands */
+[data-theme="light"] .hero {
+  background:
+    radial-gradient(ellipse 40% 43% at 80% 42%, rgba(229, 9, 20, .08), transparent 70%),
+    linear-gradient(115deg, #ffffff 45%, #faf4f4);
+}
+[data-theme="light"] .service-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, .96), rgba(246, 246, 248, .94));
+  box-shadow: 0 18px 50px rgba(0, 0, 0, .12);
+}
+[data-theme="light"] .service-mark {
+  background: #f0f0f3;
+}
+[data-theme="light"] .verified {
+  background: rgba(23, 114, 69, .12);
+}
+[data-theme="light"] .trustbar {
+  background: #ffffff;
+}
+[data-theme="light"] .faq-section {
+  background: #ffffff;
+}
+[data-theme="light"] .footer,
+[data-theme="light"] .page-footer {
+  background: #ffffff;
+}
+[data-theme="light"] .flash-sale-section {
+  background: #f6f6f8;
+}
+
+/* Category tabs + toolbar + pagination */
+[data-theme="light"] .category:hover,
+[data-theme="light"] .category.active {
+  color: #c00711;
+}
+[data-theme="light"] .catalog-toolbar {
+  background: #ffffff;
+}
+[data-theme="light"] .catalog-sort select {
+  color: var(--text);
+}
+[data-theme="light"] .page-button:not(.active) {
+  color: var(--text);
+}
+
+/* --------------------------------------------------------------------------
+   3b. Light theme — cards (brand rings and badges keep their colours)
+   -------------------------------------------------------------------------- */
+[data-theme="light"] .product-card:not(.skeleton):not(:has(.sb-dashain-emblem)) {
+  background:
+    linear-gradient(168deg, #ffffff 0%, #fdfdfd 55%, #fafafa 100%) padding-box,
+    linear-gradient(150deg,
+      hsla(var(--bh), var(--bs), var(--bl), .62) 0%,
+      hsla(var(--bh2), var(--bs2), var(--bl2), .40) 38%,
+      hsla(var(--bh), var(--bs), var(--bl), .16) 68%,
+      hsla(var(--bh2), var(--bs2), var(--bl2), .50) 100%) border-box;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, .05),
+    0 10px 28px rgba(0, 0, 0, .07),
+    0 6px 22px hsla(var(--bh), var(--bs), var(--bl), .06);
+}
+[data-theme="light"] .product-card:not(.skeleton):not(:has(.sb-dashain-emblem)):hover,
+[data-theme="light"] .product-card:not(.skeleton):not(:has(.sb-dashain-emblem)):focus-within {
+  background:
+    linear-gradient(168deg, #ffffff 0%, #ffffff 55%, #fbfbfb 100%) padding-box,
+    linear-gradient(150deg,
+      hsla(var(--bh), var(--bs), var(--bl), .85) 0%,
+      hsla(var(--bh2), var(--bs2), var(--bl2), .58) 38%,
+      hsla(var(--bh), var(--bs), var(--bl), .28) 68%,
+      hsla(var(--bh2), var(--bs2), var(--bl2), .70) 100%) border-box;
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, .05),
+    0 18px 40px rgba(0, 0, 0, .1),
+    0 10px 30px hsla(var(--bh), var(--bs), var(--bl), .1);
+}
+[data-theme="light"] .product-card:has(.sb-dashain-emblem) {
+  background: #ffffff;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, .05),
+    0 10px 28px rgba(0, 0, 0, .08),
+    0 6px 22px rgba(225, 29, 72, .08);
+}
+[data-theme="light"] .flash-deal-card.fdc-rich {
+  background:
+    linear-gradient(168deg, #ffffff 0%, #fdfdfd 60%, #fafafa 100%) padding-box,
+    linear-gradient(150deg,
+      hsla(var(--bh), var(--bs), var(--bl), .62) 0%,
+      hsla(var(--bh2), var(--bs2), var(--bl2), .40) 38%,
+      hsla(var(--bh), var(--bs), var(--bl), .16) 68%,
+      hsla(var(--bh2), var(--bs2), var(--bl2), .50) 100%) border-box !important;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, .05),
+    0 10px 26px rgba(0, 0, 0, .07),
+    0 6px 20px hsla(var(--bh), var(--bs), var(--bl), .06) !important;
+}
+[data-theme="light"] .flash-deal-card.fdc-rich:hover {
+  background:
+    linear-gradient(168deg, #ffffff 0%, #ffffff 60%, #fbfbfb 100%) padding-box,
+    linear-gradient(150deg,
+      hsla(var(--bh), var(--bs), var(--bl), .85) 0%,
+      hsla(var(--bh2), var(--bs2), var(--bl2), .58) 38%,
+      hsla(var(--bh), var(--bs), var(--bl), .28) 68%,
+      hsla(var(--bh2), var(--bs2), var(--bl2), .70) 100%) border-box !important;
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, .05),
+    0 16px 36px rgba(0, 0, 0, .1),
+    0 10px 28px hsla(var(--bh), var(--bs), var(--bl), .1) !important;
+}
+
+/* Card media areas + skeleton loaders */
+[data-theme="light"] .product-card .product-image {
+  background: radial-gradient(ellipse at 50% 60%, #ffffff, #eff0f3 100%);
+}
+[data-theme="light"] .fdc-top {
+  background: radial-gradient(ellipse at 50% 60%, #ffffff, #eff0f3 100%);
+}
+[data-theme="light"] .flash-deal-thumb {
+  background: linear-gradient(135deg, #fdf0f0, #f6f6f8);
+}
+[data-theme="light"] .product-card.skeleton {
+  background: #ececef;
+  border-color: rgba(0, 0, 0, .05);
+}
+[data-theme="light"] .product-card.skeleton::after,
+[data-theme="light"] .skeleton::after {
+  background: linear-gradient(100deg, #ececef 34%, #f8f8fa 48%, #ececef 62%);
+}
+[data-theme="light"] .product-monogram {
+  background: linear-gradient(145deg, #ececf0, #e0e0e6);
+  border-color: rgba(0, 0, 0, .08);
+  color: var(--text);
+}
+[data-theme="light"] .deal-card {
+  background: linear-gradient(170deg, rgba(229, 9, 20, .05), #ffffff 58%);
+}
+[data-theme="light"] .deal-card .product-monogram,
+[data-theme="light"] .deal-card .deal-thumb,
+[data-theme="light"] .discovery-card .compact-product-image {
+  background: #f0f0f3;
+}
+[data-theme="light"] .discovery-card:hover {
+  background: rgba(0, 0, 0, .04);
+}
+[data-theme="light"] .cat-explorer-card {
+  background: linear-gradient(165deg, #ffffff 0%, #f7f7f9 100%);
+}
+[data-theme="light"] .cat-explorer-card.active {
+  background: linear-gradient(165deg, #fdf1f2 0%, #ffffff 100%);
+}
+[data-theme="light"] .sp-thumb {
+  background: linear-gradient(135deg, #ececf0, #e2e2e6);
+}
+[data-theme="light"] .pd-related-card {
+  background: #ffffff;
+}
+[data-theme="light"] .card-action {
+  background: #f6f6f8;
+}
+
+/* Plan pills (card-premium hover washes were white-on-dark) */
+[data-theme="light"] .dur-pill:hover {
+  background: rgba(0, 0, 0, .05);
+  color: var(--text);
+}
+[data-theme="light"] .dur-pill.is-out,
+[data-theme="light"] .dur-pill.is-out:hover {
+  border-color: rgba(0, 0, 0, .14);
+  background: rgba(0, 0, 0, .03);
+  color: rgba(60, 60, 70, .55);
+}
+
+/* --------------------------------------------------------------------------
+   3c. Light theme — dialogs, forms, account views
+   -------------------------------------------------------------------------- */
+[data-theme="light"] .dialog {
+  background: #ffffff;
+}
+[data-theme="light"] .product-detail-image {
+  background: linear-gradient(160deg, #ffffff, #f1f1f4);
+}
+[data-theme="light"] .pd-price-card {
+  background: #ffffff;
+  border-color: var(--line-strong);
+}
+[data-theme="light"] .search-field input,
+[data-theme="light"] .search-result {
+  color: var(--text);
+}
+[data-theme="light"] .search-result:hover,
+[data-theme="light"] .search-result:focus,
+[data-theme="light"] .search-result:focus-visible {
+  background: rgba(0, 0, 0, .05);
+}
+[data-theme="light"] .form-label input {
+  background: #ffffff;
+  color: var(--text);
+}
+[data-theme="light"] .form-error {
+  color: #d61f2c;
+}
+[data-theme="light"] .order-item {
+  background: #ffffff;
+}
+[data-theme="light"] .status {
+  background: rgba(0, 0, 0, .06);
+}
+[data-theme="light"] .status.verified,
+[data-theme="light"] .status.delivered {
+  background: rgba(23, 114, 69, .12);
+}
+[data-theme="light"] .status.rejected {
+  background: rgba(229, 9, 20, .1);
+  color: #b91c1c;
+}
+[data-theme="light"] .toast,
+[data-theme="light"] .sp-toast {
+  background: #ffffff;
+  color: var(--text);
+}
+[data-theme="light"] .sp-toast {
+  border-color: var(--line-strong);
+}
+
+/* Auth dialog */
+[data-theme="light"] .auth-aside {
+  background: linear-gradient(145deg, #fdf1f2, #f6f6f8 63%);
+}
+[data-theme="light"] .auth-aside h3 {
+  color: var(--text);
+}
+[data-theme="light"] .auth-field input,
+[data-theme="light"] .auth-field input:focus {
+  background: #ffffff;
+  color: var(--text);
+}
+[data-theme="light"] .auth-field input:hover {
+  border-color: rgba(0, 0, 0, .28);
+}
+[data-theme="light"] .auth-link,
+[data-theme="light"] .auth-switch button {
+  color: var(--text);
+}
+[data-theme="light"] .auth-alert {
+  color: #b91c1c;
+}
+[data-theme="light"] .auth-google:hover {
+  border-color: rgba(0, 0, 0, .3);
+  background: rgba(0, 0, 0, .04);
+}
+[data-theme="light"] .password-toggle:hover {
+  background: rgba(0, 0, 0, .06);
+  color: var(--text);
+}
+[data-theme="light"] .auth-dialog .dialog-close,
+[data-theme="light"] .account-dialog .dialog-close {
+  background: rgba(255, 255, 255, .65);
+}
+[data-theme="light"] .account-menu button {
+  color: var(--text);
+}
+[data-theme="light"] .account-menu .nav-login {
+  color: var(--text);
+}
+[data-theme="light"] .account-menu .nav-login:hover {
+  border-color: rgba(0, 0, 0, .3);
+  background: rgba(0, 0, 0, .04);
+}
+[data-theme="light"] .account-menu .nav-logout:hover {
+  color: var(--text);
+}
+
+/* --------------------------------------------------------------------------
+   3d. Light theme — content pages + account settings (pages.css)
+   -------------------------------------------------------------------------- */
+[data-theme="light"] .contact-form-wrapper {
+  background: #ffffff;
+}
+[data-theme="light"] .account-sidebar {
+  background: #f6f6f8;
+}
+[data-theme="light"] .contact-form input,
+[data-theme="light"] .contact-form textarea,
+[data-theme="light"] .contact-form select,
+[data-theme="light"] .settings-field input {
+  background: #ffffff;
+  color: var(--text);
+}
+[data-theme="light"] .mfa-secret-code {
+  background: #f0f0f3;
+  color: var(--text);
+}
+[data-theme="light"] .recovery-codes code {
+  background: #f0f0f3;
+}
+[data-theme="light"] .team-avatar {
+  background: linear-gradient(145deg, var(--red-wash), #e8e8ec);
+}
+[data-theme="light"] .account-user-avatar {
+  background: linear-gradient(145deg, var(--red-wash), #e8e8ec);
+}
+[data-theme="light"] .account-nav-item:hover {
+  background: rgba(0, 0, 0, .05);
+  color: var(--text);
+}
+[data-theme="light"] .account-nav-item.active {
+  color: #c00711;
+}
+[data-theme="light"] .mfa-badge.disabled {
+  background: rgba(0, 0, 0, .05);
+}
+
+/* --------------------------------------------------------------------------
+   3e. Light theme — checkout / payment / Free Fire (storefront-polish.css)
+   Brand-coloured buttons (WhatsApp green, payment brands) keep their
+   colours; only the dark panels flip.
+   -------------------------------------------------------------------------- */
+[data-theme="light"] .checkout-product-bar,
+[data-theme="light"] .payment-total,
+[data-theme="light"] .payment-success-summary,
+[data-theme="light"] .profile-details-grid {
+  background: #f6f6f8;
+}
+[data-theme="light"] .payment-option-card,
+[data-theme="light"] .payment-qr-card,
+[data-theme="light"] .profile-card {
+  background: #ffffff;
+}
+[data-theme="light"] .free-fire-section {
+  background: linear-gradient(180deg, #ffffff 0%, #fdf3ea 55%, #ffffff 100%);
+}
+[data-theme="light"] .free-fire-card,
+[data-theme="light"] .ff-pkg {
+  background: #ffffff;
+}
+[data-theme="light"] .ff-pkg:hover {
+  background: #fdf6ee;
+}
+[data-theme="light"] .ff-pay-btn {
+  background: #f0f0f3;
+}
+
+/* --------------------------------------------------------------------------
+   3f. Light theme — admin panel (admin.css)
+   Most of the panel is driven by the admin tokens redefined above; these
+   are the hard-coded surfaces tokens cannot reach.
+   -------------------------------------------------------------------------- */
+[data-theme="light"] .sidebar {
+  background: #ffffff;
+}
+[data-theme="light"] .topbar {
+  background: rgba(255, 255, 255, .88);
+}
+[data-theme="light"] .login-screen {
+  background:
+    radial-gradient(ellipse at 25% 20%, rgba(99, 102, 241, .1), transparent 55%),
+    radial-gradient(ellipse at 80% 85%, rgba(236, 72, 153, .07), transparent 50%),
+    var(--bg);
+}
+[data-theme="light"] .login-card {
+  background: #ffffff;
+}
+[data-theme="light"] .stock-input {
+  color: var(--text);
+}
+[data-theme="light"] .stat-card.violet .stat-card-val {
+  color: #7c3aed;
+}
+[data-theme="light"] .toast.error {
+  color: #dc2626;
+}
+[data-theme="light"] .drawer-close:hover {
+  color: #dc2626;
+}
+[data-theme="light"] tr:hover td {
+  background: rgba(99, 102, 241, .05);
+}
+
+/* --------------------------------------------------------------------------
+   4. Reduced motion — everything settles instantly
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
