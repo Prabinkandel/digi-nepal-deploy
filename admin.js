@@ -175,6 +175,25 @@ function renderMfaVerify(){
       </div>
       <div id="mfa-verify-err" style="color:var(--sale);font-size:.82rem;margin-bottom:14px" hidden></div>
       <button class="btn-primary full" id="mfa-verify-btn">Verify &amp; continue</button>
+    </div>
+    <div class="table-wrap" style="max-width:520px;margin:24px auto 0;padding:30px">
+      <h3 style="margin-bottom:8px">🔑 Change Password</h3>
+      <p style="color:var(--text3);font-size:.85rem;margin:0 0 20px">Update the password for your admin account. You will be signed out and asked to sign in again with the new password.</p>
+      <div class="form-group">
+        <label>Current password</label>
+        <input type="password" id="pw-current" placeholder="Your current password" autocomplete="current-password"/>
+      </div>
+      <div class="form-group">
+        <label>New password</label>
+        <input type="password" id="pw-new" placeholder="Your new password" autocomplete="new-password"/>
+        <p style="font-size:.72rem;color:var(--text3);margin:6px 0 0">At least 12 characters, with upper- and lower-case letters, a number and a symbol.</p>
+      </div>
+      <div class="form-group">
+        <label>Confirm new password</label>
+        <input type="password" id="pw-confirm" placeholder="Repeat your new password" autocomplete="new-password"/>
+      </div>
+      <div id="pw-change-err" style="color:var(--sale);font-size:.82rem;margin-bottom:14px" hidden></div>
+      <button class="btn-primary full" id="pw-change-btn">Change password</button>
     </div>`;
   $('mfa-verify-btn').onclick=async()=>{
     const code=$('mfa-verify-code').value.trim();const errEl=$('mfa-verify-err');
@@ -185,6 +204,19 @@ function renderMfaVerify(){
       toast('Verified! Welcome back.');
       renderDashboard();
     }catch(e){ errEl.textContent=escapeHtml(e.message);errEl.hidden=false; }
+  };
+  $('pw-change-btn').onclick=async()=>{
+    const current=$('pw-current').value;const next=$('pw-new').value;const confirmNext=$('pw-confirm').value;const errEl=$('pw-change-err');
+    if(!current||!next||!confirmNext){errEl.textContent='Fill in all three password fields.';errEl.hidden=false;return;}
+    if(next!==confirmNext){errEl.textContent='New password and confirmation do not match.';errEl.hidden=false;return;}
+    errEl.hidden=true;
+    const btn=$('pw-change-btn');btn.disabled=true;btn.textContent='Changing...';
+    try{
+      const r=await api('/auth/password',{method:'POST',body:JSON.stringify({current_password:current,password:next})});
+      toast(r.message||'Password changed. Please sign in again.');
+      csrf='';
+      setTimeout(()=>location.reload(),1200);
+    }catch(e){ errEl.textContent=escapeHtml(e.message);errEl.hidden=false;btn.disabled=false;btn.textContent='Change password'; }
   };
   $('mfa-verify-code').focus();
 }

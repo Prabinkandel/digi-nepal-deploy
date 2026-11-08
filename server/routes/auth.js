@@ -16,6 +16,20 @@ const localAutoVerify = !production && process.env.LOCAL_AUTH_AUTO_VERIFY === 't
 const dummyHash = bcrypt.hashSync(randomBytes(32).toString('hex'), 12);
 const safe = user => ({ id: user.id, name: user.name, email: user.email, role: user.role, mfa_enabled: !!user.mfa_enabled });
 const credentials = z.object({ email, password: z.string().min(1).max(256), code: text(32).default('') }).strict();
+const TRUST_COOKIE = production ? '__Host-dn.trust' : 'dn.trust';
+const TRUST_COOKIE_OPTIONS = { path: '/', httpOnly: true, sameSite: 'lax', secure: production, maxAge: 30 * 24 * 3600 * 1000 };
+function readCookie(req, name) {
+  const header = req.headers && req.headers.cookie;
+  if (typeof header !== 'string') return undefined;
+  for (const part of header.split(';')) {
+    const eq = part.indexOf('=');
+    if (eq === -1) continue;
+    if (part.slice(0, eq).trim() !== name) continue;
+    const raw = part.slice(eq + 1).trim();
+    try { return decodeURIComponent(raw); } catch { return raw; }
+  }
+  return undefined;
+}
 const emailLimit = limit('auth-email', 10, 900, req => typeof req.body.email === 'string' ? req.body.email.trim().toLowerCase() : req.ip);
 const limited = [limit('auth-ip', 40, 900), emailLimit];
 async function signIn(req, user, verified = false) {
@@ -153,8 +167,16 @@ router.post('/login', limited, async (req, res, next) => {
     const user = await User.findOne({ email: data.email }).select('+mfa_secret +recovery_codes');
     const valid = await bcrypt.compare(data.password, user?.password || dummyHash);
     if (!valid || !user || user.is_active !== 1) fail(401, 'Invalid email or password.');
-    if (user.mfa_enabled && !data.code) return res.status(200).json({ requires_mfa: true });
+    if (user.mfa_enabled && !data.code) {
+      if (await mfa.checkTrust(readCookie(req, TRUST_COOKIE), user)) {
+        res.cookie(TRUST_COOKIE, await mfa.issueTrust(user), TRUST_COOKIE_OPTIONS);
+        await Audit.create({ actor_id: user.id, action: 'SIGN_IN', target: 'account', outcome: 'completed', status: 200 });
+        return res.json(await signIn(req, user, true));
+      }
+      return res.status(200).json({ requires_mfa: true });
+    }
     if (user.mfa_enabled && !await mfa.verify(user, data.code)) fail(401, 'Invalid or already used verification code.');
+    if (user.mfa_enabled) res.cookie(TRUST_COOKIE, await mfa.issueTrust(user), TRUST_COOKIE_OPTIONS);
     await Audit.create({ actor_id: user.id, action: 'SIGN_IN', target: 'account', outcome: 'completed', status: 200 });
     res.json(await signIn(req, user, user.mfa_enabled));
   } catch (err) {
@@ -203,8 +225,10 @@ router.post('/password',auth,limit('password',6,900,req=>req.user.id),async(req,
   const data=z.object({ current_password:z.string().max(256), password }).strict().parse(req.body);
   const user=await User.findOne({id:req.user.id});
   if(!await bcrypt.compare(data.current_password,user.password)) fail(400,'Current password is incorrect.');
+  const wasVerified=!!req.session.mfaVerified;
   await User.updateOne({id:user.id},{password:await bcrypt.hash(data.password,12),$inc:{auth_version:1}});
   await Audit.create({actor_id:user.id,action:'PASSWORD_CHANGE',target:'account',outcome:'completed',status:200});
+  if(wasVerified&&user.mfa_enabled) res.cookie(TRUST_COOKIE,await mfa.issueTrust({id:user.id,auth_version:(user.auth_version||0)+1}),TRUST_COOKIE_OPTIONS);
   await new Promise((resolve,reject)=>req.session.destroy(e=>e?reject(e):resolve()));
   res.json({message:'Password changed. Please sign in again.'});
 });
