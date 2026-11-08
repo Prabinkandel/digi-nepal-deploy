@@ -657,6 +657,100 @@
 }
 
 /* --------------------------------------------------------------------------
+   3b-4. Light theme — gaming trust cards, review cards, social-proof
+   toast (hotfix 3). The PR #17–#19 sweeps left three surfaces dark in
+   white mode: gaming-trust.css paints the section on var(--black) with
+   near-black gradient cards, and store-ui.css paints the "just
+   ordered" toast near-black. White mode should be white, so the whole
+   gaming section and the toast flip here.
+   -------------------------------------------------------------------------- */
+/* Section shell: ambient red/blue washes stay, the black base goes
+   (the light --black token is #f6f6f8) and the white grid overlay
+   becomes a faint dark grid. */
+[data-theme="light"] .gaming-trust-section {
+  background:
+    radial-gradient(58% 46% at 50% 0%, rgba(229, 9, 20, .07) 0%, transparent 70%),
+    radial-gradient(40% 34% at 88% 8%, rgba(96, 165, 250, .1) 0%, transparent 70%),
+    var(--black);
+}
+[data-theme="light"] .gaming-trust-section::before {
+  background-image:
+    linear-gradient(rgba(0, 0, 0, .045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, .045) 1px, transparent 1px);
+}
+
+/* Trust cards: white surface, token border, dark text. The hover/focus
+   lift keeps the accent glow but trades the black drop shadow for a
+   soft one. The icon chip keeps its per-card accent as a light tint. */
+[data-theme="light"] .gt-item {
+  background: var(--card);
+  border-color: var(--line);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+[data-theme="light"] .gt-item:hover,
+[data-theme="light"] .gt-item:focus-within {
+  border-color: color-mix(in srgb, var(--acc, #e50914) 45%, transparent);
+  box-shadow:
+    0 18px 44px rgba(0, 0, 0, .1),
+    0 0 0 1px color-mix(in srgb, var(--acc, #e50914) 14%, transparent),
+    0 10px 34px color-mix(in srgb, var(--acc, #e50914) 12%, transparent);
+}
+[data-theme="light"] .gt-icon {
+  border-color: color-mix(in srgb, var(--acc, #e50914) 30%, transparent);
+  background: color-mix(in srgb, var(--acc, #e50914) 12%, #fff);
+  box-shadow: inset 0 0 22px color-mix(in srgb, var(--acc, #e50914) 10%, transparent);
+}
+[data-theme="light"] .gt-item h3 { color: var(--text); }
+[data-theme="light"] .gt-item p { color: var(--text-muted); }
+
+/* Review cards: same flip. The decorative quote mark and top light
+   line become faint dark marks, the stars keep an amber that reads on
+   white (the light --warn-amber token, #b45309), and the verified
+   badge keeps its green family at light-theme strength. */
+[data-theme="light"] .gaming-reviews .review-card {
+  background: var(--card);
+  border-color: var(--line);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+[data-theme="light"] .gaming-reviews .review-card:hover,
+[data-theme="light"] .gaming-reviews .review-card:focus-within {
+  border-color: rgba(229, 9, 20, .38);
+  box-shadow: 0 22px 50px rgba(0, 0, 0, .1), 0 0 0 1px rgba(229, 9, 20, .12);
+}
+[data-theme="light"] .gaming-reviews .review-card::before { color: rgba(0, 0, 0, .06); }
+[data-theme="light"] .review-card::after {
+  background: linear-gradient(90deg, transparent, rgba(0, 0, 0, .12) 30%, rgba(0, 0, 0, .12) 70%, transparent);
+}
+[data-theme="light"] .gaming-reviews .eyebrow { color: #c00711; }
+[data-theme="light"] .gaming-reviews .review-card blockquote { color: var(--text); }
+[data-theme="light"] .gaming-reviews .review-card figcaption { border-top-color: var(--line); }
+[data-theme="light"] .rc-stars { color: var(--warn-amber); text-shadow: none; }
+[data-theme="light"] .rc-id strong { color: var(--text); }
+[data-theme="light"] .rc-id small { color: var(--text-muted); }
+[data-theme="light"] .rc-verified {
+  color: #0a7a54;
+  background: rgba(10, 122, 84, .1);
+  border-color: rgba(10, 122, 84, .35);
+}
+
+/* Social-proof toast: white pill, token border, soft shadow. The name
+   was hard-coded #fff and the meta used the faint token (3.4:1 on
+   white); both take the readable text tokens. The thumb monogram sat
+   white on the lightened .sp-thumb gradient from 3b, so it darkens
+   with the toast. */
+[data-theme="light"] .sp-toast {
+  background: rgba(255, 255, 255, .97);
+  border-color: var(--line-strong);
+  color: var(--text);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, .14);
+}
+[data-theme="light"] .sp-name { color: var(--text); }
+[data-theme="light"] .sp-meta { color: var(--text-muted); }
+[data-theme="light"] .sp-thumb-mono { color: var(--text); }
+
+/* --------------------------------------------------------------------------
    3c. Light theme — dialogs, forms, account views
    -------------------------------------------------------------------------- */
 [data-theme="light"] .dialog {
@@ -860,6 +954,33 @@
 }
 [data-theme="light"] tr:hover td {
   background: rgba(99, 102, 241, .05);
+}
+
+/* --------------------------------------------------------------------------
+   3g. Discount badges — solid in both themes (hotfix 3 addendum)
+   User screenshot (dark mode): the "-89% OFF" pill on the Prime Video
+   card washes out — card-premium.css paints .store-badge-save with the
+   product's brand hue at 18% alpha plus a lightened brand text colour,
+   and the badge row overlaps the white logo banner, so the wash and
+   the text both disappear against it. PR #19 solidified this badge in
+   light mode only; this block makes it solid in BOTH themes.
+   Specificity (0,3,0) beats card-premium.css (0,2,0) and store-ui.css
+   (0,1,0), theme.css loads last on every page, and the block sits
+   after the 3b-3 light rule carrying the same background and colour,
+   so dark and light resolve identically. White on #065f46 is 7.68:1 —
+   readable over white banners and dark cards alike. The stock badge
+   shares the same green-wash tokens in store-ui.css, so it gets the
+   same solid treatment; .store-badge-featured keeps its blue wash.
+   -------------------------------------------------------------------------- */
+.product-card .card-badges .store-badge-save,
+.product-card .card-badges .store-badge-stock {
+  background: #065f46;
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, .35);
+  font-weight: 700;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .35);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 /* --------------------------------------------------------------------------

@@ -343,11 +343,11 @@ function themeVarsString(theme) {
    fallback: it is used only when a product has no image of its own — an image
    uploaded in the admin otherwise wins. */
 const BRAND_LOGOS = {
-  'netflix 4k': '/logos/netflix.svg',
+  'netflix 4k': '/logos/netflix.svg?v=2',
   'spotify premium': '/logos/spotify.svg',
   'canva pro': '/logos/canva.svg',
   'chatgpt plus': '/logos/chatgpt.svg',
-  'gemini ai pro': '/logos/gemini.svg',
+  'gemini ai pro': '/logos/gemini.svg?v=2',
   'capcut pro': '/logos/capcut.svg',
   'prime video': '/logos/prime-video.svg'
 };
