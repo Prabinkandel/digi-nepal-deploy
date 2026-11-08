@@ -608,6 +608,55 @@
 [data-theme="light"] .pd-related-card span { color: var(--text); }
 
 /* --------------------------------------------------------------------------
+   3b-3. Light theme — product detail dialog TEXT + card save badge (hotfix 2)
+   Section 3c flipped the dialog surface to white, but the dialog's own
+   text stayed in dark-theme colours: the product name (.pd-layout h1 is
+   --white), the price (a white-to-pink gradient clipped into the text),
+   its label and the delivery step copy (pale rgba whites, !important in
+   card-premium). Same class of bug as 3b-2, one shared .pd-* template.
+   -------------------------------------------------------------------------- */
+/* Product name + category eyebrow */
+[data-theme="light"] .pd-layout h1 { color: var(--text); }
+[data-theme="light"] .pd-category { color: #c00711; }
+
+/* Price: kill the white gradient text; label in the deep red used
+   across this layer (6.4:1 on white). */
+[data-theme="light"] .pd-price-main b {
+  background: none;
+  color: var(--text);
+  -webkit-text-fill-color: var(--text);
+}
+[data-theme="light"] .pd-price-main small { color: #c00711; }
+[data-theme="light"] .pd-price-side s { color: var(--text-muted); }
+
+/* Reassure list: the white 7% top border vanishes on white. */
+[data-theme="light"] .pd-reassure { border-top-color: var(--line); }
+
+/* Delivery steps: body copy and step titles are pale/white with
+   !important in card-premium, so the light values are !important too.
+   The step number chip keeps its red-wash disc; only its numeral
+   deepens to the same readable red. */
+[data-theme="light"] .pd-delivery li .pd-step-body,
+[data-theme="light"] .pd-delivery li > div {
+  color: var(--text-muted) !important;
+}
+[data-theme="light"] .pd-delivery b { color: var(--text) !important; }
+[data-theme="light"] .pd-delivery li::before { color: #c00711 !important; }
+
+/* Catalogue card save badge: the base paints it with the product's own
+   brand hue at 18% alpha + a lightened brand text colour — washed out
+   on the white card. Mirror the .fdc-save-pill fix (solid deep green +
+   white text, 7.7:1). */
+[data-theme="light"] .card-badges .store-badge-save {
+  background: #065f46;
+  border-color: #065f46;
+  color: #fff;
+  box-shadow: 0 3px 10px rgba(6, 95, 70, .25);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* --------------------------------------------------------------------------
    3c. Light theme — dialogs, forms, account views
    -------------------------------------------------------------------------- */
 [data-theme="light"] .dialog {
