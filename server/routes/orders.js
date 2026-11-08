@@ -160,4 +160,16 @@ router.put('/:id/status',admin,async(req,res)=>{
  res.json(order);
 });
 
+router.delete('/bulk-all',admin,async(req,res)=>{
+ const result=await Order.deleteMany({});
+ res.json({deleted:result.deletedCount||0});
+});
+
+router.delete('/:id',admin,async(req,res)=>{
+ const orderId=id.parse(req.params.id);
+ const order=await Order.findOneAndDelete({id:orderId});
+ if(!order)fail(404,'Order not found.');
+ res.json({message:'Order deleted'});
+});
+
 module.exports=router;

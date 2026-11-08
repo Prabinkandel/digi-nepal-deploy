@@ -540,6 +540,7 @@ async function renderOrders(){
       <div class="section-header">
         <h2>Orders <span style="color:var(--text3);font-weight:400;font-size:1rem" id="orders-count">(${orders.length})</span></h2>
         <div style="display:flex;gap:10px;align-items:center;">
+          ${orders.length?`<button class="btn-danger" id="erase-all-orders">Erase all orders</button>`:''}
           <input class="search-box" id="order-search" placeholder="Search Order ID / Ref, Customer, Product..." style="width:280px;font-size:.85rem;padding:7px 12px;"/>
           <select class="filter-select" id="order-filter">
             <option value="">All Status</option>
@@ -577,6 +578,7 @@ async function renderOrders(){
       window._orderSearchTimer = setTimeout(filterOrders, 300);
     });
     $('order-filter').onchange = filterOrders;
+    attachOrderActions(orders);
   } catch(e) {
     $('page-content').innerHTML = `<div style="color:var(--sale);padding:20px">${e.message}</div>`;
   }
@@ -597,6 +599,7 @@ function renderOrderRows(orders){
           ${['pending','verified','rejected','delivered'].map(s=>`<option value="${s}" ${o.status===s?'selected':''}>${s}</option>`).join('')}
         </select>
         <a href="https://wa.me/9779705985657?text=${encodeURIComponent(o.wa_message||'')}" target="_blank" class="btn-success btn-sm">WA</a>
+        <button class="btn-danger btn-sm del-order" data-id="${o.id}">Delete</button>
       </div></td>
     </tr>`).join('');
 }
@@ -608,7 +611,35 @@ window.updateOrderStatus=async function(sel,id){
   }catch(e){toast(e.message,'error');}
 };
 
-function attachOrderActions(){}
+function attachOrderActions(orders){
+  // Event delegation on the tbody so Delete buttons also work on rows
+  // re-rendered by the search/filter path (which replaces tbody HTML only).
+  const tbody=$('orders-tbody');
+  if(tbody){
+    tbody.addEventListener('click',e=>{
+      const btn=e.target.closest('.del-order');if(!btn)return;
+      const oid=btn.dataset.id;
+      const ref=oid.split('-')[0].toUpperCase();
+      confirm(`Delete order #${ref} permanently? This cannot be undone.`,async()=>{
+        try{
+          await api(`/orders/${oid}`,{method:'DELETE'});
+          toast('Order deleted');renderOrders();
+        }catch(err){toast(err.message,'error');}
+      });
+    });
+  }
+  const eraseBtn=$('erase-all-orders');
+  if(eraseBtn){
+    eraseBtn.onclick=()=>{
+      confirm(`ERASE ALL ${orders.length} order records permanently? This cannot be undone.`,async()=>{
+        try{
+          await api('/orders/bulk-all',{method:'DELETE'});
+          toast('All orders erased');renderOrders();
+        }catch(err){toast(err.message,'error');}
+      });
+    };
+  }
+}
 
 // OFFERS
 async function renderOffers(){
