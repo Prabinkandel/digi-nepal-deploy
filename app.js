@@ -339,20 +339,57 @@ function themeVarsString(theme) {
 }
 
 /* Official brand logo banners bundled with the site (/logos/*.svg, composed
-   at the exact 1200x600 product-image fit). Used only when a product has no
-   image of its own — an image uploaded in the admin always wins. */
+   at the exact 1200x600 product-image fit). For most families the banner is a
+   fallback: it is used only when a product has no image of its own — an image
+   uploaded in the admin otherwise wins. */
 const BRAND_LOGOS = {
   'netflix 4k': '/logos/netflix.svg',
   'spotify premium': '/logos/spotify.svg',
   'canva pro': '/logos/canva.svg',
   'chatgpt plus': '/logos/chatgpt.svg',
-  'gemini ai pro': '/logos/gemini.svg'
+  'gemini ai pro': '/logos/gemini.svg',
+  'capcut pro': '/logos/capcut.svg',
+  'prime video': '/logos/prime-video.svg'
 };
 function brandLogoFor(name) { return BRAND_LOGOS[baseKey(name || '')] || ''; }
+
+/* Families whose bundled original-logo banner ALWAYS wins over an
+   admin-uploaded image (the store owner asked for the original logos on
+   these cards; the previous uploads were a square app icon and a clipped
+   low-res crop that CSS cannot fix). All other families keep
+   admin-image-first. */
+const BRAND_LOGO_OVERRIDE = new Set(['chatgpt plus', 'capcut pro', 'prime video']);
+function brandLogoOverrideFor(name) {
+  const key = baseKey(name || '');
+  return BRAND_LOGO_OVERRIDE.has(key) ? (BRAND_LOGOS[key] || '') : '';
+}
+
+/* Absolute URL helpers for messages that leave the site (e.g. WhatsApp),
+   where relative paths like /logos/... or /api/media/... would not resolve. */
+const SITE_ORIGIN = 'https://www.diginepalnp.com';
+function absoluteMediaUrl(url) {
+  const u = String(url || '').trim();
+  if (!u) return '';
+  if (/^https?:\/\//i.test(u)) return u;
+  return SITE_ORIGIN + (u.startsWith('/') ? u : '/' + u);
+}
+/* The image a card/detail shows for this product, as an absolute URL:
+   override logo first for the override families, then the product's own
+   image, then the bundled fallback logo. '' when there is none. */
+function productImageUrlFor(product) {
+  if (!product) return '';
+  const override = brandLogoOverrideFor(product.name);
+  if (override) return absoluteMediaUrl(override);
+  if (product.image_url) return absoluteMediaUrl(product.image_url);
+  const logo = brandLogoFor(product.name);
+  return logo ? absoluteMediaUrl(logo) : '';
+}
 
 function productVisual(product, compact = false) {
   const brandVisual = getBrandEmblem(product.name);
   const cls = 'product-image' + (compact ? ' compact-product-image' : '');
+  const overrideLogo = brandLogoOverrideFor(product.name);
+  if (overrideLogo) return '<div class="' + cls + '"><img src="' + overrideLogo + '" alt="' + escapeHtml(product.name || '') + '" loading="lazy" decoding="async" onload="this.classList.add(\'loaded\')"></div>';
   if (!product.image_url) {
     const logo = brandLogoFor(product.name);
     if (logo) return '<div class="' + cls + '"><img src="' + logo + '" alt="' + escapeHtml(product.name || '') + '" loading="lazy" decoding="async" onload="this.classList.add(\'loaded\')"></div>';
@@ -463,8 +500,9 @@ function displayNameOf(name) {
 }
 function baseKey(name) {
   const k = String(name || '').trim().toLowerCase();
-  // CapCut Pro + its pre-activated variant are one product family -> one card.
-  if (k === 'capcut pro' || k === 'capcut pro (pre-activated, 2 devices)') return 'capcut pro';
+  // CapCut Pro + any parenthetical tier variant ("CapCut Pro (1 Device)",
+  // "CapCut Pro (Pre-activated, 2 Devices)", ...) are one product family.
+  if (k === 'capcut pro' || /^capcut pro\s*\(/.test(k)) return 'capcut pro';
   const stripped = stripDurationSuffix(k);
   return stripped || k;
 }
@@ -486,7 +524,11 @@ function groupProducts(products) {
     g.variants.sort((a, b) => Number(a.price) - Number(b.price));
     g.minPrice = Math.min(...g.variants.map(v => Number(v.price || 0)));
     g.featured = g.variants.some(v => Number(v.featured) === 1);
-    g.stockOut = g.variants.some(v => Number(v.stock_out) === 1);
+    // Card-level stock-out banner only when EVERY variant is flagged out;
+    // a single flagged plan is handled per-pill (see durationPills) so the
+    // card stays sellable while other plans remain. For a single-variant
+    // group this is identical to the old any-variant rule.
+    g.stockOut = g.variants.every(v => Number(v.stock_out) === 1);
     const withSaving = g.variants.map(v => ({ v, s: savingsOf(v) })).filter(x => x.s).sort((a, b) => b.s.percent - a.s.percent);
     g.bestSaving = withSaving.length ? withSaving[0].s : null;
     const dashainVariant = g.variants.find(v => (v.badge && v.badge.toLowerCase().includes('dashain')) || (v.offer_label && v.offer_label.toLowerCase().includes('dashain')));
@@ -546,6 +588,15 @@ function durationPills(group) {
   const dupes = duplicateDurations(variants);
   const pills = variants.map(v => {
     const label = dupes.get(durationOf(v) || v.name) > 1 ? planVariantTail(v) : (durationPillLabel(v) || v.name);
+    // A plan flagged stock_out (but not stock-count exhausted) stays visible
+    // as a disabled pill so customers can see the plan exists, but it cannot
+    // be selected or ordered.
+    if (Number(v.stock_out) === 1) {
+      return '<button type="button" class="dur-pill is-out" data-pill-variant="' + escapeHtml(v.id) + '" disabled aria-disabled="true" title="Out of stock">' +
+        '<span class="dur-pill-label">' + escapeHtml(label) + '</span>' +
+        '<span class="dur-pill-out">Out of stock</span>' +
+      '</button>';
+    }
     return '<button type="button" class="dur-pill" data-pill-variant="' + escapeHtml(v.id) + '" aria-pressed="false">' +
       '<span class="dur-pill-label">' + escapeHtml(label) + '</span>' +
       '<span class="dur-pill-price">' + formatMoney(v.price) + '</span>' +
@@ -563,10 +614,11 @@ function wireDurationPills(card) {
   const ctxEl = card.querySelector('.price-context');
   const buyBtn = card.querySelector('.card-buy[data-group-view]');
   const activate = (pill) => {
+    if (!pill || pill.disabled) return;
     pills.forEach(p => {
       const on = p === pill;
       p.classList.toggle('active', on);
-      p.setAttribute('aria-pressed', String(on));
+      if (!p.disabled) p.setAttribute('aria-pressed', String(on));
     });
     const variantId = pill.dataset.pillVariant;
     const group = state.groupByKey?.get(card.dataset.groupKey);
@@ -576,8 +628,9 @@ function wireDurationPills(card) {
     if (ctxEl) ctxEl.textContent = 'SELECTED';
     if (buyBtn) buyBtn.dataset.selectedVariant = variant.id;
   };
-  pills.forEach(pill => { pill.onclick = (e) => { e.stopPropagation(); activate(pill); }; });
-  const defaultPill = card.querySelector('.duration-pills .dur-pill');
+  pills.forEach(pill => { pill.onclick = (e) => { e.stopPropagation(); if (!pill.disabled) activate(pill); }; });
+  // Default-select the first selectable (in-stock) pill, never a disabled one.
+  const defaultPill = card.querySelector('.duration-pills .dur-pill:not([disabled])');
   if (defaultPill) { activate(defaultPill); }
 }
 
@@ -1001,6 +1054,8 @@ function selectCategory(category) {
 
 function detailVisual(product) {
   const brandVisual = getBrandEmblem(product.name);
+  const overrideLogo = brandLogoOverrideFor(product.name);
+  if (overrideLogo) return '<img src="' + overrideLogo + '" alt="' + escapeHtml(product.name) + '" loading="eager" decoding="async" onload="this.classList.add(\'loaded\')">';
   if (!product.image_url) {
     const logo = brandLogoFor(product.name);
     if (logo) return '<img src="' + logo + '" alt="' + escapeHtml(product.name) + '" loading="eager" decoding="async" onload="this.classList.add(\'loaded\')">';
@@ -1042,13 +1097,15 @@ function planOptionCard(variant, selected, duplicateDuration = false) {
   const duration = durationOf(variant);
   const saving = savingsOf(variant);
   const inStock = variant.stock === undefined || variant.stock === null || Number(variant.stock) > 0;
+  const flaggedOut = Number(variant.stock_out) === 1;
+  const unavailable = !inStock || flaggedOut;
   const variantTail = !duplicateDuration ? '' : ('<span class="plan-tail"> · ' + escapeHtml(planVariantTail(variant)) + '</span>');
-  return '<button type="button" class="plan-option' + (selected ? ' selected' : '') + '" data-plan="' + escapeHtml(variant.id) + '"' + (inStock ? '' : ' disabled') + ' aria-pressed="' + (selected ? 'true' : 'false') + '">' +
+  return '<button type="button" class="plan-option' + (selected ? ' selected' : '') + (flaggedOut ? ' is-out' : '') + '" data-plan="' + escapeHtml(variant.id) + '"' + (unavailable ? ' disabled' : '') + ' aria-pressed="' + (selected ? 'true' : 'false') + '">' +
     '<span class="plan-duration">' + escapeHtml(duration || variant.name) + variantTail + '</span>' +
     '<span class="plan-price">' + formatMoney(variant.price) + '</span>' +
     (variant.original_price && Number(variant.original_price) > Number(variant.price) ? '<span class="plan-was">' + formatMoney(variant.original_price) + '</span>' : '') +
     (saving ? '<span class="price-save">Save ' + saving.percent + '%</span>' : '') +
-    (!inStock ? '<span class="plan-out">Unavailable</span>' : '') +
+    (flaggedOut ? '<span class="plan-out">Out of stock</span>' : (!inStock ? '<span class="plan-out">Unavailable</span>' : '')) +
   '</button>';
 }
 
@@ -1063,7 +1120,7 @@ function renderGroupDetail(group, preselectVariantId) {
   const variants = selectedGroupVariants(group);
   const preIndex = preselectVariantId ? variants.findIndex(v => v.id === preselectVariantId) : -1;
   const chosen = preIndex >= 0 ? variants[preIndex] : null;
-  const fallback = chosen || variants.find(v => v.stock === undefined || v.stock === null || Number(v.stock) > 0) || variants[0];
+  const fallback = chosen || variants.find(v => Number(v.stock_out) !== 1 && (v.stock === undefined || v.stock === null || Number(v.stock) > 0)) || variants[0];
   const features = (fallback.features || []).map(feature => '<li>' + escapeHtml(feature) + '</li>').join('');
   const dupes = duplicateDurations(variants);
   $('product-detail').innerHTML = '<div class="pd-layout">' +
@@ -1077,7 +1134,7 @@ function renderGroupDetail(group, preselectVariantId) {
         '<p class="pd-summary">' + escapeHtml(fallback.description || 'Choose a plan, then start your order.') + '</p>' +
       '</div>' +
       '<section class="pd-block pd-plans" aria-label="Choose a plan"><h2>Choose a plan · ' + variants.length + ' options</h2><div class="plan-grid" id="plan-grid">' +
-        variants.map((v, i) => planOptionCard(v, preIndex >= 0 ? v.id === chosen.id : i === 0, dupes.get(durationOf(v) || v.name) > 1)).join('') +
+        variants.map(v => planOptionCard(v, v.id === fallback.id, dupes.get(durationOf(v) || v.name) > 1)).join('') +
       '</div></section>' +
       '<div class="pd-price-card">' +
         '<div class="pd-price-top">' +
@@ -1954,6 +2011,14 @@ function handleRoute() {
   const hash = (window.location.hash || '').toLowerCase();
   if (hash === '#free-fire' || hash === '#product=free-fire' || hash.includes('free-fire') || hash.includes('freefire')) {
     openFreeFireProduct();
+  } else if (hash.startsWith('#product=')) {
+    // Per-product link (used by the WhatsApp order message): open that
+    // product's detail dialog. The id keeps its original case.
+    const pid = (window.location.hash || '').slice('#product='.length).split('&')[0];
+    if (pid) {
+      closeFreeFireProduct();
+      try { openProduct(decodeURIComponent(pid)); } catch { openProduct(pid); }
+    }
   } else if (hash.includes('category=gaming') || hash === '#gaming') {
     closeFreeFireProduct();
     const gamingCat = state.categories.find(c => (c.name || '').toLowerCase().includes('gaming'));
@@ -2087,6 +2152,50 @@ function setupDiscoveryAutoScroll() {
   }, 90);
 }
 
+/* Designed WhatsApp order message (WhatsApp formatting: *bold*, emojis,
+   separator lines). Includes the product's own page link (#product=<id>,
+   which opens its detail dialog), its image/logo as an absolute URL on its
+   own line (WhatsApp renders a preview thumbnail for a URL in the message —
+   a wa.me text message cannot attach an image file), the plan/duration,
+   price, order date in Asia/Kathmandu time, the order reference when an
+   order was created, and the customer's name/email when logged in. */
+function buildWhatsAppOrderMessage({ product, order, user } = {}) {
+  const name = (order && order.product_name) || (product ? product.name : 'Subscription');
+  const price = order ? formatMoney(order.price) : (product ? formatMoney(product.price) : '');
+  const duration = product ? durationOf(product) : '';
+  // For CapCut-style device tiers the parentheses distinguish the plan.
+  const tail = product ? planVariantTail(product) : '';
+  const planLabel = duration && tail && tail !== 'Standard' && !duration.includes(tail)
+    ? duration + ' (' + tail + ')'
+    : duration;
+  const dateStr = new Date().toLocaleString('en-GB', {
+    timeZone: 'Asia/Kathmandu', day: 'numeric', month: 'short', year: 'numeric',
+    hour: 'numeric', minute: '2-digit', hour12: true
+  });
+  const imageUrl = productImageUrlFor(product);
+  const productId = (order && order.product_id) || (product ? product.id : '');
+  const lines = [
+    '*🛒 New Order — Digi Nepal*',
+    '━━━━━━━━━━━━━━━',
+    '📦 *Product:* ' + name,
+  ];
+  if (planLabel) lines.push('🗓️ *Plan:* ' + planLabel);
+  if (price) lines.push('💰 *Price:* ' + price);
+  lines.push('📅 *Date:* ' + dateStr);
+  if (order) lines.push('🔖 *Order Reference:* #' + paymentReference(order));
+  if (user) {
+    if (user.name) lines.push('👤 *Name:* ' + user.name);
+    if (user.email) lines.push('📧 *Email:* ' + user.email);
+  }
+  if (productId) lines.push('🔗 *Product:* ' + SITE_ORIGIN + '/#product=' + encodeURIComponent(productId));
+  if (imageUrl) lines.push('🖼️ ' + imageUrl);
+  lines.push('━━━━━━━━━━━━━━━');
+  lines.push(order
+    ? 'Please confirm my order. Thank you! 🙏'
+    : 'Please share the payment details (eSewa / Khalti / QR). Thank you! 🙏');
+  return lines.join('\n');
+}
+
 async function startWhatsAppOrder(productId) {
   if (!productId) return;
 
@@ -2113,8 +2222,7 @@ async function startWhatsAppOrder(productId) {
   if (state.user) {
     try {
       const order = await api('/orders', { method: 'POST', body: JSON.stringify({ product_id: productId, request_key: generateUUID() }) });
-      const ref = paymentReference(order);
-      const message = 'Hello Digi Prime Nepal, I want to order ' + order.product_name + ' (' + formatMoney(order.price) + '). Order reference: #' + ref;
+      const message = buildWhatsAppOrderMessage({ product, order, user: state.user });
       window.open('https://wa.me/' + waNumber + '?text=' + encodeURIComponent(message), '_blank', 'noopener');
       closeDialog('product-dialog');
       toast('Order created! Opening WhatsApp to complete details...', 'success');
@@ -2125,7 +2233,7 @@ async function startWhatsAppOrder(productId) {
   }
 
   // Guest order directly to WhatsApp with zero barrier
-  const guestMsg = 'Hello Digi Prime Nepal, I want to order ' + pName + (pPrice ? ' (' + pPrice + ')' : '') + '. Please share payment details (eSewa / Khalti / QR).';
+  const guestMsg = buildWhatsAppOrderMessage({ product });
   window.open('https://wa.me/' + waNumber + '?text=' + encodeURIComponent(guestMsg), '_blank', 'noopener');
   closeDialog('product-dialog');
   toast('Opening WhatsApp to chat with Digi Prime Nepal...', 'success');

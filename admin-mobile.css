@@ -1,0 +1,213 @@
+/* ==========================================================================
+   Digi Nepal Admin — Mobile Polish (admin-mobile.css)
+   Loaded after admin.css in admin.html. Everything here is scoped to
+   <=768px (or coarse pointers) so the desktop admin is untouched.
+
+   Tables use the sticky-first-column compact-scroll pattern instead of a
+   card-row rebuild: the products table carries inline stock inputs and
+   stock-out toggle buttons whose bindings (attachProductActions) re-attach
+   on every search/filter re-render, and a card layout would have needed
+   data-label attributes in every renderer for uncertain gain. With the
+   first column pinned, the product name is always visible while the rest
+   of the row scrolls.
+   ========================================================================== */
+
+/* Sidebar scrim (element + binding added in admin.html / admin.js) */
+.sidebar-scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, .55);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  z-index: 45;
+}
+.sidebar-scrim[hidden] { display: none; }
+
+@media (max-width: 768px) {
+  /* --- Sidebar: above the scrim, big tap targets --- */
+  .sidebar { z-index: 60; }
+  .nav-item {
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+  .btn-logout { min-height: 44px; }
+
+  /* --- Topbar: sticky (already) + notch safe areas --- */
+  .topbar {
+    padding-top: calc(12px + env(safe-area-inset-top, 0px));
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  .sidebar-toggle {
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    margin-left: -8px;
+  }
+  .page-content {
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* --- Forms: 16px inputs stop focus-zoom on iOS/Android --- */
+  .form-group input,
+  .form-group select,
+  .form-group textarea,
+  .search-box input,
+  .filter-select,
+  .stock-input,
+  .login-card input {
+    font-size: 16px;
+  }
+
+  /* --- Drawer: full-screen sheet, sticky bottom action bar --- */
+  .drawer {
+    height: 100dvh;
+  }
+  .drawer-body {
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    overscroll-behavior: contain;
+  }
+  .drawer-body .form-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    display: flex;
+    gap: 10px;
+    margin: 18px -4px -4px;
+    padding: 12px 4px calc(6px + env(safe-area-inset-bottom, 0px));
+    background: linear-gradient(180deg, transparent, var(--surface) 30%);
+    border-top: 1px solid var(--border);
+  }
+  .drawer-body .form-actions .btn-primary,
+  .drawer-body .form-actions .btn-outline {
+    flex: 1;
+    min-height: 48px;
+  }
+
+  /* Featured / Stock-Out checkboxes become large tap-friendly rows */
+  .form-group:has(input[type="checkbox"]) {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface2);
+  }
+  .form-group:has(input[type="checkbox"]) label {
+    flex: 1;
+    margin: 0;
+    font-size: .92rem;
+  }
+  .form-group:has(input[type="checkbox"]) input[type="checkbox"] {
+    width: 26px;
+    height: 26px;
+    flex: none;
+    accent-color: var(--violet);
+  }
+
+  /* Upload zone: comfortable tap area */
+  .upload-zone {
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    text-align: center;
+  }
+
+  /* --- Login: full-width card, comfortable padding --- */
+  .login-screen {
+    padding: max(16px, env(safe-area-inset-top, 0px)) 16px max(16px, env(safe-area-inset-bottom, 0px));
+  }
+  .login-card {
+    width: 100%;
+    max-width: 420px;
+    padding: 30px 22px;
+  }
+  .login-card .btn-primary.full { min-height: 48px; }
+
+  /* --- Toast: spans the bottom width on phones --- */
+  .toast {
+    left: 12px;
+    right: 12px;
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    max-width: none;
+    text-align: center;
+  }
+
+  .confirm-box { max-width: calc(100vw - 2rem); }
+}
+
+@media (max-width: 640px) {
+  /* --- Tables: compact, sticky first column, name wraps --- */
+  .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  table { min-width: 560px; }
+  th, td {
+    padding: 8px 10px;
+    font-size: .8rem;
+  }
+  thead th:first-child,
+  tbody td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: var(--surface);
+    box-shadow: 1px 0 0 var(--border);
+  }
+  thead th:first-child { z-index: 3; }
+  tbody td:first-child {
+    min-width: 148px;
+    max-width: 196px;
+  }
+  .td-name {
+    white-space: normal;
+    overflow-wrap: break-word;
+    line-height: 1.3;
+  }
+  .td-actions {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .td-actions .btn-sm { min-height: 36px; }
+  .stock-input {
+    width: 64px;
+    min-height: 40px;
+    padding: .3rem .45rem;
+  }
+  .stockout-btn {
+    min-height: 32px;
+    padding: .3rem .6rem;
+    font-size: .72rem;
+  }
+}
+
+/* Stat cards stay 2-column even on tiny phones (admin.css drops to 1fr
+   at <=360px; values stay readable at this size). */
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .stat-card { padding: 13px; }
+  .stat-card-val { font-size: 1.3rem; }
+  .stat-card-icon { font-size: 1.3rem; margin-bottom: 6px; }
+  .stat-card-label { font-size: .7rem; }
+}
+
+/* Coarse pointers: comfortable targets everywhere */
+@media (pointer: coarse) {
+  .nav-item { min-height: 48px; }
+  .drawer-close { width: 44px; height: 44px; }
+  .td-actions .btn-sm { min-height: 36px; }
+}
