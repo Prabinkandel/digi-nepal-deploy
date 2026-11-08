@@ -1,0 +1,369 @@
+/* ==========================================================================
+   Digi Nepal — Clean Card Round (card-clean.css)
+   Loaded LAST on the homepage, after card-premium.css / gaming-trust.css /
+   responsive-fix.css, so these rules win on equal specificity.
+
+   What it does — CSS only, no markup or admin/data changes needed:
+   1. Every product card (and flash-deal card) gets a blended colour outline:
+      a 1px gradient ring that blends the card's two brand colours
+      (--bh/--bs/--bl -> --bh2/--bs2/--bl2, set inline by getBrandTheme()
+      in app.js) around the full card, drawn with layered backgrounds so it
+      survives overflow:hidden + border-radius and needs no pseudo-elements
+      (the skeleton shimmer ::after and the stock-out banner stay untouched).
+   2. Calmer, cleaner surface: softer shadow, quieter glow, tidy spacing.
+   3. Mobile-first polish at <=640px: comfortable 2-column grid, consistent
+      banner height so rows align, no price wrapping, >=44px touch targets.
+
+   Scoping notes:
+   - Skeleton cards keep their plain shimmer surface (no gradient ring).
+   - Festive Dashain cards (:has(.sb-dashain-emblem)) keep their red/gold
+     border-color treatment from card-premium.css, so the transparent-border
+     ring is NOT applied to them — only the calmer shadow below.
+   - Stock-out cards (.is-out) keep the ring (dimmed) and the existing
+     rotated banner + dimmed image from card-premium.css.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Blended brand-colour outline + clean surface — product cards
+   -------------------------------------------------------------------------- */
+.product-card:not(.skeleton):not(:has(.sb-dashain-emblem)) {
+  border: 1px solid transparent;
+  border-radius: 1.1rem;
+  background:
+    linear-gradient(168deg,
+      rgba(21, 21, 25, .97) 0%,
+      rgba(16, 16, 19, .98) 55%,
+      rgba(12, 12, 15, .99) 100%) padding-box,
+    linear-gradient(150deg,
+      hsla(var(--bh), var(--bs), var(--bl), .62) 0%,
+      hsla(var(--bh2), var(--bs2), var(--bl2), .40) 38%,
+      hsla(var(--bh), var(--bs), var(--bl), .16) 68%,
+      hsla(var(--bh2), var(--bs2), var(--bl2), .50) 100%) border-box;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, .30),
+    0 10px 28px rgba(0, 0, 0, .28),
+    0 6px 22px hsla(var(--bh), var(--bs), var(--bl), .07);
+}
+
+/* Hover / keyboard focus — ring brightens, lift stays gentle */
+.product-card:not(.skeleton):not(:has(.sb-dashain-emblem)):hover,
+.product-card:not(.skeleton):not(:has(.sb-dashain-emblem)):focus-within {
+  transform: translateY(-4px);
+  background:
+    linear-gradient(168deg,
+      rgba(23, 23, 28, .97) 0%,
+      rgba(17, 17, 21, .98) 55%,
+      rgba(13, 13, 16, .99) 100%) padding-box,
+    linear-gradient(150deg,
+      hsla(var(--bh), var(--bs), var(--bl), .85) 0%,
+      hsla(var(--bh2), var(--bs2), var(--bl2), .58) 38%,
+      hsla(var(--bh), var(--bs), var(--bl), .28) 68%,
+      hsla(var(--bh2), var(--bs2), var(--bl2), .70) 100%) border-box;
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, .30),
+    0 18px 40px rgba(0, 0, 0, .42),
+    0 10px 30px hsla(var(--bh), var(--bs), var(--bl), .13);
+}
+
+/* Festive Dashain cards: keep the red/gold border, only calm the shadow */
+.product-card:has(.sb-dashain-emblem) {
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, .30),
+    0 10px 28px rgba(0, 0, 0, .30),
+    0 6px 22px rgba(225, 29, 72, .10);
+}
+
+/* Skeleton cards: plain shimmer surface, no ring, no brand shadow */
+.product-card.skeleton {
+  background: #101216;
+  border: 1px solid rgba(255, 255, 255, .05);
+  box-shadow: none;
+}
+
+/* Stock-out cards: ring stays but quieter; banner + dimmed image unchanged */
+.product-card.is-out .card-glow {
+  opacity: .3;
+}
+
+/* Quieter ambient glow everywhere — the ring now carries the colour */
+.product-card .card-glow {
+  opacity: .45;
+}
+.product-card:hover .card-glow {
+  opacity: .65;
+}
+
+/* --------------------------------------------------------------------------
+   2. Cleaner body spacing, tidy price row and plan pills (all widths)
+   -------------------------------------------------------------------------- */
+.product-card {
+  min-width: 0;
+}
+
+.product-card .card-visual {
+  flex: none;
+}
+
+.card-body {
+  padding: .9rem 1rem 1.05rem;
+}
+
+.product-card h3 {
+  overflow-wrap: break-word;
+}
+
+.product-card .price-row {
+  flex-wrap: nowrap;
+}
+
+.product-card .price,
+.product-card .was-price {
+  white-space: nowrap;
+}
+
+.product-card .product-actions {
+  margin-top: .65rem;
+}
+
+/* Plan pills: a little more air and a reliable tap target */
+.dur-pill {
+  min-height: 2.1rem;
+  padding: .42rem .72rem;
+}
+
+/* --------------------------------------------------------------------------
+   3. Flash-deal cards — same blended outline, calmer surface
+   (card-premium.css sets these with !important, so matched here)
+   -------------------------------------------------------------------------- */
+.flash-deal-card.fdc-rich {
+  border: 1px solid transparent !important;
+  border-radius: 1.1rem !important;
+  background:
+    linear-gradient(168deg,
+      rgba(21, 21, 25, .97) 0%,
+      rgba(16, 16, 19, .98) 60%,
+      rgba(12, 12, 15, .99) 100%) padding-box,
+    linear-gradient(150deg,
+      hsla(var(--bh), var(--bs), var(--bl), .62) 0%,
+      hsla(var(--bh2), var(--bs2), var(--bl2), .40) 38%,
+      hsla(var(--bh), var(--bs), var(--bl), .16) 68%,
+      hsla(var(--bh2), var(--bs2), var(--bl2), .50) 100%) border-box !important;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, .30),
+    0 10px 26px rgba(0, 0, 0, .28),
+    0 6px 20px hsla(var(--bh), var(--bs), var(--bl), .07) !important;
+}
+
+.flash-deal-card.fdc-rich:hover {
+  transform: translateY(-4px) !important;
+  background:
+    linear-gradient(168deg,
+      rgba(23, 23, 28, .97) 0%,
+      rgba(17, 17, 21, .98) 60%,
+      rgba(13, 13, 16, .99) 100%) padding-box,
+    linear-gradient(150deg,
+      hsla(var(--bh), var(--bs), var(--bl), .85) 0%,
+      hsla(var(--bh2), var(--bs2), var(--bl2), .58) 38%,
+      hsla(var(--bh), var(--bs), var(--bl), .28) 68%,
+      hsla(var(--bh2), var(--bs2), var(--bl2), .70) 100%) border-box !important;
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, .30),
+    0 16px 36px rgba(0, 0, 0, .42),
+    0 10px 28px hsla(var(--bh), var(--bs), var(--bl), .13) !important;
+}
+
+.flash-deal-card.fdc-rich .card-glow {
+  opacity: .45;
+}
+
+/* --------------------------------------------------------------------------
+   4. Mobile-first polish — primary target <=640px (phones ~360–420px)
+   -------------------------------------------------------------------------- */
+@media (max-width: 640px) {
+  /* Comfortable 2-column grid; minmax(0,1fr) stops any horizontal overflow */
+  .product-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: .8rem !important;
+  }
+
+  /* Softer still on small screens — almost no glow, gentle ring shadow */
+  .product-card:not(.skeleton) {
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, .28),
+      0 6px 18px rgba(0, 0, 0, .24),
+      0 4px 14px hsla(var(--bh), var(--bs), var(--bl), .06);
+  }
+  .product-card .card-glow {
+    opacity: .3;
+  }
+  .product-card:hover,
+  .product-card:focus-within {
+    transform: none;
+  }
+
+  /* Consistent banner height so cards in a row line up */
+  .product-card .product-image {
+    height: 7.25rem;
+    border-radius: 1.02rem 1.02rem 0 0;
+  }
+
+  /* Tidy body: even rhythm, title always reserves two lines */
+  .card-body {
+    padding: .65rem .7rem .75rem;
+  }
+  .product-card h3 {
+    min-height: calc(1.22em * 2);
+  }
+  .card-meta {
+    margin-bottom: .5rem;
+  }
+
+  /* Price never wraps awkwardly */
+  .product-card .price-row {
+    padding-top: .55rem;
+    gap: .35rem;
+  }
+  .product-card .price {
+    font-size: clamp(.95rem, 4.6vw, 1.08rem);
+  }
+  .product-card .was-price {
+    font-size: .66rem;
+  }
+
+  /* Plan pills: easy to tap */
+  .duration-pills {
+    gap: .35rem;
+    margin-top: .45rem;
+    padding-top: .45rem;
+  }
+  .dur-pill {
+    min-height: 2.5rem;
+    padding: .45rem .6rem;
+  }
+
+  /* Buy / View are full 44px touch targets */
+  .product-card .product-actions {
+    gap: .4rem;
+    margin-top: .55rem;
+  }
+  .product-card .card-buy {
+    min-height: 2.75rem;
+  }
+  .product-card .card-view {
+    min-height: 2.75rem;
+  }
+
+  /* Flash deals: buttons already 44px via mobile-ux.css; calm the lift */
+  .flash-deal-card.fdc-rich:hover {
+    transform: none !important;
+  }
+}
+
+/* Very small phones — keep the same layout, just breathe a little less */
+@media (max-width: 380px) {
+  .product-grid {
+    gap: .65rem !important;
+  }
+  .product-card .product-image {
+    height: 6.75rem;
+  }
+  .card-body {
+    padding: .6rem .62rem .7rem;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   6. Logo / image placement — centred, never cropped or stretched
+   Built-in 1200x600 brand banners and uploaded images alike render with
+   object-fit: contain inside a consistent frame, at the same visual height
+   on mobile and desktop.
+   -------------------------------------------------------------------------- */
+.product-card .product-image img {
+  object-fit: contain;
+  object-position: center;
+  width: 100%;
+  height: 100%;
+  padding: 1.5rem 2.2rem;
+}
+
+.product-detail-image {
+  background: linear-gradient(160deg, rgba(24, 24, 29, .96), rgba(13, 13, 16, .98));
+}
+.product-detail-image img {
+  object-fit: contain;
+  object-position: center;
+  width: 100%;
+  height: 100%;
+  padding: 1.1rem 1.4rem;
+}
+
+@media (max-width: 640px) {
+  .product-card .product-image img {
+    padding: .95rem 1.05rem;
+  }
+  .product-detail-image img {
+    padding: .8rem 1rem;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   7. Per-plan stock-out — disabled pill on the card, disabled option in the
+   product-detail plan picker. Visible, clearly labelled, not selectable.
+   -------------------------------------------------------------------------- */
+.dur-pill.is-out {
+  border-style: dashed;
+  border-color: rgba(255, 255, 255, .10);
+  background: rgba(255, 255, 255, .02);
+  color: rgba(190, 195, 208, .55);
+  cursor: not-allowed;
+  opacity: .75;
+}
+.dur-pill.is-out::before {
+  display: none;
+}
+.dur-pill.is-out:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: rgba(255, 255, 255, .10);
+  background: rgba(255, 255, 255, .02);
+  color: rgba(190, 195, 208, .55);
+}
+.dur-pill-out {
+  padding: .1rem .42rem;
+  border-radius: 100px;
+  background: rgba(220, 38, 38, .16);
+  border: 1px solid rgba(220, 38, 38, .35);
+  color: #f87171;
+  font-size: .58rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.plan-option.is-out {
+  opacity: .62;
+  cursor: not-allowed;
+  border-style: dashed;
+}
+.plan-option.is-out:hover {
+  transform: none;
+}
+
+/* --------------------------------------------------------------------------
+   5. Reduced motion — no lift, no transitions that move things
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .product-card,
+  .flash-deal-card.fdc-rich {
+    transition: none !important;
+  }
+  .product-card:hover,
+  .product-card:focus-within,
+  .flash-deal-card.fdc-rich:hover {
+    transform: none !important;
+  }
+  .dur-pill:hover {
+    transform: none;
+  }
+}

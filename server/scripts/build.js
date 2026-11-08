@@ -6,7 +6,7 @@ const output = path.join(root, 'dist');
 const publicFiles = [
   'index.html', 'admin.html', 'about.html', 'contact.html', 'privacy.html', 'terms.html', 'refund.html',
   'style.css', 'animations.css', 'auth.css', 'storefront-polish.css', 'payment-overrides.css', 'store-ui.css', 'mobile-ux.css',
-  'responsive-fix.css', 'card-premium.css', 'gaming-trust.css', 'admin.css', 'pages.css', 'tokens.css',
+  'responsive-fix.css', 'card-premium.css', 'card-clean.css', 'gaming-trust.css', 'admin.css', 'admin-mobile.css', 'pages.css', 'tokens.css',
   'app.js', 'admin.js', 'pages.js', 'logo.png', 'digi-prime-nepal-logo.png', 'logo mm.png', 'dashain-sale-banner.png', 'dashain-sale-banner.jpg',
   'robots.txt', 'sitemap.xml'
 ];
