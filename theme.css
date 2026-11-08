@@ -431,6 +431,183 @@
 }
 
 /* --------------------------------------------------------------------------
+   3b-2. Light theme — card & section TEXT on flipped surfaces (hotfix)
+   PR #17 flipped the card/section surfaces to white but several text
+   rules in store-ui.css / card-premium.css hard-code white foregrounds
+   (they never referenced the tokens), leaving card names, prices and
+   flash-deal text white-on-white. Every rule below is scoped to
+   [data-theme="light"] with specificity >= the base rule it replaces,
+   so the dark theme is untouched. Buttons/badges with their own solid
+   brand backgrounds (.card-buy, .fdc-btn-buy, .card-discount) and the
+   intentionally dark media areas keep white text on purpose.
+   -------------------------------------------------------------------------- */
+
+/* Flash / Special Offers header — sits on the #f6f6f8 section band */
+[data-theme="light"] .flash-title { color: var(--text); }
+[data-theme="light"] .flash-subtitle { color: var(--text-muted); }
+[data-theme="light"] .flash-badge-text { color: #c00711; }
+[data-theme="light"] .flash-see-all { color: #c00711; }
+[data-theme="light"] .flash-see-all:hover {
+  background: rgba(229, 9, 20, .12);
+  border-color: rgba(229, 9, 20, .5);
+  color: #c00711;
+}
+[data-theme="light"] .flash-cat-tab { color: var(--text); }
+[data-theme="light"] .flash-cat-tab:hover {
+  background: rgba(229, 9, 20, .12);
+  color: var(--text);
+}
+[data-theme="light"] .flash-nav { color: #c00711; }
+[data-theme="light"] .ticker-item { color: var(--text-muted); }
+
+/* Flash deal cards (.fdc-*) — text sits on the white card body */
+[data-theme="light"] .fdc-name,
+[data-theme="light"] .flash-deal-card.fdc-rich .fdc-name { color: var(--text); }
+[data-theme="light"] .flash-deal-card.fdc-rich:hover .fdc-name { color: var(--text); }
+[data-theme="light"] .fdc-price,
+[data-theme="light"] .flash-deal-card.fdc-rich .fdc-price {
+  color: var(--text);
+  text-shadow: none;
+}
+[data-theme="light"] .flash-deal-card.fdc-rich .fdc-dur { color: var(--text-muted); }
+[data-theme="light"] .fdc-was,
+[data-theme="light"] .flash-deal-card.fdc-rich .fdc-was { color: var(--text-muted); }
+[data-theme="light"] .fdc-out-stock { color: #c00711; }
+/* Discount pill: the fdc-rich base uses a translucent brand wash with a
+   light brand tint for text (unreadable on white). Solid deep green +
+   white text instead — 7.7:1. !important mirrors the base rule. */
+[data-theme="light"] .fdc-save-pill {
+  background: #065f46;
+  border: 1px solid #065f46;
+  color: #fff;
+  box-shadow: 0 3px 10px rgba(6, 95, 70, .25);
+}
+[data-theme="light"] .flash-deal-card.fdc-rich .fdc-save-pill {
+  background: #065f46 !important;
+  border: 1px solid #065f46 !important;
+  color: #fff !important;
+  box-shadow: 0 3px 10px rgba(6, 95, 70, .25) !important;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+/* Flash card Details button (the Buy button keeps its red gradient) */
+[data-theme="light"] .fdc-btn-detail {
+  background: rgba(0, 0, 0, .04);
+  border-color: var(--line-strong);
+  color: var(--text);
+}
+[data-theme="light"] .fdc-btn-detail:hover {
+  background: rgba(0, 0, 0, .08);
+  border-color: rgba(0, 0, 0, .28);
+  color: var(--text);
+}
+[data-theme="light"] .flash-deal-card.fdc-rich .fdc-btn-detail {
+  background: rgba(0, 0, 0, .04);
+  border-color: var(--line-strong);
+  color: var(--text);
+}
+[data-theme="light"] .flash-deal-card.fdc-rich .fdc-btn-detail:hover {
+  background: rgba(0, 0, 0, .08);
+  border-color: rgba(0, 0, 0, .28);
+  color: var(--text);
+}
+
+/* Catalogue cards — name, description, meta and price block */
+[data-theme="light"] .product-card h3 { color: var(--text); }
+[data-theme="light"] .product-card:hover h3 { color: var(--text); }
+[data-theme="light"] .product-card .product-desc { color: var(--text-muted); }
+[data-theme="light"] .product-card:hover .product-desc { color: var(--text-muted); }
+[data-theme="light"] .product-card .product-category { color: #c00711; }
+[data-theme="light"] .card-meta-item {
+  background: rgba(0, 0, 0, .04);
+  color: var(--text-muted);
+}
+[data-theme="light"] .card-meta-stock { color: var(--success); }
+[data-theme="light"] .card-meta-stock::before { background: var(--success); }
+[data-theme="light"] .card-meta-stock.is-out { color: var(--warn-amber); }
+[data-theme="light"] .card-meta-stock.is-out::before { background: var(--warn-amber); }
+[data-theme="light"] .product-card .price {
+  color: var(--text);
+  text-shadow: none;
+}
+[data-theme="light"] .product-card .price-context { color: var(--text-muted); }
+[data-theme="light"] .product-card .was-price { color: var(--text-muted); }
+/* Details / Plans button — base colours are !important in card-premium,
+   so the light values are too. */
+[data-theme="light"] .product-card .card-view {
+  background: rgba(0, 0, 0, .04) !important;
+  border-color: var(--line-strong) !important;
+  color: var(--text) !important;
+}
+[data-theme="light"] .product-card .card-view:hover {
+  background: rgba(0, 0, 0, .08) !important;
+  border-color: rgba(0, 0, 0, .28) !important;
+  color: var(--text) !important;
+}
+/* WhatsApp button: bright #25d366 text on a 7% wash is unreadable on
+   white — deep brand green instead (5.9:1). */
+[data-theme="light"] .product-card .card-whatsapp {
+  border-color: rgba(11, 110, 79, .45);
+  color: #0b6e4f;
+}
+
+/* Duration plan pills — default chip + selected state */
+[data-theme="light"] .duration-pills { border-top-color: var(--line); }
+[data-theme="light"] .dur-pill {
+  background: var(--surface-raised);
+  border-color: var(--line-strong);
+  color: var(--text-muted);
+}
+/* Selected: dark chip + white text (17.2:1) — the base selected colours
+   are the bright per-position --pill-color / white on a pale tint. */
+[data-theme="light"] .dur-pill.active {
+  background: #1b1b1f;
+  border-color: var(--pill-color, #ff1f32);
+  color: #fff;
+  box-shadow: 0 3px 14px rgba(0, 0, 0, .22);
+}
+[data-theme="light"] .dur-pill.active .dur-pill-label,
+[data-theme="light"] .dur-pill.active .dur-pill-price { color: #fff; }
+[data-theme="light"] .dur-pill-out { color: #b91c1c; }
+
+/* Catalogue search — white field on the white toolbar */
+[data-theme="light"] .catalog-search input {
+  background: #ffffff;
+  border-color: var(--line-strong);
+  color: var(--text);
+}
+[data-theme="light"] .catalog-search input::placeholder { color: #6d6d74; }
+[data-theme="light"] .catalog-search-clear:hover {
+  background: rgba(0, 0, 0, .07);
+  color: var(--text);
+}
+
+/* Hero stats, category explorer, deals + discovery + related cards —
+   section surfaces that flipped light in PR #17 */
+[data-theme="light"] .hero-stats b { color: var(--text); }
+[data-theme="light"] .cat-card-icon {
+  background: var(--surface-raised);
+  border-color: var(--line);
+  color: var(--text);
+}
+[data-theme="light"] .cat-card-badge {
+  background: rgba(0, 0, 0, .04);
+  border-color: var(--line);
+}
+[data-theme="light"] .cat-card-title { color: var(--text); }
+[data-theme="light"] .cat-card-price { color: var(--text); }
+[data-theme="light"] .deals-heading h2 { color: var(--text); }
+[data-theme="light"] .deal-card-title strong { color: var(--text); }
+[data-theme="light"] .deal-price b { color: var(--text); }
+[data-theme="light"] .deal-cta { color: var(--text); }
+[data-theme="light"] .discovery-heading h2 { color: var(--text); }
+[data-theme="light"] .discovery-card { color: var(--text); }
+[data-theme="light"] .discovery-card b { color: var(--text); }
+[data-theme="light"] .carousel-button { color: var(--text); }
+[data-theme="light"] .pd-related-card strong { color: var(--text); }
+[data-theme="light"] .pd-related-card span { color: var(--text); }
+
+/* --------------------------------------------------------------------------
    3c. Light theme — dialogs, forms, account views
    -------------------------------------------------------------------------- */
 [data-theme="light"] .dialog {
