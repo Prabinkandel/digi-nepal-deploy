@@ -937,8 +937,19 @@ function setupFlashCarousel(deals) {
 }
 
 function dealThumb(product) {
+  /* Resolve exactly like productVisual: override-family bundled logos win
+     over admin uploads, then the product's own image, then the bundled
+     fallback logo, then the generic brand emblem. */
+  const override = brandLogoOverrideFor(product.name);
+  if (override) {
+    return '<img class="deal-thumb" src="' + override + '" alt="" loading="lazy" decoding="async">';
+  }
   if (product.image_url) {
     return '<img class="deal-thumb" src="' + escapeHtml(product.image_url) + '" alt="" loading="lazy" decoding="async" onerror="this.style.display=\'none\';if(this.nextElementSibling)this.nextElementSibling.style.display=\'flex\';"><div style="display:none" class="brand-fallback-wrap">' + getBrandEmblem(product.name) + '</div>';
+  }
+  const logo = brandLogoFor(product.name);
+  if (logo) {
+    return '<img class="deal-thumb" src="' + logo + '" alt="" loading="lazy" decoding="async">';
   }
   return getBrandEmblem(product.name);
 }
