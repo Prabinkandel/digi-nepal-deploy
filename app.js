@@ -76,7 +76,43 @@ async function api(path, options = {}) {
   return payload;
 }
 
-function showDialog(id) { const dialog = $(id); if (dialog && !dialog.open) dialog.showModal(); }
+/* Product-dialog scroll preservation (round 2): opening the product
+   popup can throw the background page back to the top on phones, so the
+   shopper loses their place in the catalogue. Remember window.scrollY
+   when the product dialog opens and restore it when the dialog closes,
+   with behavior:'instant' so the html{scroll-behavior:smooth} rule in
+   style.css does not animate the jump. The restore is suppressed when
+   the close hands off to the Free Fire section (openFreeFireProduct),
+   because that section scrolls itself into view. Only the product
+   dialog is hooked — every open path for it (openProduct, openGroup,
+   openGroupWithPlan, search results, hash routing) funnels through
+   showDialog, and re-opens while it is already open (related products)
+   must not overwrite the saved position. */
+let productDialogScrollY = null;
+let suppressProductScrollRestore = false;
+
+function restoreProductDialogScroll() {
+  const y = productDialogScrollY;
+  productDialogScrollY = null;
+  if (suppressProductScrollRestore) { suppressProductScrollRestore = false; return; }
+  if (y === null) return;
+  window.scrollTo({ top: y, left: 0, behavior: 'instant' });
+}
+
+function showDialog(id) {
+  const dialog = $(id);
+  if (dialog && !dialog.open) {
+    if (id === 'product-dialog') {
+      productDialogScrollY = window.scrollY;
+      suppressProductScrollRestore = false;
+      if (!dialog.dataset.scrollRestoreBound) {
+        dialog.dataset.scrollRestoreBound = '1';
+        dialog.addEventListener('close', restoreProductDialogScroll);
+      }
+    }
+    dialog.showModal();
+  }
+}
 function closeDialog(id) { const dialog = $(id); if (dialog && dialog.open) dialog.close(); }
 function toast(message, type = '') { const item = document.createElement('div'); item.className = 'toast ' + type; item.textContent = message; $('toast-region').append(item); setTimeout(() => item.remove(), 4500); }
 
@@ -1988,6 +2024,10 @@ function bindFreeFireOrder(waNumber) {
 }
 
 function openFreeFireProduct() {
+  /* The FF section scrolls itself into view below; the product
+     dialog's scroll restore (see showDialog) must not fight it. The
+     flag is cleared on the next product-dialog open or close. */
+  suppressProductScrollRestore = true;
   closeDialog('product-dialog');
   const ff = $('free-fire');
   if (ff) {
