@@ -15,6 +15,9 @@
    3i. Design polish round — hero gradient accent + trust strip, section
        rhythm + title accent bars, card hover/press motion inside the
        diet, sticky mobile CTA bar, footer payment chips (both themes).
+   3j. Round 2 — catalog cleanup (calm logo stage, badge lanes, even
+       card heights, uniform plan pills), Free Fire light-theme
+       visibility + mobile package order, dialog scroll hardening.
    4. Global prefers-reduced-motion support.
 
    The theme attribute is set before first paint by an inline snippet in
@@ -1406,6 +1409,214 @@
   .sticky-cta-btn:active {
     transform: none !important;
   }
+}
+
+/* --------------------------------------------------------------------------
+   3j. Round 2 — catalog cleanup, Free Fire visibility/order, dialog
+       scroll hardening
+
+   A. CATALOG CLEANUP. What painted the busy logo stage before this
+      section (load order: style.css -> storefront-polish.css ->
+      store-ui.css -> card-premium.css -> card-clean.css -> theme.css):
+      - style.css: flat dark gradient on .product-image (base only).
+      - storefront-polish.css: red radial wash on .product-image.
+      - store-ui.css §~601: radial wash + a 24px GRID PATTERN on
+        .product-image::before; §~913: red radial wash; §20d: a "lit
+        plinth" radial + a light/shade overlay on ::after + a heavy
+        drop-shadow on the logo img.
+      - card-premium.css §3 (the dark-theme winner): brand-hue gradient
+        stage + a MESH of two brand radial glows on ::before + a bottom
+        fade on ::after + a brand-coloured drop-shadow glow on the img.
+      - card-clean.css §6: no background — object-fit:contain + padding
+        on the img (kept; the logo resolution order in productVisual /
+        dealThumb is untouched).
+      - theme.css §3b (the light-theme winner): white radial wash.
+      - .card-glow ambient blob: already display:none since §1.
+      Badges: .card-badges (card-premium.css) is absolutely positioned
+      at the top of .card-visual — discount pill + FEATURED in the left
+      slot, status/SALE badge in the right slot — directly over the
+      stage, and the logo img's top padding (1.5rem desktop / .95rem
+      mobile) was smaller than the badge row's bottom edge (~2.15rem),
+      so badges sat on the logo (worst case: Prime Video, -89% OFF).
+      The deal card's .fdc-save-pill overlays .fdc-top the same way.
+      The rotated .stock-out-banner is a deliberate diagonal status
+      ribbon for out-of-stock cards (logo dimmed), and the admin
+      campaign banner (.sb-campaign-banner) is a designed full-width
+      strip at the stage's bottom — neither is a corner badge, so both
+      keep their designed positions.
+   -------------------------------------------------------------------------- */
+
+/* A1. Calm stage: one flat token surface in both themes, the grid /
+   mesh patterns and the light/shade fades off, and a soft neutral
+   shadow under the logo instead of the brand-coloured glow. */
+.product-card .product-image {
+  background: var(--surface-raised);
+}
+[data-theme="light"] .product-card .product-image {
+  background: var(--surface-raised);
+}
+.product-card .product-image::before,
+.product-card .product-image::after {
+  background: none;
+}
+.product-card .product-image img {
+  filter: drop-shadow(0 8px 18px rgba(0, 0, 0, .35));
+}
+.flash-deal-card.fdc-rich .fdc-top {
+  background: var(--surface-raised) !important;
+}
+.flash-deal-card.fdc-rich .fdc-top::after {
+  background: none;
+}
+
+/* A2. Badge lanes: the logo can only paint inside the img content box,
+   so a top padding taller than the badge row (~2.15rem incl. its
+   .65rem offset) guarantees corner badges never touch the logo. The
+   emblem fallback (no image at all) is centred, so it gets a matching
+   downward shift. Deal thumbs get the same lane under the save pill. */
+.product-card .card-visual .product-image img {
+  padding-top: 2.75rem;
+}
+@media (max-width: 640px) {
+  .product-card .card-visual .product-image img {
+    padding-top: 2.5rem;
+  }
+}
+.product-card .product-image .banner-logo-wrap,
+.product-card .product-image .brand-fallback-wrap {
+  margin-top: 1.6rem;
+}
+.flash-deal-card.fdc-rich .fdc-top .deal-thumb {
+  padding-top: 2.3rem;
+}
+
+/* A3. Even heights + aligned rows: grid/flex stretch already equalises
+   card height per row and .price-row already anchors to the bottom
+   (margin-top:auto in store-ui.css); what varied was the title (1 vs
+   2 clamped lines) and the meta row above it. Reserve both so the
+   price and action rows line up across the row. Deal cards get the
+   same treatment: the card becomes a flex column (its .fdc-body was
+   already flex:1, inert while the card was a block) and the price row
+   anchors to the bottom. */
+.product-card {
+  height: 100%;
+}
+.product-card h3 {
+  min-height: calc(1.25em * 2);
+}
+.product-card .card-meta {
+  min-height: 1.6rem;
+}
+.flash-deal-card.fdc-rich {
+  display: flex;
+  flex-direction: column;
+}
+.flash-deal-card.fdc-rich .fdc-name {
+  min-height: calc(1.3em * 2);
+}
+.flash-deal-card.fdc-rich .fdc-price-row {
+  margin-top: auto;
+}
+
+/* A4. Plan pills: one uniform size at each breakpoint (the ≤640px
+   value keeps the 40px+ touch target card-clean.css established),
+   one consistent gap. Per-plan colours are kept — only size and
+   rhythm are normalised. */
+.duration-pills {
+  gap: .45rem;
+}
+.dur-pill {
+  min-height: 2.25rem;
+  padding: .45rem .75rem;
+}
+@media (max-width: 640px) {
+  .dur-pill {
+    min-height: 2.5rem;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   B. FREE FIRE — light-theme visibility + mobile order.
+   Root cause (light theme only; every dark-theme pairing below already
+   measures ≥13:1): §3e flips the section to a cream gradient and the
+   card + package buttons to #ffffff, but storefront-polish.css colours
+   the package name and the "Select Diamond" label with --white, a
+   token tokens.css never redefines for light — white on white. The
+   note (#ffd88a, 1.18:1 on its cream tint) and the back-to-gaming
+   button (#fff, 1.23:1) wash out the same way, and §3e's plain
+   .ff-pkg / .ff-pay-btn backgrounds outrank the .is-active gradients,
+   leaving the selected states pale-on-pale. Fixes below keep the
+   designed dark-chip look for selected states (peach on deep brown,
+   11–13:1) and use --text for unselected labels (18:1).
+   -------------------------------------------------------------------------- */
+[data-theme="light"] .ff-pkg-name {
+  color: var(--text);
+}
+[data-theme="light"] .ff-pkg.is-active {
+  background: linear-gradient(135deg, #2a1408, #170b04);
+  border-color: #ff9b54;
+}
+[data-theme="light"] .ff-pkg.is-active .ff-pkg-name {
+  color: #ffc79b;
+}
+[data-theme="light"] .ff-pkg.is-active .ff-pkg-price {
+  color: #85d6a1;
+}
+[data-theme="light"] .ff-pkg-label {
+  color: var(--text);
+}
+[data-theme="light"] .ff-game-title {
+  color: var(--text);
+}
+[data-theme="light"] .ff-note {
+  color: #7a4d00;
+}
+[data-theme="light"] .ff-note strong {
+  color: #6f4500;
+}
+[data-theme="light"] .btn-back-gaming {
+  background: rgba(255, 75, 43, .1);
+  border-color: rgba(255, 75, 43, .45);
+  color: #a8340f;
+}
+[data-theme="light"] .btn-back-gaming:hover {
+  background: rgba(255, 75, 43, .18);
+  border-color: rgba(255, 75, 43, .55);
+  color: #8f2f0e;
+}
+[data-theme="light"] .ff-pay-btn.is-active {
+  background: linear-gradient(135deg, #2a1408, #170b04);
+  border-color: #ff9b54;
+  color: #ffb27d;
+}
+[data-theme="light"] .ff-field input {
+  background: var(--surface-raised);
+  color: var(--text);
+}
+
+/* B4. Mobile order: below the 820px breakpoint storefront-polish.css
+   stacks .free-fire-card into one column with the UID/payment block
+   (.ff-left) first in source order, pushing the diamond packages a
+   full screen down. Pull the packages (.ff-right) above it — the
+   desktop two-column layout (>820px) is untouched. */
+@media (max-width: 820px) {
+  .free-fire-card .ff-right {
+    order: -1;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   C. DIALOG SCROLL HARDENING (CSS half; the scroll-position
+   save/restore lives in app.js). Every .dialog is a modal with a
+   max-height; making each one explicitly its own scroller with
+   overscroll containment stops touch scrolling inside a dialog from
+   chaining into the page behind it. No dialog markup relies on
+   visible overflow (close buttons are positioned inside the padding
+   box), and the admin panel uses no .dialog elements.
+   -------------------------------------------------------------------------- */
+.dialog {
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 /* --------------------------------------------------------------------------
