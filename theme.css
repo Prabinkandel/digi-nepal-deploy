@@ -12,6 +12,9 @@
       tokens.css / admin.css plus targeted fixes for hard-coded dark
       surfaces that tokens cannot flip. Brand colours (--red, per-brand
       card rings, badges, logo banners) are identical in both themes.
+   3i. Design polish round — hero gradient accent + trust strip, section
+       rhythm + title accent bars, card hover/press motion inside the
+       diet, sticky mobile CTA bar, footer payment chips (both themes).
    4. Global prefers-reduced-motion support.
 
    The theme attribute is set before first paint by an inline snippet in
@@ -1014,6 +1017,395 @@
   box-shadow: 0 2px 10px rgba(0, 0, 0, .35) !important;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
+}
+
+/* --------------------------------------------------------------------------
+   3i. Design polish round — both themes
+   Owner-approved polish, not a rebuild: hero gradient accent + trust
+   strip, standardised section rhythm and title accent bars, one card
+   motion language inside the 200ms diet, a sticky mobile CTA bar, and
+   footer payment chips. Token-driven throughout so dark and light stay
+   correct. Raw hex is limited to the hero gradient stops and the white
+   label on the bar's solid red button — each justified where it sits,
+   with contrast computed against both themes' backgrounds.
+
+   Sticky bar vs the existing mobile chrome: .mob-bottom-nav (mobile-
+   ux.css, z-index 200) already owns the bottom edge at ≤639px, so at
+   that width the CTA bar docks directly ABOVE the nav — bottom offset
+   = nav height + safe-area — instead of overlapping it; at 640–768px
+   (no mob nav) it docks to bottom: 0. Body bottom padding grows by
+   the same stack so the footer is never covered. Bar z-index 40 sits
+   below the social-proof region (z 60, store-ui.css); the product /
+   payment / auth dialogs are native <dialog> elements in the top
+   layer, always above the bar. The WhatsApp float and the toast
+   region are lifted clear of the bar at ≤768px.
+   -------------------------------------------------------------------------- */
+
+/* --- Hero: red gradient accent on the headline's key phrase ---------
+   Dark hero background is #050505 (style.css): the gradient runs
+   #ff6b4a (7.23:1) → var(--red-bright) #ff1f32 (5.33:1), both ≥4.5:1.
+   The light hero is pale (#ffffff → #faf4f4, section 3): var(--red)
+   alone reaches only 4.41:1 on #faf4f4, so the light scope uses
+   darker stops with no token equivalent — #d00813 (5.64:1 on #fff,
+   5.18:1 on #faf4f4) → #8f020d (8.85:1 on #faf4f4). Without
+   background-clip support the phrase keeps the plain <em> colours
+   from style.css / section 3. */
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+  .hero h1 .hero-accent {
+    background: linear-gradient(94deg, #ff6b4a 0%, var(--red-bright) 88%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+  }
+
+  [data-theme="light"] .hero h1 .hero-accent {
+    background: linear-gradient(94deg, #d00813 0%, #8f020d 88%);
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+}
+
+/* --- Hero trust strip -------------------------------------------------
+   Directly under the hero content (markup in index.html). Token
+   colours only: --text-muted on the hero background measures 8.47:1
+   (dark) and 7.31:1 (light); the top border is --line in both themes.
+   Wraps on desktop, stacks 2×2 on small phones. */
+.hero-trust-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .55rem 1.6rem;
+  margin: var(--space-5) 0 0;
+  padding: var(--space-4) 0 0;
+  border-top: 1px solid var(--line);
+  list-style: none;
+  color: var(--text-muted);
+  font-size: .92rem;
+  font-weight: 600;
+}
+
+.hero-trust-strip li {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .hero-trust-strip {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .55rem .9rem;
+    font-size: .84rem;
+  }
+
+  .hero-trust-strip li {
+    white-space: normal;
+  }
+}
+
+/* --- Section rhythm ---------------------------------------------------
+   .section already pads var(--space-7) in style.css (var(--space-6)
+   at ≤640px, section 1); the rules below bring the sections that do
+   not use .section — or that override its padding — onto the same
+   rhythm, and give every section title one size/weight scale plus a
+   small red accent bar (::after, token reds). No classes renamed, no
+   section restructured. */
+.gaming-trust-section {
+  padding-block: var(--space-7);
+}
+
+.categories-section {
+  padding-top: var(--space-5);
+  padding-bottom: var(--space-4);
+}
+
+@media (min-width: 641px) {
+  .catalog-section {
+    padding-top: var(--space-5);
+  }
+
+  .flash-sale-section {
+    padding-top: var(--space-4);
+  }
+
+  /* The flash header is a compact flex row with badge + see-all, so
+     its title joins the scale modestly — and not at ≤639px, where
+     mobile-ux.css tunes it to .95rem. */
+  .flash-title {
+    font-size: clamp(1.25rem, 2.4vw, 1.6rem);
+    font-weight: 800;
+  }
+}
+
+@media (max-width: 640px) {
+  .gaming-trust-section {
+    padding-block: var(--space-6);
+  }
+}
+
+.section-heading h2,
+.reason-copy h2,
+.faq-layout h2 {
+  font-size: clamp(1.9rem, 3.6vw, 2.95rem);
+  font-weight: 800;
+  letter-spacing: -.045em;
+}
+
+.catalog-heading h2 {
+  font-size: clamp(1.55rem, 3vw, 2.1rem);
+  font-weight: 800;
+}
+
+.section-heading h2::after,
+.reason-copy h2::after,
+.faq-layout h2::after,
+.catalog-heading h2::after,
+.flash-title::after {
+  content: "";
+  display: block;
+  width: 2.75rem;
+  height: 3px;
+  margin-top: .65rem;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--red), var(--red-bright));
+}
+
+.section-heading.centered h2::after {
+  margin-inline: auto;
+}
+
+.flash-title::after {
+  width: 2rem;
+  margin-top: .4rem;
+}
+
+/* --- Cards: one motion language inside the diet -----------------------
+   card-premium.css runs card transitions at .32–.35s and lifts the
+   product card −6px / the deal card −7px on hover. Cap durations at
+   the diet token and standardise the fine-pointer lift to −3px with a
+   border glow in each card's own brand vars (--bh/--bs/--bl). The
+   deal card's hover border/shadow are !important in card-premium.css,
+   so its hover needs !important too — same (0,3,0) specificity, won
+   on source order because theme.css loads last. Light-theme card
+   shadows in 3b rank higher ((0,4,0)+) and keep winning there, so in
+   light mode only the standardised lift applies. */
+.product-card {
+  transition-duration: var(--motion-base);
+}
+
+.flash-deal-card.fdc-rich {
+  transition-duration: var(--motion-base) !important;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .product-card:not(.skeleton):hover {
+    transform: translateY(-3px);
+    border-color: hsla(var(--bh), var(--bs), var(--bl), .55);
+    box-shadow:
+      0 16px 38px rgba(0, 0, 0, .45),
+      0 8px 28px hsla(var(--bh), var(--bs), var(--bl), .2);
+  }
+
+  .flash-deal-card.fdc-rich:hover {
+    transform: translateY(-3px) !important;
+    border-color: hsla(var(--bh), var(--bs), var(--bl), .6) !important;
+    box-shadow:
+      0 16px 38px rgba(0, 0, 0, .5),
+      0 8px 28px hsla(var(--bh), var(--bs), var(--bl), .25) !important;
+  }
+}
+
+/* Gentle press feedback for touch (the base :active states sat at
+   −2px / scale(.975); these are a touch softer and cover both card
+   types uniformly). */
+.product-card:not(.skeleton):active {
+  transform: translateY(-1px);
+}
+
+.flash-deal-card.fdc-rich:active {
+  transform: scale(.985);
+}
+
+/* Prices: slightly larger/bolder through the existing price classes.
+   Live bases — product .price: 1.4rem desktop / 1.25rem at 640–1023px
+   (card-premium.css), clamp(.95rem, 4.6vw, 1.08rem) on small phones
+   (card-clean.css), .98rem at ≤420px (mobile-ux.css); deal .fdc-price:
+   1.45rem inside .fdc-rich (card-premium.css), 1.25rem (store-ui.css).
+   Each step below sits just above its base. */
+.product-card .price {
+  font-weight: 900;
+}
+
+.fdc-price {
+  font-size: 1.32rem;
+}
+
+.flash-deal-card.fdc-rich .fdc-price {
+  font-size: 1.5rem;
+  font-weight: 900;
+}
+
+@media (min-width: 1024px) {
+  .product-card .price {
+    font-size: 1.5rem;
+  }
+}
+
+@media (min-width: 640px) and (max-width: 1023.98px) {
+  .product-card .price {
+    font-size: 1.32rem;
+  }
+}
+
+@media (max-width: 639.98px) {
+  .product-card .price {
+    font-size: 1.12rem;
+  }
+
+  .flash-deal-card.fdc-rich .fdc-price {
+    font-size: 1.3rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .product-card .price {
+    font-size: 1.05rem;
+  }
+}
+
+/* --- Sticky mobile CTA bar (index.html only) --------------------------
+   Hidden entirely on desktop. Token surface with blur + top border +
+   safe-area padding; buttons keep a 44px touch height. */
+.sticky-cta-bar {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .sticky-cta-bar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 40;
+    display: flex;
+    gap: .6rem;
+    padding: .55rem .75rem calc(.55rem + env(safe-area-inset-bottom, 0px));
+    background: var(--surface);
+    background: color-mix(in srgb, var(--surface) 88%, transparent);
+    border-top: 1px solid var(--line);
+    backdrop-filter: blur(16px) saturate(1.4);
+    -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  }
+
+  .sticky-cta-btn {
+    flex: 1 1 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .45rem;
+    min-height: 44px;
+    padding: .55rem .8rem;
+    border-radius: .7rem;
+    font-size: .92rem;
+    font-weight: 700;
+    line-height: 1.2;
+    text-align: center;
+    transition: transform var(--motion-base), background-color var(--motion-base);
+  }
+
+  .sticky-cta-btn:active {
+    transform: scale(.98);
+  }
+
+  /* White on solid --red is the site-wide .button pairing: 4.79:1. */
+  .sticky-cta-plans {
+    background: var(--red);
+    color: #fff;
+  }
+
+  /* --text on --surface-raised: 16.31:1 dark, 15.86:1 light. */
+  .sticky-cta-wa {
+    background: var(--surface-raised);
+    color: var(--text);
+    border: 1px solid var(--line-strong);
+  }
+
+  /* The bar exists only in index.html, so :has() scopes this padding
+     to the storefront — the footer is never covered by the bar. */
+  body:has(.sticky-cta-bar) {
+    padding-bottom: calc(62px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .whatsapp-float {
+    bottom: calc(62px + env(safe-area-inset-bottom, 0px) + .85rem);
+  }
+
+  .toast-region {
+    bottom: calc(62px + env(safe-area-inset-bottom, 0px) + .75rem);
+  }
+}
+
+@media (max-width: 639px) {
+  /* Dock above .mob-bottom-nav (mobile-ux.css tokens) — never overlap. */
+  .sticky-cta-bar {
+    bottom: calc(var(--mob-bottom-nav, 62px) + var(--mob-safe-bottom, 0px));
+    padding-bottom: .55rem;
+  }
+
+  body:has(.sticky-cta-bar) {
+    padding-bottom: calc(var(--mob-bottom-nav, 62px) + var(--mob-safe-bottom, 0px) + 62px);
+  }
+
+  .whatsapp-float {
+    bottom: calc(var(--mob-bottom-nav, 62px) + var(--mob-safe-bottom, 0px) + 62px + .85rem);
+  }
+
+  .toast-region {
+    bottom: calc(var(--mob-bottom-nav, 62px) + var(--mob-safe-bottom, 0px) + 62px + .5rem);
+  }
+
+  /* mobile-ux.css pins this with !important; match and extend it. */
+  .social-proof-region {
+    bottom: calc(var(--mob-bottom-nav, 62px) + var(--mob-safe-bottom, 0px) + 62px + 1.2rem) !important;
+  }
+}
+
+/* --- Footer: payment chips + column spacing tidy ----------------------
+   The .footer-pay row already exists in index.html (store-ui.css gives
+   it bordered spans); this round adds the IME Pay and WhatsApp
+   Ordering chips in the markup and rounds the chips into
+   token-surfaced pills that wrap on mobile. */
+.footer-grid {
+  column-gap: var(--space-6);
+}
+
+.footer-pay {
+  gap: .55rem;
+  margin-top: var(--space-5);
+}
+
+.footer-pay span:not(.footer-pay-label) {
+  background: var(--surface-raised);
+  border-radius: 999px;
+  padding: .38rem .78rem;
+}
+
+.footer-bottom {
+  margin-top: var(--space-4);
+}
+
+/* Reduced motion: section 4 already flattens every transition; also
+   pin this section's hover/press transforms so nothing moves. */
+@media (prefers-reduced-motion: reduce) {
+  .product-card:hover,
+  .product-card:active,
+  .flash-deal-card.fdc-rich:hover,
+  .flash-deal-card.fdc-rich:active,
+  .sticky-cta-btn:active {
+    transform: none !important;
+  }
 }
 
 /* --------------------------------------------------------------------------
