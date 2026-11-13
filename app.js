@@ -500,15 +500,16 @@ function displayNameOf(name) {
 }
 function baseKey(name) {
   const k = String(name || '').trim().toLowerCase();
-  // CapCut Pro + any parenthetical tier variant ("CapCut Pro (1 Device)",
-  // "CapCut Pro (Pre-activated, 2 Devices)", ...) are one product family.
-  if (k === 'capcut pro' || /^capcut pro\s*\(/.test(k)) return 'capcut pro';
-  const stripped = stripDurationSuffix(k);
-  return stripped || k;
+  const stripped = stripDurationSuffix(k) || k;
+  // Any "Family (variant)" name groups under its family: the parenthetical
+  // is the plan label (see planVariantTail), not a separate product. This
+  // covers CapCut Pro tiers, Muse AI token plans, Claude AI API packages, …
+  const noParen = stripped.replace(/\s*\([^)]*\)\s*$/, '').trim();
+  return noParen || stripped;
 }
 /* Family-level display names: variants of a shared family get one short
    card title instead of inheriting whichever variant was created last. */
-const GROUP_DISPLAY_NAMES = { 'capcut pro': 'CapCut Pro' };
+const GROUP_DISPLAY_NAMES = { 'capcut pro': 'CapCut Pro', 'muse ai': 'Muse AI', 'claude ai api': 'Claude AI API' };
 
 function groupProducts(products) {
   const map = new Map();
