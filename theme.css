@@ -18,6 +18,8 @@
    3j. Round 2 — catalog cleanup (calm logo stage, badge lanes, even
        card heights, uniform plan pills), Free Fire light-theme
        visibility + mobile package order, dialog scroll hardening.
+   3k. Price-baseline hotfix — flex-order the plan pills above the
+       price row so grouped and single cards share one price baseline.
    4. Global prefers-reduced-motion support.
 
    The theme attribute is set before first paint by an inline snippet in
@@ -1617,6 +1619,57 @@
 .dialog {
   overflow-y: auto;
   overscroll-behavior: contain;
+}
+
+/* --------------------------------------------------------------------------
+   3k. PRICE BASELINE — grouped vs single cards (hotfix after §3j).
+
+   §3j A3 assumed .price-row's margin-top:auto (store-ui.css, repeated
+   in card-premium.css) anchored the PRICE to the bottom of .card-body.
+   It anchors everything from the price row down instead: .price-row,
+   then .duration-pills (grouped cards only), then .product-actions.
+   That whole block is bottom-anchored, so the price's distance from
+   the card's bottom edge grows with the pills block beneath it — a
+   card whose pills wrap to two rows floats its price visibly higher
+   than a no-pill neighbour, and a one-row card lands in between.
+   Live-verified after PR #27: card heights even and Buy rows aligned,
+   price lines ragged exactly along pill-row counts (Muse AI highest,
+   CapCut Pro mid, Prime Video / Gemini AI Pro lowest), with the slack
+   gap sitting above the price on single cards only.
+
+   Markup (app.js productCard; the only .card-body renderer): the
+   .card-body flex column (store-ui.css) holds, in DOM order,
+   .product-category, h3, .card-meta, .price-row (with the
+   [data-card-price] span and the FROM/SELECTED .price-context),
+   .duration-pills (multi-variant groups only) and .product-actions.
+
+   Fix — flex order only, no markup change: lift .duration-pills
+   above .price-row visually (order 1 < 2 < 3 for pills / price /
+   actions; category, title and meta keep the default order 0 in DOM
+   sequence). .price-row keeps its existing margin-top:auto, which is
+   now the only flexible space in the bottom block, so all free space
+   collects directly above the price row on every card type and:
+     price-row top = card-body height − price-row height
+                     − actions margin − actions height
+   with no pills term. The price baseline therefore coincides for
+   no-pill, 1-pill-row and 2+-pill-row cards, at desktop widths and
+   at the ≤640px two-column grid alike: .card-body is a flex column
+   at every breakpoint (no sheet re-declares its display) and these
+   order values are breakpoint-independent. §3j's pill sizing is
+   untouched; the pills keep their card-premium top border, which now
+   reads as the divider between the meta row and the plan picker —
+   the same hairline rhythm the price row's own top border keeps
+   below the pills. DOM (and therefore keyboard) order is unchanged:
+   the pills still follow the price they update in tab order.
+   -------------------------------------------------------------------------- */
+.product-card .duration-pills {
+  order: 1;
+}
+.product-card .price-row {
+  order: 2;
+}
+.product-card .product-actions {
+  order: 3;
 }
 
 /* --------------------------------------------------------------------------
