@@ -2,6 +2,12 @@ const routerFactory=require('express').Router;
 const {randomUUID}=require('node:crypto');
 const access=require('../middleware/access');
 const {query,page,searchFilter,fail,id,z}=require('../utils/validation');
+/* Public catalogue responses are identical for every visitor (active items
+   only, no per-user data), so the CDN may cache them briefly. Set only on the
+   public GET handlers below — never on the staff-only /all route. The header
+   replaces the blanket no-store set earlier in server.js, and function
+   response headers take priority over the vercel.json /api rule. */
+const PUBLIC_CACHE='public, s-maxage=60, stale-while-revalidate=300';
 module.exports=function catalogRouter(Model,schema,{fields=['name'],decorate=async x=>x,validate=async()=>{}}={}){
   const router=routerFactory();const staff=access('admin','editor');
   router.get('/all',staff,async(req,res)=>{
@@ -13,11 +19,11 @@ module.exports=function catalogRouter(Model,schema,{fields=['name'],decorate=asy
   router.get('/',async(req,res)=>{
     const q=query(req);const filter={is_active:1,...searchFilter(q.search,fields)};
     if(q.category)filter.category_id=id.parse(q.category);
-    const result=await page(Model,filter,q);result.items=await decorate(result.items);res.json(result);
+    const result=await page(Model,filter,q);result.items=await decorate(result.items);res.set('Cache-Control',PUBLIC_CACHE);res.json(result);
   });
   router.get('/:id',async(req,res)=>{
     const record=await Model.findOne({id:id.parse(req.params.id),is_active:1}).select('-_id -__v').lean();
-    if(!record)fail(404,'This item is unavailable.');res.json((await decorate([record]))[0]);
+    if(!record)fail(404,'This item is unavailable.');res.set('Cache-Control',PUBLIC_CACHE);res.json((await decorate([record]))[0]);
   });
   router.post('/',staff,async(req,res)=>{
     const data=schema.parse(req.body);await validate(data);

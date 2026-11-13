@@ -95,8 +95,12 @@ async function resolveProducts(campaign) {
 /* ── Public: featured live campaign ─────────────────────────────────────
    Priority rule: live (enabled + inside date window) campaigns ordered by
    display_order ascending, then newest first — the first one wins. When no
-   campaign is live, the section falls back to discount-derived deals. */
+   campaign is live, the section falls back to discount-derived deals.
+   The response is identical for every visitor, so the CDN may cache it
+   briefly (a campaign starting/ending may take up to the 60s s-maxage
+   window to appear/disappear at the edge). */
 router.get('/active', async (req, res) => {
+  res.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
   const now = new Date();
   const candidates = await Campaign.find({ is_active: 1 })
     .select('-_id -__v')
