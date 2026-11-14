@@ -31,6 +31,11 @@
        "View Details" pill; deal cards get the same shell + strip,
        a narrower carousel width and the save pill beside the price
        (never over the wordmark).
+   3m-add. Post-#30 micro-fixes — long plan-pill labels wrap at
+       ≤640px instead of clipping, and the Hot Sale deal cards
+       narrow again (phone 64vw capped at 250px, tablet capped at
+       270px, desktop capped at 280px; supersedes the §3m pins of
+       76vw/300px and 19rem).
    4. Global prefers-reduced-motion support.
 
    The theme attribute is set before first paint by an inline snippet in
@@ -2063,6 +2068,86 @@
   flex: none;
   align-self: center;
   margin-left: auto;
+}
+
+/* --------------------------------------------------------------------------
+   3m-add. POST-#30 MICRO-FIXES (the two style items; the popup plan
+   carry-over and the single-plan chip from the same round are app.js
+   only and need no CSS).
+
+   (a) LONG PILL LABELS WRAP ON NARROW SCREENS. card-premium paints
+   .dur-pill with white-space:nowrap + overflow:hidden, so at phone
+   widths the longest labels (Muse AI's "1M Tokens, No Warranty")
+   clip instead of wrapping. At ≤640px the pill text is set at a
+   uniform .78rem and allowed to wrap: the label breaks to a second
+   line, centred, at a 1.25 line-height. Nothing here touches the
+   §3k orders or the price row's margin-top:auto anchoring — the
+   pills live in the flex-grown region (order 1) above the anchored
+   price (order 2) and actions (order 3), so a taller wrapped pill
+   only consumes grown space and the shared price baseline stands.
+   min-height floors from §3j A4 are untouched; a wrapped pill
+   simply grows past them. (0,2,0) below beats card-premium's
+   (0,1,0) nowrap at every width in this band.
+   -------------------------------------------------------------------------- */
+@media (max-width: 640px) {
+  .product-card .dur-pill {
+    font-size: .78rem;
+    white-space: normal;
+    line-height: 1.25;
+    text-align: center;
+    max-width: 100%;
+  }
+  .product-card .dur-pill-label {
+    font-size: .78rem;
+    white-space: normal;
+    line-height: 1.25;
+    min-width: 0;
+  }
+  .product-card .dur-pill-price {
+    font-size: .78rem;
+    white-space: normal;
+    line-height: 1.25;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   (b) HOT SALE DEAL CARDS NARROW AGAIN. The §3m pins (76vw capped
+   at 300px on phones, 19rem overall) still read as one dominating
+   card on the owner's phone. New proportions: one full card plus a
+   substantial peek of the next.
+     phone  ≤639px:  flex-basis 64vw, max-width 250px
+                     (was flex 0 0 76vw / max-width 300px in §3m M7)
+     tablet 640–1023px: basis stays store-ui's calc(42% - .5rem),
+                     capped at 270px (was capped by §3m's 19rem)
+     desktop ≥1024px: the overall cap drops from 19rem (304px) to
+                     280px; store-ui's percentage bases stand, so
+                     wide-desktop cards were already under the cap
+                     and the 1024–1279 band is what tightens.
+   Scroll-snap (store-ui's scroll-snap-align on the base card) and
+   the §3l deal-top image rules, including the contain exceptions,
+   are untouched. Same selector as §3m M7 (0,2,0), later in the
+   sheet, so these values supersede it.
+   At 250px the price row (price + strikethrough + save pill, per
+   §3m) can crowd, so the row may wrap on phones: the save pill —
+   already margin-left:auto — drops to a second line, right-aligned,
+   rather than squeezing the price figures.
+   -------------------------------------------------------------------------- */
+.flash-deal-card.fdc-rich {
+  max-width: 280px;
+}
+@media (min-width: 640px) and (max-width: 1023px) {
+  .flash-deal-card.fdc-rich {
+    max-width: 270px;
+  }
+}
+@media (max-width: 639.98px) {
+  .flash-deal-card.fdc-rich {
+    flex: 0 0 64vw;
+    max-width: 250px;
+  }
+  .flash-deal-card.fdc-rich .fdc-price-row {
+    flex-wrap: wrap;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   html {

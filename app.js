@@ -660,11 +660,15 @@ function durationPills(group) {
 /* After a card is rendered, bind its duration pills: clicking one updates the
    card's displayed NPR price and marks the chosen variant so Buy Now carries it. */
 function wireDurationPills(card) {
-  const pills = card.querySelectorAll('.duration-pills .dur-pill');
+  // Only real plan pills carry data-pill-variant; the static single-plan
+  // chip (singlePlanChip) deliberately does not, so it is never wired —
+  // clicks on it fall through to the card's own popup behaviour.
+  const pills = card.querySelectorAll('.duration-pills .dur-pill[data-pill-variant]');
   if (!pills.length) return;
   const priceEl = card.querySelector('[data-card-price]');
   const ctxEl = card.querySelector('.price-context');
   const buyBtn = card.querySelector('.card-buy[data-group-view]');
+  const viewBtn = card.querySelector('.card-view[data-group-view]');
   const activate = (pill) => {
     if (!pill || pill.disabled) return;
     pills.forEach(p => {
@@ -679,11 +683,47 @@ function wireDurationPills(card) {
     if (priceEl) priceEl.textContent = formatMoney(variant.price);
     if (ctxEl) ctxEl.textContent = 'SELECTED';
     if (buyBtn) buyBtn.dataset.selectedVariant = variant.id;
+    // Carry the card's selected plan to every affordance that opens the
+    // group view — View Details and the card body itself — so the popup
+    // opens on the plan the customer picked, not the first plan.
+    if (viewBtn) viewBtn.dataset.selectedVariant = variant.id;
+    card.dataset.selectedVariant = variant.id;
   };
   pills.forEach(pill => { pill.onclick = (e) => { e.stopPropagation(); if (!pill.disabled) activate(pill); }; });
   // Default-select the first selectable (in-stock) pill, never a disabled one.
-  const defaultPill = card.querySelector('.duration-pills .dur-pill:not([disabled])');
+  const defaultPill = card.querySelector('.duration-pills .dur-pill[data-pill-variant]:not([disabled])');
   if (defaultPill) { activate(defaultPill); }
+}
+
+/* Label for a single-variant group's one plan: the full duration text
+   ("6 Months", "1 Year", "Lifetime"), then the raw duration_text field
+   if the API ever supplies one, then the short pill label, then a
+   plain fallback. */
+function singlePlanLabel(variant) {
+  return durationOf(variant) || variant.duration_text || durationPillLabel(variant) || 'Single plan';
+}
+
+/* Single-variant groups render the same plan area as grouped cards —
+   a "Plan:" label and ONE static chip in the selected pill style — so
+   the §3k price baseline does not leave a blank band where grouped
+   cards carry their pills. The chip is a span, not a button: there is
+   nothing to switch, it carries no data-pill-variant (so
+   wireDurationPills never binds it), and clicks on it fall through to
+   the card's own open-the-popup behaviour. */
+function singlePlanChip(variant) {
+  if (!variant) return '';
+  const isOut = Number(variant.stock_out) === 1;
+  const chip = isOut
+    ? '<span class="dur-pill is-out is-static">' +
+        '<span class="dur-pill-label">' + escapeHtml(singlePlanLabel(variant)) + '</span>' +
+        '<span class="dur-pill-out">Out of stock</span>' +
+      '</span>'
+    : '<span class="dur-pill active is-static">' +
+        '<span class="dur-pill-label">' + escapeHtml(singlePlanLabel(variant)) + '</span>' +
+        '<span class="dur-pill-price">' + formatMoney(variant.price) + '</span>' +
+      '</span>';
+  return '<span class="plan-choose-label">Plan:</span>' +
+    '<div class="duration-pills" role="group" aria-label="Plan">' + chip + '</div>';
 }
 
 function productCard(group) {
@@ -745,7 +785,7 @@ function productCard(group) {
         (multi ? '<span class="card-meta-item card-meta-plans"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>' + group.variants.length + ' plans</span>' : '') +
         '<span class="card-meta-stock' + (group.inStock ? '' : ' is-out') + '">' + (group.inStock ? 'Available now' : 'Currently unavailable') + '</span>' +
       '</div>' +
-      (multi ? '<span class="plan-choose-label">Choose plan:</span>' + durationPills(group) : '') +
+      (multi ? '<span class="plan-choose-label">Choose plan:</span>' + durationPills(group) : singlePlanChip(group.variants[0])) +
       '<div class="price-row">' +
         '<div class="price-main">' + (multi ? '<small class="price-context">FROM</small>' : '') + '<span class="price" data-card-price>' + formatMoney(group.minPrice) + '</span></div>' +
         buyAction +
@@ -2176,8 +2216,11 @@ function bindUI() {
           openFreeFireProduct();
           return;
         }
-        // If a duration pill was picked on a multi-plan Buy Now, order that variant directly.
-        if (groupView.classList.contains('card-buy') && groupView.dataset.selectedVariant) {
+        // If a duration pill was picked on the card, open the group view
+        // with that variant preselected — the Buy control (its original
+        // behaviour) and View Details alike, since wireDurationPills
+        // mirrors the selection onto both.
+        if (groupView.dataset.selectedVariant) {
           openGroupWithPlan(groupView.dataset.groupView, groupView.dataset.selectedVariant);
           return;
         }
@@ -2208,13 +2251,25 @@ function bindUI() {
           openFreeFireProduct();
           return;
         }
+        // Card-body clicks carry the pill selection over too.
+        if (card.dataset.selectedVariant) {
+          openGroupWithPlan(card.dataset.groupKey, card.dataset.selectedVariant);
+          return;
+        }
         openGroup(card.dataset.groupKey);
       }
     });
     grid.addEventListener('keydown', event => {
       if (event.key !== 'Enter' && event.key !== ' ') return;
       const card = event.target.closest('.product-card[data-group-key]');
-      if (card && event.target === card) { event.preventDefault(); openGroup(card.dataset.groupKey); }
+      if (card && event.target === card) {
+        event.preventDefault();
+        if (card.dataset.selectedVariant) {
+          openGroupWithPlan(card.dataset.groupKey, card.dataset.selectedVariant);
+          return;
+        }
+        openGroup(card.dataset.groupKey);
+      }
     });
   }
 
