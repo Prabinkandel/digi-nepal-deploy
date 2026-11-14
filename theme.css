@@ -2083,44 +2083,11 @@
 }
 
 /* --------------------------------------------------------------------------
-   3m-add. POST-#30 MICRO-FIXES (the two style items; the popup plan
-   carry-over and the single-plan chip from the same round are app.js
-   only and need no CSS).
-
-   (a) LONG PILL LABELS WRAP ON NARROW SCREENS. card-premium paints
-   .dur-pill with white-space:nowrap + overflow:hidden, so at phone
-   widths the longest labels (Muse AI's "1M Tokens, No Warranty")
-   clip instead of wrapping. At ≤640px the pill text is set at a
-   uniform .78rem and allowed to wrap: the label breaks to a second
-   line, centred, at a 1.25 line-height. Nothing here touches the
-   §3k orders or the price row's margin-top:auto anchoring — the
-   pills live in the flex-grown region (order 1) above the anchored
-   price (order 2) and actions (order 3), so a taller wrapped pill
-   only consumes grown space and the shared price baseline stands.
-   min-height floors from §3j A4 are untouched; a wrapped pill
-   simply grows past them. (0,2,0) below beats card-premium's
-   (0,1,0) nowrap at every width in this band.
+   3m-add. POST-#30 MICRO-FIXES.
+   (a) was the ≤640px card pill wrap rules; §3o removed the card plan
+   pills entirely (minimum price on cards, plans in the popup only),
+   so those rules are gone. (b) follows.
    -------------------------------------------------------------------------- */
-@media (max-width: 640px) {
-  .product-card .dur-pill {
-    font-size: .78rem;
-    white-space: normal;
-    line-height: 1.25;
-    text-align: center;
-    max-width: 100%;
-  }
-  .product-card .dur-pill-label {
-    font-size: .78rem;
-    white-space: normal;
-    line-height: 1.25;
-    min-width: 0;
-  }
-  .product-card .dur-pill-price {
-    font-size: .78rem;
-    white-space: normal;
-    line-height: 1.25;
-  }
-}
 
 /* --------------------------------------------------------------------------
    (b) HOT SALE DEAL CARDS NARROW AGAIN. The §3m pins (76vw capped
@@ -2370,6 +2337,94 @@
 .product-dialog .pd-faq p {
   margin-bottom: .55rem;
   line-height: 1.5;
+}
+
+/* --------------------------------------------------------------------------
+   3o. OWNER DECISIONS — minimum price on cards; richer popup
+   (PR #31, same round as §3n).
+
+   DECISION 1 — CARDS: MINIMUM PRICE ONLY, PLANS IN DETAILS ONLY.
+   productCard() no longer renders a plan area at all: the grouped
+   cards' .dur-pills + "Choose plan:" label and the single-plan chip
+   ("Plan:") from earlier in this PR are removed, and the dead card
+   wiring (wireDurationPills, durationPills, singlePlanChip and their
+   label helpers) is deleted from app.js. Grouped cards show FROM +
+   the group's minimum variant price (this settles the old
+   SELECTED-vs-FROM question: FROM, grouped only); single cards show
+   a plain price. The grouped Buy control targets the cheapest
+   selectable variant via data-selected-variant in the markup; View
+   Details and card clicks open the popup on its default plan.
+   Heights equalise via the §3j title/meta reservations + the §3k
+   pinned price baseline — the §3k flex orders (pills 1 / price 2 /
+   actions 3) simply have no pill row left to order, and the §3m-add
+   (a) pill-wrap rules are removed above. The remaining .dur-pill /
+   .plan-choose-label rules in earlier sheets are inert (no matching
+   markup) and are left in place.
+
+   DECISION 2 — POPUP, SECOND PASS (app.js + the rules below):
+   - "⭐ BEST VALUE" tag on the plan with the lowest per-month cost
+     (groups with 2+ parseable durations only), and a per-month line
+     ("≈ NPR 67/month") under multi-month plan prices.
+   - The sticky footer's price side adds the total saving in rupees
+     ("You save NPR 497") next to the Save % pill, both popup types.
+   - A compact trust-chip row sits under the popup title, and a
+     payment-chip row (eSewa · Khalti · IME Pay · Bank QR) is pinned
+     inside the footer — token colours, both themes.
+   - The first FAQ item renders open; the rest stay collapsed.
+   -------------------------------------------------------------------------- */
+.plan-best-tag {
+  align-self: flex-start;
+  padding: .18rem .5rem;
+  border-radius: 999px;
+  background: rgba(251, 191, 36, .14);
+  color: #fbbf24;
+  font-size: .62rem;
+  font-weight: 800;
+  letter-spacing: .05em;
+}
+[data-theme="light"] .plan-best-tag {
+  background: rgba(217, 119, 6, .13);
+  color: #b45309;
+}
+.plan-per-month {
+  color: var(--text-muted);
+  font-size: .72rem;
+  font-weight: 600;
+}
+.pd-price-side .pd-save-amount {
+  color: var(--save-green);
+  font-size: var(--fs-tiny);
+  font-weight: 700;
+}
+.pd-trust-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+}
+.pd-trust-chips span {
+  padding: .32rem .6rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: var(--fs-micro);
+  font-weight: 700;
+}
+.pd-pay-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+  align-items: center;
+}
+.pd-pay-chips span {
+  padding: .28rem .55rem;
+  border: 1px solid var(--line);
+  border-radius: .45rem;
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: var(--fs-micro);
+  font-weight: 800;
+  letter-spacing: .02em;
 }
 
 @media (prefers-reduced-motion: reduce) {
