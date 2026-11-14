@@ -2439,3 +2439,99 @@
     transition-duration: .01ms !important;
   }
 }
+
+/* --------------------------------------------------------------------------
+   3p. PRE-PUBLISH FIX ROUND (PR #31) — six defects from the full
+   preview check, each diagnosed against the code/data before fixing.
+
+   1. HOT SALE SAVE PILL CLIPPED. §3m-add (b) narrowed the deal cards
+      (210px tablet / 235px small-desktop caps) but its flex-wrap for
+      .fdc-price-row only applied at ≤639.98px. Above that the row
+      stayed nowrap while price + strikethrough + "-72% OFF" need
+      ~233px+ — measured in a real browser at 768px: the pill's right
+      edge sat up to 65px past the card's edge and was cut ("-68% OFF"
+      read as "-6…"). Fix: the row wraps at EVERY width (the pill —
+      margin-left:auto from §3m — drops under the price, right-aligned,
+      as originally intended), the price figures may shrink, and the
+      deal body clips any residual overflow.
+   2. CATALOGUE PRICE BASELINES. §3j A3 reserved only one meta line
+      (min-height 1.6rem), but .card-meta wraps variably — two lines
+      wherever a long duration range ("3 Months – 18 Months") joins
+      the plans + stock items (measured 26px vs 56px at desktop), so
+      the meta block's height differed card to card. Fix: reserve a
+      uniform meta height everywhere — two pill lines on desktop,
+      three at ≤640px where the narrow two-column cards wrap the
+      three items onto three lines (measured 73px) — so the §3k
+      baseline maths starts from the same offset on every card.
+   3. FEATURED PILL CONTRAST. card-premium.css paints
+      .store-badge-featured as a translucent amber wash
+      (rgba(245,158,11,.42)) with pale-yellow #fde68a text; the badge
+      sits over the white logo banners, so it washed out in BOTH
+      themes. Fix: the §3g solid treatment — deep amber #92400e with
+      white text (6.9:1), unscoped so dark and light resolve the
+      same; position and size class untouched.
+   4. POPUP BANNER CROPPED + FOOTER CLEARANCE. §3n made .pd-banner
+      `display:grid; place-items:center` with the img at
+      width/height:100%. For a grid item the percentage height is
+      circular (the implicit row's height depends on the item), so
+      real browsers fall back to the image's aspect height — measured
+      428px tall (Prime SVG) / 481px (Gemini Plus WebP) inside the
+      200px banner, top-aligned and clipped by overflow:hidden: Prime
+      oversized and cut at the bottom, Gemini Plus a sliver at the
+      bottom edge. Fix: the banner becomes a plain block box with a
+      definite height, so height:100% resolves against it and
+      object-fit:contain works as intended for bundled SVGs and
+      uploaded banners alike (the .brand-detail-emblem fallback is
+      width/height:100% and centres itself, so it is unaffected).
+      The same item: .pd-scroll gains bottom padding equal to the
+      measured sticky-footer height (264px desktop / 259px phone —
+      17rem covers both) so scrolled content can never sit hidden
+      behind the footer.
+   -------------------------------------------------------------------------- */
+
+/* 1 — Deal price row: wrap at every width; pill drops under the
+   price, right-aligned (margin-left:auto stands from §3m). */
+.flash-deal-card.fdc-rich .fdc-price-row {
+  flex-wrap: wrap;
+  row-gap: .3rem;
+}
+.flash-deal-card.fdc-rich .fdc-price-row .fdc-price,
+.flash-deal-card.fdc-rich .fdc-price-row .fdc-was {
+  min-width: 0;
+}
+.flash-deal-card.fdc-rich .fdc-body {
+  overflow: hidden;
+}
+
+/* 2 — Uniform reserved meta height (supersedes the §3j A3 value). */
+.product-card .card-meta {
+  min-height: 3.5rem;
+}
+@media (max-width: 640px) {
+  .product-card .card-meta {
+    min-height: 4.6rem;
+  }
+}
+
+/* 3 — FEATURED pill: solid deep amber + white text, both themes. */
+.product-card .card-badges .store-badge-featured {
+  background: #92400e;
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, .35);
+  font-weight: 700;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .35);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* 4 — Popup banner: definite-height block box (see header note);
+   .pd-scroll bottom clearance ≥ the sticky footer's height. */
+.pd-banner {
+  display: block;
+}
+.pd-banner img {
+  display: block;
+}
+.pd-scroll {
+  padding-bottom: 17rem;
+}

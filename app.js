@@ -1153,6 +1153,23 @@ function planLabelFor(variant, dupes) {
   return dupes && dupes.get(durationOf(variant) || variant.name) > 1 ? duration + ' · ' + planVariantTail(variant) : duration;
 }
 
+/* The "What you get" list for one product/variant: its stored
+   features when it has them; otherwise the selling points the admin
+   record carries in its description instead. Some records (Gemini
+   Plus is the known case — features: [] in BOTH the catalogue and
+   the detail payloads, verified against the live API) keep
+   everything in the description, which is written as feature
+   sentences, so the list splits the product's OWN description on
+   sentence boundaries — no copy is invented. Decimals ("Gemini 3.1
+   Pro") are safe: a split needs ". " and a decimal point is never
+   followed by a space. */
+function featuresOf(product) {
+  if (product && Array.isArray(product.features) && product.features.length) return product.features;
+  const desc = String((product && product.description) || '').replace(/\s+/g, ' ').trim();
+  if (!desc) return [];
+  return desc.split(/\.\s+/).map(s => s.replace(/\.\s*$/, '').trim()).filter(s => s.length >= 12).slice(0, 8);
+}
+
 function renderGroupDetail(group, preselectVariantId) {
   const variants = selectedGroupVariants(group);
   const preIndex = preselectVariantId ? variants.findIndex(v => v.id === preselectVariantId) : -1;
@@ -1207,26 +1224,30 @@ function renderGroupDetail(group, preselectVariantId) {
     const section = $('pd-features');
     const list = $('pd-features-list');
     if (!section || !list) return;
-    const feats = v.features || [];
+    const feats = featuresOf(v);
     section.style.display = feats.length ? '' : 'none';
     list.innerHTML = feats.map(feature => '<li>' + escapeHtml(feature) + '</li>').join('');
   };
-  renderFeatures(fallback);
   const byId = new Map(variants.map(v => [v.id, v]));
+  // ONE update path for the selected plan: the initial render and
+  // every plan switch run through applyPlan(), so the description,
+  // "What you get", price side and order buttons always move
+  // together — whichever entry opened the popup (View Details, card
+  // Buy, a Hot Sale deal, search results or a #product link).
+  const applyPlan = (v) => {
+    $('plan-grid').querySelectorAll('[data-plan]').forEach(b => { const on = b.dataset.plan === v.id; b.classList.toggle('selected', on); b.setAttribute('aria-pressed', String(on)); });
+    $('pd-plan-label').textContent = planLabelFor(v, dupes).toUpperCase();
+    $('pd-plan-price').textContent = formatMoney(v.price);
+    $('pd-price-side').innerHTML = priceSideHtml(v);
+    $('pd-summary').textContent = v.description || 'Choose a plan, then start your order.';
+    renderFeatures(v);
+    $('start-order').dataset.id = v.id;
+    $('start-whatsapp-order').dataset.id = v.id;
+  };
   $('plan-grid').querySelectorAll('[data-plan]').forEach(btn => {
-    btn.onclick = () => {
-      const v = byId.get(btn.dataset.plan);
-      if (!v) return;
-      $('plan-grid').querySelectorAll('[data-plan]').forEach(b => { b.classList.toggle('selected', b === btn); b.setAttribute('aria-pressed', String(b === btn)); });
-      $('pd-plan-label').textContent = planLabelFor(v, dupes).toUpperCase();
-      $('pd-plan-price').textContent = formatMoney(v.price);
-      $('pd-price-side').innerHTML = priceSideHtml(v);
-      $('pd-summary').textContent = v.description || 'Choose a plan, then start your order.';
-      renderFeatures(v);
-      $('start-order').dataset.id = v.id;
-      $('start-whatsapp-order').dataset.id = v.id;
-    };
+    btn.onclick = () => { const v = byId.get(btn.dataset.plan); if (v) applyPlan(v); };
   });
+  applyPlan(fallback);
   $('start-order').onclick = () => startOrder($('start-order').dataset.id);
   $('start-whatsapp-order').onclick = () => startWhatsAppOrder($('start-whatsapp-order').dataset.id);
   $('product-detail').querySelectorAll('[data-related]').forEach(button => { button.onclick = () => openProduct(button.dataset.related); });
@@ -1264,7 +1285,15 @@ async function openProduct(id) {
     }
     const byKey = baseKey(product.name);
     const group = state.groupByKey?.get(byKey);
-    if (group && group.variants.length > 1) { renderGroupDetail(group, id); return; }
+    if (group && group.variants.length > 1) {
+      // The detail payload just fetched is the canonical record for
+      // the entry variant: overlay its description/features onto the
+      // catalogue copy, so the popup opens (and switches) on the
+      // freshest per-plan text for the plan the customer came in on.
+      const merged = { ...group, variants: group.variants.map(v => v.id === product.id ? { ...v, description: product.description, features: product.features } : v) };
+      renderGroupDetail(merged, id);
+      return;
+    }
     const saving = savingsOf(product);
     const duration = durationOf(product);
     const badge = product.offer_label || product.badge;
@@ -1273,7 +1302,7 @@ async function openProduct(id) {
     if (badge) badges.push(saleBadge(badge));
     if (duration) badges.push('<span class="store-badge store-badge-plain">' + escapeHtml(duration) + '</span>');
     const catalogEntry = state.catalog.find(item => item.id === product.id);
-    const featureSource = (product.features && product.features.length) ? product.features : ((catalogEntry && catalogEntry.features) || []);
+    const featureSource = (product.features && product.features.length) ? product.features : ((catalogEntry && catalogEntry.features && catalogEntry.features.length) ? catalogEntry.features : featuresOf(product));
     const features = featureSource.map(feature => '<li>' + escapeHtml(feature) + '</li>').join('');
     $('product-detail').innerHTML = '<div class="pd-shell">' +
       '<div class="pd-scroll">' +
