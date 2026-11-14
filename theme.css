@@ -2169,6 +2169,209 @@
     padding: .75rem .7rem .8rem !important;
   }
 }
+
+/* --------------------------------------------------------------------------
+   3n. PRODUCT POPUP REDESIGN — banner header, sticky action footer,
+   unified plan selection (PR #31 follow-up; owner: "optimize view
+   plan page design").
+
+   The pd-* popup (app.js renderGroupDetail + openProduct) was a
+   two-column grid (store-ui.css): a ~270px square cover image at top
+   left with ~60% empty black space under it while the right column
+   scrolled, the price + Buy/WhatsApp block scrolled away with the
+   content, and plan options each glowed a different colour (cyan,
+   purple, amber… via --plan-color nth-child rules in mobile-ux.css).
+
+   New structure (markup in app.js; this section is display only):
+     .pd-shell   flex column filling the dialog
+       .pd-scroll  the scroller: banner, then the single content
+                   column (.pd-layout kept as the column class so the
+                   §3b light-theme h1 fix and base type rules stand)
+       .pd-footer  pinned price card (reuses .pd-price-card chrome,
+                   including its [data-theme="light"] overrides):
+                   plan label, price, strikethrough + Save % pill,
+                   and the same wired #start-order /
+                   #start-whatsapp-order buttons, moved not copied.
+
+   1. BANNER. The popup image becomes a full-width strip, contain on
+      white — the banner assets are white 1200x600 canvases, so wide
+      wordmarks are never cropped here (the square cover frame read
+      Prime as "rime vide" and Gemini Plus as "Gemin"). This is the
+      popup only: the §3l/§3m catalogue and deal cover rules are
+      untouched.
+   2. SCROLLER + FOOTER. §C made every .dialog its own scroller; the
+      product dialog keeps overscroll containment but hands scrolling
+      to .pd-scroll so the footer can pin. The app.js page-scroll
+      save/restore (PR #27) is untouched and still governs the page
+      behind the modal.
+   3. SELECTED PLAN. --plan-color/--plan-glow are unified to the Digi
+      red for every plan position, the selected card gets a red
+      border + soft red fill, and the pulsing ::after dot is replaced
+      by a "✓ Selected" chip (app.js planOptionCard). Popup only.
+   4. DESCRIPTION FOLLOWS THE PLAN (app.js): plan switches now also
+      update #pd-summary, the "What you get" list and the footer's
+      strikethrough/Save pill from the selected variant's own fields.
+   5. CONSISTENT SECTIONS (app.js + below): grouped popups gain the
+      "More in <category>" block singles already had, and .pd-related
+      becomes a single-row horizontal scroller in the popup — no
+      2-column grid, so no lone orphan cell. Singles also fall back
+      to the catalog entry's features when the detail payload has
+      none, so "What you get" no longer vanishes for them.
+   6. SPACING. Section gaps and bullet line-spacing come down one
+      step on the existing scale; type sizes are unchanged, and all
+      new colours are theme tokens / red tints that read in both
+      themes (the banner's white is the asset canvas, both themes).
+   -------------------------------------------------------------------------- */
+.product-dialog[open] {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.product-dialog #product-detail {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.pd-shell {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.pd-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: grid;
+  gap: .85rem;
+  align-content: start;
+  padding-right: .15rem;
+}
+.product-dialog .pd-layout {
+  grid-template-columns: minmax(0, 1fr);
+  gap: .85rem;
+}
+
+/* 1 — Banner header */
+.pd-banner {
+  position: relative;
+  height: 200px;
+  border-radius: 1rem;
+  overflow: hidden;
+  background: #ffffff;
+  display: grid;
+  place-items: center;
+}
+.pd-banner img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.pd-banner .pd-badges {
+  position: absolute;
+  left: .8rem;
+  bottom: .8rem;
+  z-index: 3;
+}
+@media (max-width: 640px) {
+  .pd-banner {
+    height: 140px;
+  }
+}
+
+/* 2 — Sticky action footer (chrome from .pd-price-card) */
+.pd-footer {
+  flex: 0 0 auto;
+  margin-top: .85rem;
+}
+.product-dialog .pd-footer {
+  padding: .85rem 1rem;
+  gap: .55rem;
+}
+
+/* 3 — Selected plan: one Digi-red accent for every position */
+.product-dialog .plan-option:nth-child(n) {
+  --plan-color: var(--red-bright);
+  --plan-glow: rgba(229, 9, 20, .28);
+}
+.product-dialog .plan-option.selected {
+  border-color: var(--red);
+  background: linear-gradient(150deg, rgba(229, 9, 20, .16), rgba(229, 9, 20, .05));
+  box-shadow:
+    0 0 0 1px rgba(229, 9, 20, .45),
+    0 4px 18px rgba(229, 9, 20, .16),
+    inset 0 1px 0 rgba(255, 255, 255, .06);
+}
+.product-dialog .plan-option.selected::after {
+  display: none;
+}
+.plan-selected-chip {
+  display: none;
+  position: absolute;
+  top: .55rem;
+  right: .55rem;
+  padding: .18rem .5rem;
+  border-radius: 999px;
+  background: var(--red);
+  color: #fff;
+  font-size: .62rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+}
+.product-dialog .plan-option.selected .plan-selected-chip {
+  display: inline-flex;
+}
+
+/* 5 — "More in category": one row, horizontally scrollable */
+.product-dialog .pd-related {
+  display: flex;
+  gap: .6rem;
+  overflow-x: auto;
+  padding-bottom: .3rem;
+}
+.product-dialog .pd-related-card {
+  flex: 0 0 11rem;
+  width: 11rem;
+}
+
+/* 6 — Tighter section rhythm inside the popup */
+.product-dialog .pd-head {
+  gap: .35rem;
+}
+.product-dialog .pd-block {
+  padding-top: .8rem;
+  gap: .45rem;
+}
+.product-dialog .pd-plans {
+  padding-top: 0;
+}
+.product-dialog .pd-summary {
+  line-height: 1.55;
+}
+.product-dialog .pd-reassure {
+  padding-top: .6rem;
+}
+.product-dialog .feature-list li {
+  margin: .2rem 0;
+  line-height: 1.45;
+}
+.product-dialog .pd-delivery {
+  gap: .55rem;
+}
+.product-dialog .pd-delivery li .pd-step-body,
+.product-dialog .pd-delivery li > div {
+  line-height: 1.5;
+}
+.product-dialog .pd-faq summary {
+  padding: .55rem 0;
+}
+.product-dialog .pd-faq p {
+  margin-bottom: .55rem;
+  line-height: 1.5;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
