@@ -382,10 +382,10 @@ const BRAND_LOGOS = {
   'netflix 4k': '/logos/netflix.svg?v=2',
   'spotify premium': '/logos/spotify.svg',
   'canva pro': '/logos/canva.svg',
-  'chatgpt plus': '/logos/chatgpt.svg',
-  'gemini ai pro': '/logos/gemini.svg?v=2',
+  'chatgpt plus': '/logos/chatgpt.svg?v=2',
+  'gemini ai pro': '/logos/gemini.svg?v=3',
   'capcut pro': '/logos/capcut.svg',
-  'prime video': '/logos/prime-video.svg'
+  'prime video': '/logos/prime-video.svg?v=2'
 };
 function brandLogoFor(name) { return BRAND_LOGOS[baseKey(name || '')] || ''; }
 

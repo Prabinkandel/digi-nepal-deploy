@@ -33,9 +33,10 @@
        (never over the wordmark).
    3m-add. Post-#30 micro-fixes — long plan-pill labels wrap at
        ≤640px instead of clipping, and the Hot Sale deal cards
-       narrow again (phone 64vw capped at 250px, tablet capped at
-       270px, desktop capped at 280px; supersedes the §3m pins of
-       76vw/300px and 19rem).
+       narrow again (phone 45vw capped at 185px, tablet capped at
+       210px, desktop capped at 235px; supersedes the §3m pins of
+       76vw/300px and 19rem and the first narrowing to
+       64vw/250px, 270px and 280px).
    4. Global prefers-reduced-motion support.
 
    The theme attribute is set before first paint by an inline snippet in
@@ -1707,9 +1708,14 @@
    Clipping, measured before shipping (logo bounding boxes read off
    the artwork files; every mark is centred at ~50%/~50%):
      bundled 1200x600 (2:1) — Netflix W74.8% H40.0%, Spotify
-       W73.2% H43.7%, Canva W71.5% H46.0%, ChatGPT W29.0% H58.0%,
-       Gemini W28.2% H56.3%, CapCut ~W73% H28% and Prime Video
-       ~W77% H48% (nested-viewport bounds in their SVGs);
+       W73.2% H43.7%, Canva W71.5% H46.0%, ChatGPT W40.0% H80.0%,
+       Gemini W40.0% H80.0%, CapCut ~W73% H28% and Prime Video
+       W61.7% H38.7% (nested-viewport bounds in their SVGs;
+       ChatGPT, Gemini and Prime Video were re-canvassed in the
+       PR #31 follow-up — the two square marks enlarged from
+       ~W29%/H58% and Prime's wordmark narrowed from ~W77%/H48%
+       so the §3m 3/2 cover frame, which crops 16.7% per side of
+       a 2:1 banner, leaves Prime whole at ~82% of frame width);
      admin uploads 1200x675 (1.78:1) — Muse W37.5% H67.6%, Claude
        W76.8% H50.1%, Gemini W75.0% H46.8%, Canva Edu W52.5% H36.1%,
        Microsoft W77.2% H36.4%.
@@ -1726,10 +1732,11 @@
    - Deal top (.fdc-top, ratio 2.7:1 desktop / ~3.3:1 phones /
      up to ~4.6:1 in the 640–1023px band): flat wordmark banners
      (logo height <=50%) survive everywhere; the two TALL bundled
-     marks — ChatGPT (58% of canvas height) and Gemini (56.3%) —
-     would crop top/bottom in the wide band, so they alone keep
-     contain on deal tops (L2 exception, keyed on the bundled src;
-     the flat §3j stage behind them reads as a deliberate tile).
+     marks — ChatGPT and Gemini (80% of canvas height after the
+     PR #31 re-canvas) — would crop top/bottom in the wide band,
+     so they alone keep contain on deal tops (L2 exception, keyed
+     on the bundled src; the img's own white background fills the
+     letterbox so the top reads as one white tile, edge to edge).
      Tall admin uploads (Muse, 67.6%) have no src hook: on deal
      tops their mark crops ~1% per side on desktop, ~7% on phones —
      centred and symmetric; a wider Muse banner is the remedy if
@@ -1766,11 +1773,16 @@
   padding: 0;
 }
 /* ...except the two tall bundled marks measured above, which keep
-   the pre-§3j contain fit on deal tops only. */
+   the pre-§3j contain fit on deal tops only. PR #31 follow-up: the
+   letterbox area lives inside the img box, so a white background on
+   the img itself makes the contained white banner fill the whole
+   deal top edge-to-edge — no dark bands at the sides — and the
+   padding drops so the (now larger) marks render bigger. */
 .flash-deal-card.fdc-rich .fdc-top img.deal-thumb[src*="logos/chatgpt.svg"],
 .flash-deal-card.fdc-rich .fdc-top img.deal-thumb[src*="logos/gemini.svg"] {
   object-fit: contain;
-  padding: .65rem 1.1rem;
+  background: #ffffff;
+  padding: .4rem .8rem;
 }
 
 /* L3. Product detail popup media: full-bleed, no padding. */
@@ -2113,40 +2125,48 @@
 /* --------------------------------------------------------------------------
    (b) HOT SALE DEAL CARDS NARROW AGAIN. The §3m pins (76vw capped
    at 300px on phones, 19rem overall) still read as one dominating
-   card on the owner's phone. New proportions: one full card plus a
-   substantial peek of the next.
-     phone  ≤639px:  flex-basis 64vw, max-width 250px
-                     (was flex 0 0 76vw / max-width 300px in §3m M7)
+   card on the owner's phone, and the first narrowing (64vw capped
+   at 250px) still read as too large. New proportions: two compact
+   cards side by side plus a peek of the third, matching the
+   2-column catalogue density.
+     phone  ≤639px:  flex-basis 45vw, max-width 185px
+                     (was flex 0 0 64vw / max-width 250px in the
+                     first narrowing; §3m M7 had 76vw / 300px)
      tablet 640–1023px: basis stays store-ui's calc(42% - .5rem),
-                     capped at 270px (was capped by §3m's 19rem)
-     desktop ≥1024px: the overall cap drops from 19rem (304px) to
-                     280px; store-ui's percentage bases stand, so
+                     capped at 210px (was capped at 270px)
+     desktop ≥1024px: the overall cap drops to 235px (was 280px);
+                     store-ui's percentage bases stand, so
                      wide-desktop cards were already under the cap
                      and the 1024–1279 band is what tightens.
    Scroll-snap (store-ui's scroll-snap-align on the base card) and
    the §3l deal-top image rules, including the contain exceptions,
    are untouched. Same selector as §3m M7 (0,2,0), later in the
    sheet, so these values supersede it.
-   At 250px the price row (price + strikethrough + save pill, per
+   At 185px the price row (price + strikethrough + save pill, per
    §3m) can crowd, so the row may wrap on phones: the save pill —
    already margin-left:auto — drops to a second line, right-aligned,
-   rather than squeezing the price figures.
+   rather than squeezing the price figures. The deal body padding
+   also tightens slightly on phones (deal cards only) so the
+   title and price row keep breathing room at 185px.
    -------------------------------------------------------------------------- */
 .flash-deal-card.fdc-rich {
-  max-width: 280px;
+  max-width: 235px;
 }
 @media (min-width: 640px) and (max-width: 1023px) {
   .flash-deal-card.fdc-rich {
-    max-width: 270px;
+    max-width: 210px;
   }
 }
 @media (max-width: 639.98px) {
   .flash-deal-card.fdc-rich {
-    flex: 0 0 64vw;
-    max-width: 250px;
+    flex: 0 0 45vw;
+    max-width: 185px;
   }
   .flash-deal-card.fdc-rich .fdc-price-row {
     flex-wrap: wrap;
+  }
+  .flash-deal-card.fdc-rich .fdc-body {
+    padding: .75rem .7rem .8rem !important;
   }
 }
 @media (prefers-reduced-motion: reduce) {
