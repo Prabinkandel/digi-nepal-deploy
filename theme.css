@@ -2610,3 +2610,172 @@
 .pd-footer {
   flex: 0 0 auto;
 }
+
+/* --------------------------------------------------------------------------
+   3r. POPUP FOOTER, ROUND 2 (PR #31) — the first-open clip the
+   earlier rounds' measurements kept missing.
+
+   §3q's diagnosis was right that §3n's structure is in-flow, and
+   its box measurements were accurate — for the boxes it measured.
+   It never re-measured the plan pills at FIRST OPEN (its verify
+   scrolled the pill into view first), so the defect the owner kept
+   seeing survived. Reproduced headlessly against the real
+   catalogue payloads at 1920x998, first open, Prime Video:
+     .pd-scroll   50 .. 626.7  (577px scrollport)
+     plan cards   474.2 .. 657.2  — bottoms ~31px PAST the
+                  scrollport's bottom edge
+     1M Save pill 570 .. 593.6  — fully visible
+     6M Save pill 618 .. 641.6  — clipped at 626.7, and its box
+                  crosses the footer's top edge (640.3)
+     .pd-footer   640.3 .. 904  (in-flow, flex: 0 0 auto)
+   Culprit rules, precisely:
+   (i)  app.js planOptionCard emits .price-save LAST inside
+        .plan-option's flex column (mobile-ux.css), and §3o's
+        .plan-best-tag + .plan-per-month lines exist only on the
+        multi-month card — so the 6M pill sits ~48px lower than
+        the 1M pill, at the very bottom of the card, exactly
+        where the scrollport runs out.
+   (ii) §3n's .pd-banner{height:200px} plus the head / trust
+        chips / section heading stack ~424px above the cards;
+        against the 577px scrollport (the dialog is capped by
+        store-ui's max-height:min(92vh,56rem)) the 183px cards
+        end ~31px too low. §3n's .pd-footer{margin-top:.85rem}
+        leaves only 13.6px between the scrollport's clip edge
+        and the footer's top edge, so content clipped at the
+        edge — at first open and while scrolling — reads as
+        sliced by / sliding under the footer.
+   (iii) style.css leaves the dialog height:auto (fit-content,
+        clamped by max-height). Chromium resolves the §3n flex
+        chain against the clamped height, but the shell's height
+        is never definite; engines that resolve flex against an
+        indefinite container height size .pd-scroll to content
+        and push the footer out of the dialog entirely.
+
+   Fix (this section is the final word on all four points):
+   1. DEFINITE HEIGHT. The open product dialog takes
+      height:min(92vh,56rem) — the same value as its max-height —
+      so the flex chain (dialog → #product-detail → .pd-shell →
+      .pd-scroll + .pd-footer) resolves against a definite size
+      in every engine. The chain is re-asserted below: the
+      dialog never scrolls, only .pd-scroll does, and the footer
+      is an in-flow flex sibling that cannot overlap content.
+      (≤639px the sheets already force height:100% !important.)
+   2. SAVE PILL MOVES UP. Flex order inside .plan-option puts
+      .price-save directly under .plan-price — above the
+      per-month and was lines — so every card's pill sits at the
+      same high position instead of last at the bottom. DOM and
+      keyboard order are unchanged (the §3k technique).
+   3. BANNER 200px → 148px. With (2), the plan cards and both
+      pills now end well inside the scrollport at first open
+      (measured below in the PR comment).
+   4. SHORT-VIEWPORT COMPACT MODE (max-height:720px, ≥640px
+      wide — landscape laptops and small windows): the dialog
+      takes 96vh, the banner drops to 64px, the summary clamps
+      to one line, the trust chips and the footer's payment
+      chips hide (the same facts remain one scroll away / in
+      the order flow), the footer buttons sit side by side,
+      and plan cards shed their per-month / was lines (the
+      footer still shows the selected plan's strikethrough +
+      Save %). First open at 1280x600 then fits the plan cards
+      and both Save pills inside the scrollport too.
+   -------------------------------------------------------------------------- */
+
+/* 1 — Definite dialog height + the shell chain, re-asserted. */
+.product-dialog[open] {
+  height: min(92vh, 56rem);
+}
+.product-dialog #product-detail {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.pd-shell {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.pd-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.pd-footer {
+  flex: 0 0 auto;
+}
+
+/* 2 — Save pill directly under the price on every plan card. */
+.product-dialog .plan-option .plan-duration {
+  order: 1;
+}
+.product-dialog .plan-option .plan-best-tag {
+  order: 2;
+}
+.product-dialog .plan-option .plan-price {
+  order: 3;
+}
+.product-dialog .plan-option .price-save {
+  order: 4;
+}
+.product-dialog .plan-option .plan-per-month {
+  order: 5;
+}
+.product-dialog .plan-option .plan-was {
+  order: 6;
+}
+.product-dialog .plan-option .plan-out {
+  order: 7;
+}
+
+/* 3 — Banner: 148px (supersedes §3n's 200px and its ≤640px
+   140px; one height at every width). */
+.pd-banner {
+  height: 148px;
+}
+
+/* 4 — Short-viewport compact mode. */
+@media (max-height: 720px) and (min-width: 640px) {
+  .product-dialog[open] {
+    height: 96vh;
+    max-height: 96vh;
+    padding: .75rem 1.1rem;
+  }
+  .pd-banner {
+    height: 64px;
+  }
+  .product-dialog .pd-summary {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .product-dialog .plan-grid {
+    margin-top: .4rem;
+  }
+  .product-dialog .pd-trust-chips {
+    display: none;
+  }
+  .product-dialog .pd-footer {
+    padding: .7rem .9rem;
+  }
+  .pd-footer .pd-pay-chips {
+    display: none;
+  }
+  .product-dialog .pd-actions {
+    display: flex;
+    gap: .55rem;
+  }
+  .product-dialog .pd-actions .button {
+    flex: 1 1 0;
+    min-height: 3rem;
+  }
+  .product-dialog .plan-option {
+    padding: .6rem .9rem;
+  }
+  .product-dialog .plan-option .plan-per-month,
+  .product-dialog .plan-option .plan-was {
+    display: none;
+  }
+}
