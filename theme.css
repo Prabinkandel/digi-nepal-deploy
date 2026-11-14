@@ -24,6 +24,13 @@
        fills its frame edge-to-edge (cover, no letterbox padding),
        with measured exceptions for the square discovery thumb and
        two tall bundled marks on deal tops.
+   3m. Card redesign (owner's two references) — flat token shell,
+       3/2 poster frame, category strip under the image, one badge
+       pill, "Choose plan:" label, FROM-only-grouped price label, a
+       red Buy text action on the price row and one full-width red
+       "View Details" pill; deal cards get the same shell + strip,
+       a narrower carousel width and the save pill beside the price
+       (never over the wordmark).
    4. Global prefers-reduced-motion support.
 
    The theme attribute is set before first paint by an inline snippet in
@@ -1766,6 +1773,296 @@
   object-fit: cover;
   object-position: center;
   padding: 0;
+}
+
+/* --------------------------------------------------------------------------
+   3m. CARD REDESIGN — the owner's two references.
+
+   Owner's spec (design/layout only — every Digi function, datum and
+   flow is unchanged; the accent stays Digi red, not the references'
+   orange):
+     Ref A (mobile store screenshot): dark rounded cards, artwork
+       filling the whole top edge-to-edge, name under it, and a price
+       row of bold price + a coloured "Buy →" text action on the right.
+     Ref B (ottsewa.store): charcoal card, 1px subtle border, radius
+       ~14px, no glow; full-bleed portrait image; ONE badge pill
+       top-left over the image; a thin category strip directly under
+       the image; name; a "FROM" mini-label + big bold price with NO
+       strikethrough on the card; one full-width gradient pill button
+       at the bottom ("View Details").
+
+   Markup (app.js productCard / renderFlashCards): the visual stays
+   flush with the card's top/left/right edges (§3l cover kept), ONE
+   badge renders in the left badge slot (priority in app.js: discount
+   % → ⭐ Featured → the product's own badge label; the rotated
+   stock-out ribbon is a separate element and stays), a
+   .card-cat-strip / .fdc-cat-strip sits directly under the image,
+   grouped cards gain a "Choose plan:" label above duration-first
+   pills (app.js cardPillLabel), the price row carries the existing
+   Buy control as a red text action, and .product-actions holds ONE
+   full-width "View Details" pill (the old Plans/Details control,
+   same data attributes, so the grid delegation is untouched). The
+   crossed-out was-price no longer renders on cards — it stays in
+   the popup, per Ref B. §3k is preserved: the label and pills live
+   in the flex-grown region above the price row (orders 1/2/3 stand),
+   so price + actions stay anchored and the row baseline still
+   coincides across card types. Festive Dashain cards keep their
+   card-clean treatment (the shell mirrors below keep card-clean's
+   :not(:has(.sb-dashain-emblem)) exclusion; when a Dashain-emblem
+   product is also on sale, the ONE badge over its image is now the
+   discount pill and the emblem yields — the emblem's own festive
+   frame styling is untouched).
+
+   FRAME — 4/3 measured and rejected, 3/2 shipped. The brief asked
+   for ≈4/3, re-running the §3l clipping check first (centred marks;
+   spans from the §3l measurements):
+     4/3 frame → a 2:1 banner shows 66.7% of its width (window
+       16.7–83.3%): Prime Video (mark spans 11.5–88.5%) loses
+       ~5.2 pts/side, Netflix (12.6–87.4%) ~4.1, CapCut ~3.3,
+       Spotify ~3.3, Canva ~2.6 — five marks past the ~2%/side
+       threshold. 1.78:1 uploads show 75% (12.5–87.5%): Microsoft
+       (11.4–88.6%) and Claude (11.6–88.4%) also graze.
+     3/2 frame → a 2:1 banner shows 75% of its width (12.5–87.5%):
+       only Prime Video grazes, ~1.0 pt/side (~1.3% of the mark);
+       Netflix and every other bundled mark fit whole. 1.78:1
+       uploads show 84.3% (7.9–92.1%) at full height: Microsoft,
+       Claude, Gemini and Muse (67.6% tall) all fit whole.
+   So the frame is aspect-ratio 3/2 at every width (the fixed ratio
+   also ends §3l's width-dependent crop: phones showed 68–74% of a
+   banner before, desktop ~100% wide but height-cropped; now the
+   crop is one consistent, measured 75%-wide / 100%-tall window).
+
+   DEAL CARDS (Special Offers, now headed "🔥 Hot Sale" in
+   index.html): same flat shell + strip. Width: the store-ui bases
+   are min(19rem, 86vw) with a ≤639px step of 68vw/19rem and uncapped
+   27% / 42% steps above; the owner's phone screenshot reads ~85%
+   of the screen with an awkward peek. §3m pins the mobile basis to
+   76vw capped at 300px (a clean ~24% side peek, scroll-snap
+   untouched) and caps the card at 19rem overall, which also tames
+   the 27% / 42% bands. The .fdc-top keeps its §3l heights, so at
+   ≤300px wide the top ratio is ~2.5–2.8:1 — inside the §3l
+   envelope. The save pill MOVES into .fdc-price-row beside the
+   price (owner's screenshot: perched top-right it clipped the
+   Prime Video wordmark's last letter on the full-bleed top);
+   putting it in the body is deterministic — no object-position
+   guesswork per banner — and it stays the deal card's one badge,
+   still solid #065f46 from §3h. (Catalogue cards keep their
+   badge-over-image lane; only deal tops had this crop geometry.)
+   -------------------------------------------------------------------------- */
+
+/* M1. Flat token shell — mirrors card-clean's layered-gradient
+   selectors (and §3b's light mirrors) so the flat surface wins at
+   equal specificity from this last-loaded sheet; the hover lift
+   itself (card-clean translateY) is not redeclared and stands. */
+.product-card:not(.skeleton):not(:has(.sb-dashain-emblem)) {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, .3),
+    0 10px 28px rgba(0, 0, 0, .28);
+}
+.product-card:not(.skeleton):not(:has(.sb-dashain-emblem)):hover,
+.product-card:not(.skeleton):not(:has(.sb-dashain-emblem)):focus-within {
+  background: var(--card);
+  border-color: var(--line-strong);
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, .3),
+    0 18px 40px rgba(0, 0, 0, .42);
+}
+[data-theme="light"] .product-card:not(.skeleton):not(:has(.sb-dashain-emblem)) {
+  background: var(--card);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, .05),
+    0 10px 28px rgba(0, 0, 0, .07);
+}
+[data-theme="light"] .product-card:not(.skeleton):not(:has(.sb-dashain-emblem)):hover,
+[data-theme="light"] .product-card:not(.skeleton):not(:has(.sb-dashain-emblem)):focus-within {
+  background: var(--card);
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, .05),
+    0 18px 40px rgba(0, 0, 0, .1);
+}
+/* Ref B is a no-glow design: the brand glow overlay goes. */
+.product-card .card-glow,
+.flash-deal-card.fdc-rich .card-glow {
+  display: none;
+}
+
+/* M2. Poster frame: 3/2 at every width (see the clipping audit in
+   the section header). Height rules in card-premium / card-clean /
+   store-ui are all (0,2,0); this (0,3,0) rule replaces them. The
+   frame keeps its own top corners, matched to the 1rem shell. */
+.product-card .card-visual .product-image {
+  height: auto;
+  aspect-ratio: 3 / 2;
+  border-radius: calc(1rem - 1px) calc(1rem - 1px) 0 0;
+  border-bottom: 0;
+}
+
+/* M3. Category strips — full-width, centred, uppercase, on the
+   raised token surface (subtly different from the card in both
+   themes). New classes; nothing else styles them. */
+.product-card .card-cat-strip,
+.flash-deal-card.fdc-rich .fdc-cat-strip {
+  background: var(--surface-raised);
+  color: var(--text-muted);
+  text-align: center;
+  text-transform: uppercase;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.product-card .card-cat-strip {
+  font-size: .68rem;
+  letter-spacing: .14em;
+  padding: .45rem .5rem;
+}
+.flash-deal-card.fdc-rich .fdc-cat-strip {
+  font-size: .64rem;
+  letter-spacing: .13em;
+  padding: .4rem .5rem;
+}
+
+/* M4. Body padding ~14px under the strip, and the "Choose plan:"
+   mini-label (grouped cards only; it sits in the order-0 region of
+   the §3k flex column, directly above the order-1 pills). */
+.product-card .card-body {
+  padding: .875rem;
+}
+.product-card .plan-choose-label {
+  display: block;
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: .1rem 0 .45rem;
+}
+
+/* M5. Buy as a red text action on the price row (Ref A). The
+   card-premium §15 paint (brand gradient, white label, white icon)
+   is all !important, so the overrides are too, one specificity
+   step up at each point. */
+.product-card .price-row .card-buy {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: 0 !important;
+  border-radius: .5rem !important;
+  min-height: 2.5rem !important;
+  padding: .35rem .15rem !important;
+  margin: 0;
+  gap: .3rem !important;
+  flex: none;
+  color: var(--red-bright) !important;
+}
+.product-card .price-row .card-buy:hover {
+  background: var(--red-wash) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+.product-card .price-row .card-buy.card-action .card-buy-text {
+  color: var(--red-bright) !important;
+  font-size: .85rem !important;
+  font-weight: 800 !important;
+  letter-spacing: .01em !important;
+  text-shadow: none !important;
+}
+.product-card .price-row .card-buy svg {
+  color: var(--red-bright) !important;
+  stroke: var(--red-bright) !important;
+  filter: none !important;
+  opacity: 1 !important;
+}
+/* Light theme: --red-bright on white is the §3b-documented
+   unreadable case; the deep red used for light red text applies. */
+[data-theme="light"] .product-card .price-row .card-buy {
+  color: #c00711 !important;
+}
+[data-theme="light"] .product-card .price-row .card-buy.card-action .card-buy-text {
+  color: #c00711 !important;
+}
+[data-theme="light"] .product-card .price-row .card-buy svg {
+  color: #c00711 !important;
+  stroke: #c00711 !important;
+}
+
+/* M6. ONE full-width Digi-red gradient pill: "View Details".
+   Overrides card-premium's glass .card-view and §3b's light mirror
+   the same way as M5 (one step up, !important where they are). */
+.product-card .product-actions {
+  grid-template-columns: 1fr;
+}
+.product-card .product-actions .card-view {
+  width: 100%;
+  min-height: 2.75rem !important;
+  margin: 0;
+  padding: .6rem 1rem !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: linear-gradient(135deg, var(--red-bright), var(--red)) !important;
+  color: #fff !important;
+  font-size: .85rem !important;
+  font-weight: 800 !important;
+  letter-spacing: .01em !important;
+  box-shadow: 0 4px 16px rgba(229, 9, 20, .3) !important;
+  text-align: center;
+  justify-content: center;
+}
+.product-card .product-actions .card-view:hover {
+  background: linear-gradient(135deg, var(--red-bright), var(--red)) !important;
+  color: #fff !important;
+  filter: brightness(1.1);
+  box-shadow: 0 6px 20px rgba(229, 9, 20, .38) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* M7. Deal cards: flat shell (card-clean's deal paint is
+   !important, so these mirrors are too), the width pins from the
+   section header, and the save pill beside the price. */
+.flash-deal-card.fdc-rich {
+  background: var(--card) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 1rem !important;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, .3),
+    0 10px 26px rgba(0, 0, 0, .28) !important;
+  max-width: 19rem;
+}
+.flash-deal-card.fdc-rich:hover {
+  background: var(--card) !important;
+  border-color: var(--line-strong) !important;
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, .3),
+    0 16px 36px rgba(0, 0, 0, .42) !important;
+}
+[data-theme="light"] .flash-deal-card.fdc-rich {
+  background: var(--card) !important;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, .05),
+    0 10px 26px rgba(0, 0, 0, .07) !important;
+}
+[data-theme="light"] .flash-deal-card.fdc-rich:hover {
+  background: var(--card) !important;
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, .05),
+    0 16px 36px rgba(0, 0, 0, .1) !important;
+}
+@media (max-width: 639.98px) {
+  .flash-deal-card.fdc-rich {
+    flex: 0 0 76vw;
+    max-width: 300px;
+  }
+}
+/* The pill's absolute perch came from card-premium (0,3,0, not
+   !important); in the price row it is a plain flex item pushed to
+   the far side of the price. Its §3h colours stand. */
+.flash-deal-card.fdc-rich .fdc-price-row .fdc-save-pill {
+  position: static;
+  flex: none;
+  align-self: center;
+  margin-left: auto;
 }
 @media (prefers-reduced-motion: reduce) {
   html {
