@@ -20,6 +20,10 @@
        visibility + mobile package order, dialog scroll hardening.
    3k. Price-baseline hotfix — flex-order the plan pills above the
        price row so grouped and single cards share one price baseline.
+   3l. Full-bleed product images — card, deal-top and popup artwork
+       fills its frame edge-to-edge (cover, no letterbox padding),
+       with measured exceptions for the square discovery thumb and
+       two tall bundled marks on deal tops.
    4. Global prefers-reduced-motion support.
 
    The theme attribute is set before first paint by an inline snippet in
@@ -1673,8 +1677,96 @@
 }
 
 /* --------------------------------------------------------------------------
-   4. Reduced motion — everything settles instantly
+   3l. FULL-BLEED PRODUCT IMAGES — the artwork fills its frame.
+
+   Owner's spec (a customer called the old placement "not good"; the
+   reference is a competitor grid whose art fills each card): until
+   now every product image rendered object-fit:contain with heavy
+   padding — card-clean.css §6 (1.5rem 2.2rem desktop / .95rem 1.05rem
+   mobile) over card-premium.css (1.8rem 2.5rem), plus §3j A2's
+   2.75rem badge-lane top padding — so a wide banner shrank to a small
+   centred mark floating on the §3j calm stage. This section switches
+   the three customer-facing frames to cover with NO img padding.
+   Frame heights/ratios are unchanged; the §3j stage stays behind the
+   img and shows only while the image loads. Corner badges keep their
+   §3j positions and now overlay the artwork's corners (the reference
+   look); the §3j emblem fallback (no image at all) is untouched.
+
+   Clipping, measured before shipping (logo bounding boxes read off
+   the artwork files; every mark is centred at ~50%/~50%):
+     bundled 1200x600 (2:1) — Netflix W74.8% H40.0%, Spotify
+       W73.2% H43.7%, Canva W71.5% H46.0%, ChatGPT W29.0% H58.0%,
+       Gemini W28.2% H56.3%, CapCut ~W73% H28% and Prime Video
+       ~W77% H48% (nested-viewport bounds in their SVGs);
+     admin uploads 1200x675 (1.78:1) — Muse W37.5% H67.6%, Claude
+       W76.8% H50.1%, Gemini W75.0% H46.8%, Canva Edu W52.5% H36.1%,
+       Microsoft W77.2% H36.4%.
+   - Product card: frame ratio ranges ~1.36:1 (360px phones) to
+     ~2.34:1 (desktop). Side crop is worst on small phones: 73–74%
+     of a 2:1 banner's width stays visible at 390px, ~68% at 360px,
+     so the two widest wordmarks (Prime Video, Netflix) graze at
+     most ~1.5% per side at <=380px and are whole from ~414px up.
+     Vertical crop is worst on desktop: >=85% of height visible vs
+     a tallest mark of 58% (2:1) / 76% visible vs 67.6% (uploads)
+     — every centred mark survives whole.
+   - Popup (.product-detail-image, ratio ~1.6–2.0:1): >=79% of
+     width and >=87% of height always visible — everything fits.
+   - Deal top (.fdc-top, ratio 2.7:1 desktop / ~3.3:1 phones /
+     up to ~4.6:1 in the 640–1023px band): flat wordmark banners
+     (logo height <=50%) survive everywhere; the two TALL bundled
+     marks — ChatGPT (58% of canvas height) and Gemini (56.3%) —
+     would crop top/bottom in the wide band, so they alone keep
+     contain on deal tops (L2 exception, keyed on the bundled src;
+     the flat §3j stage behind them reads as a deliberate tile).
+     Tall admin uploads (Muse, 67.6%) have no src hook: on deal
+     tops their mark crops ~1% per side on desktop, ~7% on phones —
+     centred and symmetric; a wider Muse banner is the remedy if
+     the owner campaigns it into Special Offers.
+   - Discovery thumb (.compact-product-image, 4.25rem x 4.15rem,
+     ~1.02:1): cover would show only the centre ~51% of a 2:1
+     banner and cut EVERY wide wordmark (71–77% wide) — it keeps
+     contain (card-clean/store-ui values stand; L-rules below are
+     scoped away from it). It is a 68px navigation chip, not card
+     art. The legacy .flash-deal-thumb / .deal-card / .sp-thumb
+     rules are not emitted by the current renderers and are left
+     alone.
+   Layout only — no colour changes; both themes behave identically.
    -------------------------------------------------------------------------- */
+
+/* L1. Product cards: fill the frame; the §3j drop-shadow and
+   card-premium's rotated hover zoom belonged to the letterboxed
+   look (a rotated full-bleed img would bare the frame corners), so
+   the shadow goes and the hover settles to a gentle straight zoom. */
+.product-card .card-visual .product-image img {
+  object-fit: cover;
+  object-position: center;
+  padding: 0;
+  filter: none;
+}
+.product-card:hover .card-visual .product-image img {
+  transform: scale(1.04);
+}
+
+/* L2. Special Offers deal tops: same full-bleed fill... */
+.flash-deal-card.fdc-rich .fdc-top .deal-thumb {
+  object-fit: cover;
+  object-position: center;
+  padding: 0;
+}
+/* ...except the two tall bundled marks measured above, which keep
+   the pre-§3j contain fit on deal tops only. */
+.flash-deal-card.fdc-rich .fdc-top img.deal-thumb[src*="logos/chatgpt.svg"],
+.flash-deal-card.fdc-rich .fdc-top img.deal-thumb[src*="logos/gemini.svg"] {
+  object-fit: contain;
+  padding: .65rem 1.1rem;
+}
+
+/* L3. Product detail popup media: full-bleed, no padding. */
+.product-detail-image img {
+  object-fit: cover;
+  object-position: center;
+  padding: 0;
+}
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
