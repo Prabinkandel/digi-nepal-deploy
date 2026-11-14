@@ -612,6 +612,22 @@ function planVariantTail(variant) {
   return m ? m[1].trim() : 'Standard';
 }
 
+/* Card pill label — duration-first. When a family's plans differ by
+   duration, the FULL duration leads the pill ("1 Month", "6 Months",
+   "1 Year") via the shared planLabelFor() rule the popup uses, instead
+   of the old terse abbreviations ("1M", "6M", "1Yr"). When every plan
+   shares one duration, the plans differ by something else (tokens,
+   devices, warranty), so the distinguishing tail stays the label —
+   exactly the fallback the pills have always used for those families. */
+function cardPillLabel(variant, variants) {
+  const durations = new Set(variants.map(v => durationOf(v) || v.name));
+  if (durations.size > 1 && durationOf(variant)) {
+    return planLabelFor(variant, duplicateDurations(variants));
+  }
+  const dupes = duplicateDurations(variants);
+  return dupes.get(durationOf(variant) || variant.name) > 1 ? planVariantTail(variant) : (durationPillLabel(variant) || variant.name);
+}
+
 /* Builds the clickable duration pill row for a multi-variant group.
    Each pill maps to one duration variant; the cheapest is selected by default.
    When two variants share a duration the pill falls back to the variant's
@@ -622,9 +638,8 @@ function durationPills(group) {
     return inStock;
   });
   if (!variants.length) return '';
-  const dupes = duplicateDurations(variants);
   const pills = variants.map(v => {
-    const label = dupes.get(durationOf(v) || v.name) > 1 ? planVariantTail(v) : (durationPillLabel(v) || v.name);
+    const label = cardPillLabel(v, variants);
     // A plan flagged stock_out (but not stock-count exhausted) stays visible
     // as a disabled pill so customers can see the plan exists, but it cannot
     // be selected or ordered.
@@ -677,7 +692,11 @@ function productCard(group) {
   const theme = getBrandTheme(group.name, group.category_name, group.brand_color);
   const tvars = themeVarsString(theme);
 
-  // Dual-slot badges: Top-Left discount pill, Top-Right promotional/status badge
+  // ONE badge pill over the image (reference layout): the discount pill
+  // wins, then FEATURED, then the product's own badge (offer label /
+  // campaign). The rotated stock-out ribbon is a separate element and
+  // stays in the visual; the campaign banner strip inside saleBadge()
+  // output is likewise untouched when it is the primary badge.
   const discountBadge = saving ? '<span class="store-badge store-badge-save">-' + saving.percent + '% OFF</span>' : '';
   const campaignBadgeHtml = group.variants
     .map(v => campaignBadge(v, saving))
@@ -685,10 +704,10 @@ function productCard(group) {
   const featuredBadge = group.featured ? '<span class="store-badge store-badge-featured">⭐ Featured</span>' : '';
   const stockOutBanner = group.stockOut ? '<span class="stock-out-banner">Out of Stock</span>' : '';
   const statusBadge = group.offer_label ? saleBadge(group.offer_label) : campaignBadgeHtml;
-  const badgesHtml = (discountBadge || statusBadge || featuredBadge)
+  const primaryBadge = discountBadge || featuredBadge || statusBadge;
+  const badgesHtml = primaryBadge
     ? '<div class="card-badges">' +
-        '<div class="badge-slot-left">' + discountBadge + featuredBadge + '</div>' +
-        '<div class="badge-slot-right">' + statusBadge + '</div>' +
+        '<div class="badge-slot-left">' + primaryBadge + '</div>' +
       '</div>'
     : '';
 
@@ -696,34 +715,43 @@ function productCard(group) {
     ? productVisual({ name: group.name, image_url: group.image_url })
     : productVisual(group.rep);
 
-  const crossedPrice = group.maxPrice ? '<s class="was-price">' + formatMoney(group.maxPrice) + '</s>' : '';
+  const isFreeFire = group.name.toLowerCase().includes('free fire');
+  const arrowSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>';
+  // The Buy control rides on the price row as a red text action (the
+  // reference layout). It keeps the exact classes and data attributes
+  // the grid click delegation and wireDurationPills() have always used,
+  // so the selected-plan order flow is unchanged.
+  const buyAction = isFreeFire
+    ? '<button type="button" class="card-buy card-action" data-freefire="true" aria-label="Top up Free Fire Diamonds"><span class="card-buy-text">Top Up</span>' + arrowSvg + '</button>'
+    : (multi
+        ? '<button type="button" class="card-buy card-action" data-group-view="' + escapeHtml(group.key) + '"' + (group.inStock ? '' : ' disabled') + ' aria-label="Buy ' + escapeHtml(group.name) + '"><span class="card-buy-text">Buy</span>' + arrowSvg + '</button>'
+        : '<button type="button" class="card-buy card-action" data-buy="' + escapeHtml(group.variants[0].id) + '"' + (group.inStock ? '' : ' disabled') + ' aria-label="Buy ' + escapeHtml(group.name) + '"><span class="card-buy-text">Buy</span>' + arrowSvg + '</button>');
+  // One full-width pill at the bottom of the card opens the same
+  // popup / group view the old Plans / Details buttons opened.
+  const viewAction = isFreeFire
+    ? '<button type="button" class="card-view card-action" data-freefire="true">View Details</button>'
+    : (multi
+        ? '<button type="button" class="card-view card-action" data-group-view="' + escapeHtml(group.key) + '">View Details</button>'
+        : '<button type="button" class="card-view card-action" data-product="' + escapeHtml(group.variants[0].id) + '">View Details</button>');
 
   return '<article class="product-card' + (group.stockOut ? ' is-out' : '') + '" data-group-key="' + escapeHtml(group.key) + '" style="' + tvars + '" tabindex="0" role="button" aria-label="View ' + escapeHtml(group.name) + ' plans">' +
     '<div class="card-glow" aria-hidden="true"></div>' +
     '<div class="card-visual">' + visual + badgesHtml + stockOutBanner + '</div>' +
+    '<div class="card-cat-strip">' + escapeHtml(group.category_name || 'DIGITAL SERVICE') + '</div>' +
     '<div class="card-body">' +
-      '<p class="product-category">' + escapeHtml(group.category_name || 'DIGITAL SERVICE') + '</p>' +
       '<h3>' + escapeHtml(group.name) + '</h3>' +
       '<div class="card-meta">' +
         (group.durationLabel ? '<span class="card-meta-item"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>' + escapeHtml(group.durationLabel) + '</span>' : '') +
         (multi ? '<span class="card-meta-item card-meta-plans"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>' + group.variants.length + ' plans</span>' : '') +
         '<span class="card-meta-stock' + (group.inStock ? '' : ' is-out') + '">' + (group.inStock ? 'Available now' : 'Currently unavailable') + '</span>' +
       '</div>' +
+      (multi ? '<span class="plan-choose-label">Choose plan:</span>' + durationPills(group) : '') +
       '<div class="price-row">' +
-        '<div class="price-main"><small class="price-context">' + (multi ? 'FROM' : 'PRICE') + '</small><span class="price" data-card-price>' + formatMoney(group.minPrice) + '</span>' + crossedPrice + '</div>' +
+        '<div class="price-main">' + (multi ? '<small class="price-context">FROM</small>' : '') + '<span class="price" data-card-price>' + formatMoney(group.minPrice) + '</span></div>' +
+        buyAction +
       '</div>' +
-      (multi ? durationPills(group) : '') +
       '<div class="product-actions">' +
-        (group.name.toLowerCase().includes('free fire')
-          ? '<button type="button" class="card-buy card-action" data-freefire="true" aria-label="Top up Free Fire Diamonds"><span class="card-buy-text">Top Up Now</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>'
-          : (multi
-              ? '<button type="button" class="card-buy card-action" data-group-view="' + escapeHtml(group.key) + '"' + (group.inStock ? '' : ' disabled') + ' aria-label="Buy ' + escapeHtml(group.name) + '"><span class="card-buy-text">Buy Now</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>'
-              : '<button type="button" class="card-buy card-action" data-buy="' + escapeHtml(group.variants[0].id) + '"' + (group.inStock ? '' : ' disabled') + ' aria-label="Buy ' + escapeHtml(group.name) + '"><span class="card-buy-text">Buy Now</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>')) +
-        (group.name.toLowerCase().includes('free fire')
-          ? '<button type="button" class="card-view card-action" data-freefire="true">View Product</button>'
-          : (multi
-              ? '<button type="button" class="card-view card-action" data-group-view="' + escapeHtml(group.key) + '">Plans</button>'
-              : '<button type="button" class="card-view card-action" data-product="' + escapeHtml(group.variants[0].id) + '">Details</button>')) +
+        viewAction +
       '</div>' +
     '</div>' +
   '</article>';
@@ -858,7 +886,7 @@ function renderDeals(products) {
   if (sub) {
     sub.textContent = state.campaign && state.campaign.subtitle
       ? state.campaign.subtitle
-      : 'Top ' + top.length + ' discounts right now — same prices you pay at checkout.';
+      : '⚡ Top ' + top.length + ' discounts right now — same prices you pay at checkout.';
   }
 
   // Hide the cat bar — no longer needed
@@ -881,14 +909,15 @@ function renderFlashCards(deals) {
       '<div class="card-glow" aria-hidden="true"></div>' +
       '<div class="fdc-top">' +
         '<div class="fdc-thumb">' + dealThumb(product) + '</div>' +
-        '<span class="fdc-save-pill">-' + saving.percent + '% OFF</span>' +
       '</div>' +
+      '<div class="fdc-cat-strip">' + escapeHtml(product.category_name || 'DIGITAL SERVICE') + '</div>' +
       '<div class="fdc-body">' +
         '<h3 class="fdc-name">' + escapeHtml(product.name) + '</h3>' +
         (duration ? '<p class="fdc-dur">' + escapeHtml(duration) + '</p>' : '') +
         '<div class="fdc-price-row">' +
           '<span class="fdc-price">' + formatMoney(product.price) + '</span>' +
           '<span class="fdc-was">' + formatMoney(product.original_price) + '</span>' +
+          '<span class="fdc-save-pill">-' + saving.percent + '% OFF</span>' +
         '</div>' +
         '<div class="fdc-actions">' +
           '<button class="fdc-btn-buy" type="button"' + (inStock ? '' : ' disabled') + ' aria-label="Buy ' + escapeHtml(product.name) + '"><span class="card-buy-text">Buy Now</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>' +
@@ -1141,12 +1170,17 @@ function selectedGroupVariants(group) {
   return (group?.variants || []).slice().sort((a, b) => Number(a.price) - Number(b.price));
 }
 
-function planOptionCard(variant, selected, duplicateDuration = false) {
+function planOptionCard(variant, selected, dupes) {
   const duration = durationOf(variant);
   const saving = savingsOf(variant);
   const inStock = variant.stock === undefined || variant.stock === null || Number(variant.stock) > 0;
   const flaggedOut = Number(variant.stock_out) === 1;
   const unavailable = !inStock || flaggedOut;
+  // Duration-first label, driven by the same duplicateDurations() map
+  // behind planLabelFor() and the card pills: the full duration leads,
+  // and the distinguishing tail is appended only when two plans share
+  // that duration — so popup options read exactly like the card pills.
+  const duplicateDuration = dupes ? dupes.get(durationOf(variant) || variant.name) > 1 : false;
   const variantTail = !duplicateDuration ? '' : ('<span class="plan-tail"> · ' + escapeHtml(planVariantTail(variant)) + '</span>');
   return '<button type="button" class="plan-option' + (selected ? ' selected' : '') + (flaggedOut ? ' is-out' : '') + '" data-plan="' + escapeHtml(variant.id) + '"' + (unavailable ? ' disabled' : '') + ' aria-pressed="' + (selected ? 'true' : 'false') + '">' +
     '<span class="plan-duration">' + escapeHtml(duration || variant.name) + variantTail + '</span>' +
@@ -1181,8 +1215,8 @@ function renderGroupDetail(group, preselectVariantId) {
         '<h1 id="product-title">' + escapeHtml(group.name) + '</h1>' +
         '<p class="pd-summary">' + escapeHtml(fallback.description || 'Choose a plan, then start your order.') + '</p>' +
       '</div>' +
-      '<section class="pd-block pd-plans" aria-label="Choose a plan"><h2>Choose a plan · ' + variants.length + ' options</h2><div class="plan-grid" id="plan-grid">' +
-        variants.map(v => planOptionCard(v, v.id === fallback.id, dupes.get(durationOf(v) || v.name) > 1)).join('') +
+      '<section class="pd-block pd-plans" aria-label="Choose a plan"><h2>Choose plan: ' + variants.length + ' options</h2><div class="plan-grid" id="plan-grid">' +
+        variants.map(v => planOptionCard(v, v.id === fallback.id, dupes)).join('') +
       '</div></section>' +
       '<div class="pd-price-card">' +
         '<div class="pd-price-top">' +
