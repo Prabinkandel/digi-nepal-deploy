@@ -2535,3 +2535,78 @@
 .pd-scroll {
   padding-bottom: 17rem;
 }
+
+/* --------------------------------------------------------------------------
+   3q. FINAL FIX ROUND (PR #31) — the two defects left from the
+   pre-publish re-check, both diagnosed with headless-Chromium
+   measurements against the real catalogue payloads before fixing.
+
+   1. MIXED-ROW PRICE BLOCKS. Grouped cards render "FROM" as a
+      stacked label above the price (card-premium's .price-main
+      small is width:100% inside store-ui's column flex), so their
+      .price-main block is two lines tall — measured 41.2px vs a
+      single card's 24px at desktop, 31.7px vs 16.8px at ≤640px —
+      and in mixed rows the grouped price BLOCKS start one label
+      line (17.2px desktop / 14.9px phone) above their neighbours,
+      so the price line reads ragged down the row even where the
+      §3k bottom anchor keeps the figures themselves level.
+      First choice was an INLINE label ("FROM NPR 99" on one line);
+      it was measured and rejected on two counts: baseline-aligning
+      the small label beside the price still leaves grouped blocks
+      1.4px taller (25.4 vs 24px), which put the figures 1.3–1.4px
+      out in mixed rows, and at 360px the wider one-line block
+      pushes the Buy control 5px past the card's right edge on
+      grouped cards. Fallback taken (the brief's own): reserve the
+      label line on EVERY card — .price-main gets the two-line
+      height as a minimum and its column is end-justified, so a
+      single card's price sits at the bottom of the same block a
+      grouped card fills with FROM + price. Measured after the fix:
+      .price-main is a uniform 41.3px (desktop) / 31.8px (≤640px)
+      on every card, and both the price figures and the block tops
+      spread 0px within every row at 1920 / 390 / 360px. §3k's
+      pinning and §3p's meta reservation are untouched.
+   2. POPUP FOOTER OVERFLOW AT SHORT VIEWPORTS. §3n's structure
+      was already in-flow (shell flex column, .pd-scroll flex:1,
+      footer flex:0 0 auto) — the overlap came from §3p item 4's
+      .pd-scroll bottom padding of 17rem (272px), written when the
+      footer was treated as an overlay. A border-box flex item
+      cannot shrink below its own padding, so 272px became a hard
+      floor on .pd-scroll's height: at a 600px-tall viewport the
+      column needed 272 + 13.6 margin + the 263.7px footer =
+      549.3px inside a 510px shell, and the footer was pushed
+      39.3px past the dialog's bottom edge (footer bottom 570.3 vs
+      dialog bottom 566) and clipped — reading, at first open, as
+      the footer crowding the plan cards above it. With the footer
+      in-flow it needs no clearance at all: the padding drops to a
+      normal 1rem and the flex structure is re-asserted below as
+      the final word. Measured after the fix at 1280×600: the
+      footer sits fully inside the dialog (281–545 inside
+      14–566), .pd-scroll takes its true share (233px), and
+      scrolled to the bottom the last content clears the footer's
+      top edge (252 < 281). The footer's wired buttons
+      (#start-order / #start-whatsapp-order) and the PR #27
+      page-scroll save/restore are untouched.
+   -------------------------------------------------------------------------- */
+
+/* 1 — Uniform reserved label line on every card's price block. */
+.product-card .price-row .price-main {
+  justify-content: flex-end;
+  min-height: 2.58rem;
+}
+@media (max-width: 640px) {
+  .product-card .price-row .price-main {
+    min-height: 1.99rem;
+  }
+}
+
+/* 2 — Popup: in-flow footer, true flex share for the scroller,
+   normal bottom padding (supersedes §3p item 4's 17rem). */
+.pd-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: 1rem;
+}
+.pd-footer {
+  flex: 0 0 auto;
+}
