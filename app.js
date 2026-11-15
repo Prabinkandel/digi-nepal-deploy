@@ -543,8 +543,21 @@ function baseKey(name) {
   const noParen = stripped.replace(/\s*\([^)]*\)\s*$/, '').trim();
   return noParen || stripped;
 }
-/* Family-level display names: variants of a shared family get one short
-   card title instead of inheriting whichever variant was created last. */
+/* Case-preserving family name of a variant: "Netflix 4K (1 Year)" ->
+   "Netflix 4K", "CapCut Pro 1 months" -> "CapCut Pro". baseKey() runs
+   the same derivation lowercased for grouping; this one keeps the
+   admin's casing for display, so a multi-plan group is titled by its
+   family instead of inheriting whichever variant the catalogue
+   happened to list first. */
+function familyNameOf(name) {
+  const raw = String(name || '').trim();
+  const noDur = stripDurationSuffix(raw) || raw;
+  const noParen = noDur.replace(/\s*\([^)]*\)\s*$/, '').trim();
+  return stripDurationSuffix(noParen) || noParen || raw;
+}
+/* Family-level display-name overrides: casing the derivation cannot
+   recover ("muse ai" -> "Muse AI", not "Muse Ai"). Families without
+   an entry fall back to familyNameOf(). */
 const GROUP_DISPLAY_NAMES = { 'capcut pro': 'CapCut Pro', 'muse ai': 'Muse AI', 'claude ai api': 'Claude AI API' };
 
 function groupProducts(products) {
@@ -574,7 +587,7 @@ function groupProducts(products) {
     g.durationLabel = durs.length > 1 ? durs[0] + ' – ' + durs[durs.length - 1] : (durs[0] || '');
     g.inStock = g.variants.some(v => v.stock === undefined || v.stock === null || Number(v.stock) > 0);
     g.rep = g.variants[0];
-    if (g.variants.length > 1 && GROUP_DISPLAY_NAMES[g.key]) g.name = GROUP_DISPLAY_NAMES[g.key];
+    if (g.variants.length > 1) g.name = GROUP_DISPLAY_NAMES[g.key] || familyNameOf(g.name);
     g.maxPrice = withSaving.length ? withSaving[0].v.original_price || withSaving[0].v.compare_price : null;
     return g;
   });
@@ -1185,9 +1198,29 @@ function renderGroupDetail(group, preselectVariantId) {
     const months = durationMonths(v);
     return { best: v.id === bestValueId, perMonth: months > 1 ? Math.round(Number(v.price) / months) : 0 };
   };
+  // Badge lane for the group banner. The single-product popup has
+  // always rendered one (openProduct: discount pill + saleBadge +
+  // duration pill inside .pd-badges), but the group render never did —
+  // so once Netflix became a multi-plan group, its 'dashain' promo
+  // emblem had nowhere to appear: not a CSS cascade issue (§3u's tag
+  // cap was already in place) and not a missing file
+  // (/dashain-sale-banner.png serves 200), the lane markup simply did
+  // not exist on this render path. Mirror the single-product lane for
+  // the selected plan — discount pill + the festive emblem as a tag
+  // (§3u caps it at tag size in this lane) — refreshed in applyPlan()
+  // alongside the price. Text badges (sale/hot/…) stay out of the
+  // group lane: the plan cards and footer already carry them.
+  const popupBadgesFor = (v) => {
+    const badges = [];
+    const s = savingsOf(v);
+    if (s) badges.push('<span class="store-badge store-badge-save">-' + s.percent + '% off</span>');
+    const badgeText = v.offer_label || v.badge || group.offer_label || '';
+    if (String(badgeText).toLowerCase().includes('dashain')) badges.push(saleBadge(badgeText));
+    return badges.join('');
+  };
   $('product-detail').innerHTML = '<div class="pd-shell">' +
     '<div class="pd-scroll">' +
-      '<div class="pd-banner">' + detailVisual({ name: group.name, image_url: group.image_url || fallback.image_url }) + (group.stockOut ? '<span class="stock-out-banner">Out of Stock</span>' : '') + '</div>' +
+      '<div class="pd-banner">' + detailVisual({ name: group.name, image_url: group.image_url || fallback.image_url }) + (group.stockOut ? '<span class="stock-out-banner">Out of Stock</span>' : '') + '<div class="pd-badges" id="pd-badges">' + popupBadgesFor(fallback) + '</div></div>' +
       '<div class="pd-layout">' +
         '<div class="pd-head">' +
           '<p class="pd-category">' + escapeHtml((group.category_name || 'SUBSCRIPTION').toUpperCase()) + '</p>' +
@@ -1239,6 +1272,8 @@ function renderGroupDetail(group, preselectVariantId) {
     $('pd-plan-label').textContent = planLabelFor(v, dupes).toUpperCase();
     $('pd-plan-price').textContent = formatMoney(v.price);
     $('pd-price-side').innerHTML = priceSideHtml(v);
+    const lane = $('pd-badges');
+    if (lane) lane.innerHTML = popupBadgesFor(v);
     $('pd-summary').textContent = v.description || 'Choose a plan, then start your order.';
     renderFeatures(v);
     $('start-order').dataset.id = v.id;
