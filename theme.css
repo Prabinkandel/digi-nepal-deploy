@@ -31,6 +31,12 @@
        "View Details" pill; deal cards get the same shell + strip,
        a narrower carousel width and the save pill beside the price
        (never over the wordmark).
+   3m-add. Post-#30 micro-fixes — long plan-pill labels wrap at
+       ≤640px instead of clipping, and the Hot Sale deal cards
+       narrow again (phone 45vw capped at 185px, tablet capped at
+       210px, desktop capped at 235px; supersedes the §3m pins of
+       76vw/300px and 19rem and the first narrowing to
+       64vw/250px, 270px and 280px).
    4. Global prefers-reduced-motion support.
 
    The theme attribute is set before first paint by an inline snippet in
@@ -1702,9 +1708,14 @@
    Clipping, measured before shipping (logo bounding boxes read off
    the artwork files; every mark is centred at ~50%/~50%):
      bundled 1200x600 (2:1) — Netflix W74.8% H40.0%, Spotify
-       W73.2% H43.7%, Canva W71.5% H46.0%, ChatGPT W29.0% H58.0%,
-       Gemini W28.2% H56.3%, CapCut ~W73% H28% and Prime Video
-       ~W77% H48% (nested-viewport bounds in their SVGs);
+       W73.2% H43.7%, Canva W71.5% H46.0%, ChatGPT W40.0% H80.0%,
+       Gemini W40.0% H80.0%, CapCut ~W73% H28% and Prime Video
+       W61.7% H38.7% (nested-viewport bounds in their SVGs;
+       ChatGPT, Gemini and Prime Video were re-canvassed in the
+       PR #31 follow-up — the two square marks enlarged from
+       ~W29%/H58% and Prime's wordmark narrowed from ~W77%/H48%
+       so the §3m 3/2 cover frame, which crops 16.7% per side of
+       a 2:1 banner, leaves Prime whole at ~82% of frame width);
      admin uploads 1200x675 (1.78:1) — Muse W37.5% H67.6%, Claude
        W76.8% H50.1%, Gemini W75.0% H46.8%, Canva Edu W52.5% H36.1%,
        Microsoft W77.2% H36.4%.
@@ -1721,10 +1732,11 @@
    - Deal top (.fdc-top, ratio 2.7:1 desktop / ~3.3:1 phones /
      up to ~4.6:1 in the 640–1023px band): flat wordmark banners
      (logo height <=50%) survive everywhere; the two TALL bundled
-     marks — ChatGPT (58% of canvas height) and Gemini (56.3%) —
-     would crop top/bottom in the wide band, so they alone keep
-     contain on deal tops (L2 exception, keyed on the bundled src;
-     the flat §3j stage behind them reads as a deliberate tile).
+     marks — ChatGPT and Gemini (80% of canvas height after the
+     PR #31 re-canvas) — would crop top/bottom in the wide band,
+     so they alone keep contain on deal tops (L2 exception, keyed
+     on the bundled src; the img's own white background fills the
+     letterbox so the top reads as one white tile, edge to edge).
      Tall admin uploads (Muse, 67.6%) have no src hook: on deal
      tops their mark crops ~1% per side on desktop, ~7% on phones —
      centred and symmetric; a wider Muse banner is the remedy if
@@ -1761,11 +1773,16 @@
   padding: 0;
 }
 /* ...except the two tall bundled marks measured above, which keep
-   the pre-§3j contain fit on deal tops only. */
+   the pre-§3j contain fit on deal tops only. PR #31 follow-up: the
+   letterbox area lives inside the img box, so a white background on
+   the img itself makes the contained white banner fill the whole
+   deal top edge-to-edge — no dark bands at the sides — and the
+   padding drops so the (now larger) marks render bigger. */
 .flash-deal-card.fdc-rich .fdc-top img.deal-thumb[src*="logos/chatgpt.svg"],
 .flash-deal-card.fdc-rich .fdc-top img.deal-thumb[src*="logos/gemini.svg"] {
   object-fit: contain;
-  padding: .65rem 1.1rem;
+  background: #ffffff;
+  padding: .4rem .8rem;
 }
 
 /* L3. Product detail popup media: full-bleed, no padding. */
@@ -2064,6 +2081,352 @@
   align-self: center;
   margin-left: auto;
 }
+
+/* --------------------------------------------------------------------------
+   3m-add. POST-#30 MICRO-FIXES.
+   (a) was the ≤640px card pill wrap rules; §3o removed the card plan
+   pills entirely (minimum price on cards, plans in the popup only),
+   so those rules are gone. (b) follows.
+   -------------------------------------------------------------------------- */
+
+/* --------------------------------------------------------------------------
+   (b) HOT SALE DEAL CARDS NARROW AGAIN. The §3m pins (76vw capped
+   at 300px on phones, 19rem overall) still read as one dominating
+   card on the owner's phone, and the first narrowing (64vw capped
+   at 250px) still read as too large. New proportions: two compact
+   cards side by side plus a peek of the third, matching the
+   2-column catalogue density.
+     phone  ≤639px:  flex-basis 45vw, max-width 185px
+                     (was flex 0 0 64vw / max-width 250px in the
+                     first narrowing; §3m M7 had 76vw / 300px)
+     tablet 640–1023px: basis stays store-ui's calc(42% - .5rem),
+                     capped at 210px (was capped at 270px)
+     desktop ≥1024px: the overall cap drops to 235px (was 280px);
+                     store-ui's percentage bases stand, so
+                     wide-desktop cards were already under the cap
+                     and the 1024–1279 band is what tightens.
+   Scroll-snap (store-ui's scroll-snap-align on the base card) and
+   the §3l deal-top image rules, including the contain exceptions,
+   are untouched. Same selector as §3m M7 (0,2,0), later in the
+   sheet, so these values supersede it.
+   At 185px the price row (price + strikethrough + save pill, per
+   §3m) can crowd, so the row may wrap on phones: the save pill —
+   already margin-left:auto — drops to a second line, right-aligned,
+   rather than squeezing the price figures. The deal body padding
+   also tightens slightly on phones (deal cards only) so the
+   title and price row keep breathing room at 185px.
+   -------------------------------------------------------------------------- */
+.flash-deal-card.fdc-rich {
+  max-width: 235px;
+}
+@media (min-width: 640px) and (max-width: 1023px) {
+  .flash-deal-card.fdc-rich {
+    max-width: 210px;
+  }
+}
+@media (max-width: 639.98px) {
+  .flash-deal-card.fdc-rich {
+    flex: 0 0 45vw;
+    max-width: 185px;
+  }
+  .flash-deal-card.fdc-rich .fdc-price-row {
+    flex-wrap: wrap;
+  }
+  .flash-deal-card.fdc-rich .fdc-body {
+    padding: .75rem .7rem .8rem !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   3n. PRODUCT POPUP REDESIGN — banner header, sticky action footer,
+   unified plan selection (PR #31 follow-up; owner: "optimize view
+   plan page design").
+
+   The pd-* popup (app.js renderGroupDetail + openProduct) was a
+   two-column grid (store-ui.css): a ~270px square cover image at top
+   left with ~60% empty black space under it while the right column
+   scrolled, the price + Buy/WhatsApp block scrolled away with the
+   content, and plan options each glowed a different colour (cyan,
+   purple, amber… via --plan-color nth-child rules in mobile-ux.css).
+
+   New structure (markup in app.js; this section is display only):
+     .pd-shell   flex column filling the dialog
+       .pd-scroll  the scroller: banner, then the single content
+                   column (.pd-layout kept as the column class so the
+                   §3b light-theme h1 fix and base type rules stand)
+       .pd-footer  pinned price card (reuses .pd-price-card chrome,
+                   including its [data-theme="light"] overrides):
+                   plan label, price, strikethrough + Save % pill,
+                   and the same wired #start-order /
+                   #start-whatsapp-order buttons, moved not copied.
+
+   1. BANNER. The popup image becomes a full-width strip, contain on
+      white — the banner assets are white 1200x600 canvases, so wide
+      wordmarks are never cropped here (the square cover frame read
+      Prime as "rime vide" and Gemini Plus as "Gemin"). This is the
+      popup only: the §3l/§3m catalogue and deal cover rules are
+      untouched.
+   2. SCROLLER + FOOTER. §C made every .dialog its own scroller; the
+      product dialog keeps overscroll containment but hands scrolling
+      to .pd-scroll so the footer can pin. The app.js page-scroll
+      save/restore (PR #27) is untouched and still governs the page
+      behind the modal.
+   3. SELECTED PLAN. --plan-color/--plan-glow are unified to the Digi
+      red for every plan position, the selected card gets a red
+      border + soft red fill, and the pulsing ::after dot is replaced
+      by a "✓ Selected" chip (app.js planOptionCard). Popup only.
+   4. DESCRIPTION FOLLOWS THE PLAN (app.js): plan switches now also
+      update #pd-summary, the "What you get" list and the footer's
+      strikethrough/Save pill from the selected variant's own fields.
+   5. CONSISTENT SECTIONS (app.js + below): grouped popups gain the
+      "More in <category>" block singles already had, and .pd-related
+      becomes a single-row horizontal scroller in the popup — no
+      2-column grid, so no lone orphan cell. Singles also fall back
+      to the catalog entry's features when the detail payload has
+      none, so "What you get" no longer vanishes for them.
+   6. SPACING. Section gaps and bullet line-spacing come down one
+      step on the existing scale; type sizes are unchanged, and all
+      new colours are theme tokens / red tints that read in both
+      themes (the banner's white is the asset canvas, both themes).
+   -------------------------------------------------------------------------- */
+.product-dialog[open] {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.product-dialog #product-detail {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.pd-shell {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.pd-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: grid;
+  gap: .85rem;
+  align-content: start;
+  padding-right: .15rem;
+}
+.product-dialog .pd-layout {
+  grid-template-columns: minmax(0, 1fr);
+  gap: .85rem;
+}
+
+/* 1 — Banner header */
+.pd-banner {
+  position: relative;
+  height: 200px;
+  border-radius: 1rem;
+  overflow: hidden;
+  background: #ffffff;
+  display: grid;
+  place-items: center;
+}
+.pd-banner img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.pd-banner .pd-badges {
+  position: absolute;
+  left: .8rem;
+  bottom: .8rem;
+  z-index: 3;
+}
+@media (max-width: 640px) {
+  .pd-banner {
+    height: 140px;
+  }
+}
+
+/* 2 — Sticky action footer (chrome from .pd-price-card) */
+.pd-footer {
+  flex: 0 0 auto;
+  margin-top: .85rem;
+}
+.product-dialog .pd-footer {
+  padding: .85rem 1rem;
+  gap: .55rem;
+}
+
+/* 3 — Selected plan: one Digi-red accent for every position */
+.product-dialog .plan-option:nth-child(n) {
+  --plan-color: var(--red-bright);
+  --plan-glow: rgba(229, 9, 20, .28);
+}
+.product-dialog .plan-option.selected {
+  border-color: var(--red);
+  background: linear-gradient(150deg, rgba(229, 9, 20, .16), rgba(229, 9, 20, .05));
+  box-shadow:
+    0 0 0 1px rgba(229, 9, 20, .45),
+    0 4px 18px rgba(229, 9, 20, .16),
+    inset 0 1px 0 rgba(255, 255, 255, .06);
+}
+.product-dialog .plan-option.selected::after {
+  display: none;
+}
+.plan-selected-chip {
+  display: none;
+  position: absolute;
+  top: .55rem;
+  right: .55rem;
+  padding: .18rem .5rem;
+  border-radius: 999px;
+  background: var(--red);
+  color: #fff;
+  font-size: .62rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+}
+.product-dialog .plan-option.selected .plan-selected-chip {
+  display: inline-flex;
+}
+
+/* 5 — "More in category": one row, horizontally scrollable */
+.product-dialog .pd-related {
+  display: flex;
+  gap: .6rem;
+  overflow-x: auto;
+  padding-bottom: .3rem;
+}
+.product-dialog .pd-related-card {
+  flex: 0 0 11rem;
+  width: 11rem;
+}
+
+/* 6 — Tighter section rhythm inside the popup */
+.product-dialog .pd-head {
+  gap: .35rem;
+}
+.product-dialog .pd-block {
+  padding-top: .8rem;
+  gap: .45rem;
+}
+.product-dialog .pd-plans {
+  padding-top: 0;
+}
+.product-dialog .pd-summary {
+  line-height: 1.55;
+}
+.product-dialog .pd-reassure {
+  padding-top: .6rem;
+}
+.product-dialog .feature-list li {
+  margin: .2rem 0;
+  line-height: 1.45;
+}
+.product-dialog .pd-delivery {
+  gap: .55rem;
+}
+.product-dialog .pd-delivery li .pd-step-body,
+.product-dialog .pd-delivery li > div {
+  line-height: 1.5;
+}
+.product-dialog .pd-faq summary {
+  padding: .55rem 0;
+}
+.product-dialog .pd-faq p {
+  margin-bottom: .55rem;
+  line-height: 1.5;
+}
+
+/* --------------------------------------------------------------------------
+   3o. OWNER DECISIONS — minimum price on cards; richer popup
+   (PR #31, same round as §3n).
+
+   DECISION 1 — CARDS: MINIMUM PRICE ONLY, PLANS IN DETAILS ONLY.
+   productCard() no longer renders a plan area at all: the grouped
+   cards' .dur-pills + "Choose plan:" label and the single-plan chip
+   ("Plan:") from earlier in this PR are removed, and the dead card
+   wiring (wireDurationPills, durationPills, singlePlanChip and their
+   label helpers) is deleted from app.js. Grouped cards show FROM +
+   the group's minimum variant price (this settles the old
+   SELECTED-vs-FROM question: FROM, grouped only); single cards show
+   a plain price. The grouped Buy control targets the cheapest
+   selectable variant via data-selected-variant in the markup; View
+   Details and card clicks open the popup on its default plan.
+   Heights equalise via the §3j title/meta reservations + the §3k
+   pinned price baseline — the §3k flex orders (pills 1 / price 2 /
+   actions 3) simply have no pill row left to order, and the §3m-add
+   (a) pill-wrap rules are removed above. The remaining .dur-pill /
+   .plan-choose-label rules in earlier sheets are inert (no matching
+   markup) and are left in place.
+
+   DECISION 2 — POPUP, SECOND PASS (app.js + the rules below):
+   - "⭐ BEST VALUE" tag on the plan with the lowest per-month cost
+     (groups with 2+ parseable durations only), and a per-month line
+     ("≈ NPR 67/month") under multi-month plan prices.
+   - The sticky footer's price side adds the total saving in rupees
+     ("You save NPR 497") next to the Save % pill, both popup types.
+   - A compact trust-chip row sits under the popup title, and a
+     payment-chip row (eSewa · Khalti · IME Pay · Bank QR) is pinned
+     inside the footer — token colours, both themes.
+   - The first FAQ item renders open; the rest stay collapsed.
+   -------------------------------------------------------------------------- */
+.plan-best-tag {
+  align-self: flex-start;
+  padding: .18rem .5rem;
+  border-radius: 999px;
+  background: rgba(251, 191, 36, .14);
+  color: #fbbf24;
+  font-size: .62rem;
+  font-weight: 800;
+  letter-spacing: .05em;
+}
+[data-theme="light"] .plan-best-tag {
+  background: rgba(217, 119, 6, .13);
+  color: #b45309;
+}
+.plan-per-month {
+  color: var(--text-muted);
+  font-size: .72rem;
+  font-weight: 600;
+}
+.pd-price-side .pd-save-amount {
+  color: var(--save-green);
+  font-size: var(--fs-tiny);
+  font-weight: 700;
+}
+.pd-trust-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+}
+.pd-trust-chips span {
+  padding: .32rem .6rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: var(--fs-micro);
+  font-weight: 700;
+}
+.pd-pay-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+  align-items: center;
+}
+.pd-pay-chips span {
+  padding: .28rem .55rem;
+  border: 1px solid var(--line);
+  border-radius: .45rem;
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: var(--fs-micro);
+  font-weight: 800;
+  letter-spacing: .02em;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -2074,5 +2437,345 @@
     animation-duration: .01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: .01ms !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   3p. PRE-PUBLISH FIX ROUND (PR #31) — six defects from the full
+   preview check, each diagnosed against the code/data before fixing.
+
+   1. HOT SALE SAVE PILL CLIPPED. §3m-add (b) narrowed the deal cards
+      (210px tablet / 235px small-desktop caps) but its flex-wrap for
+      .fdc-price-row only applied at ≤639.98px. Above that the row
+      stayed nowrap while price + strikethrough + "-72% OFF" need
+      ~233px+ — measured in a real browser at 768px: the pill's right
+      edge sat up to 65px past the card's edge and was cut ("-68% OFF"
+      read as "-6…"). Fix: the row wraps at EVERY width (the pill —
+      margin-left:auto from §3m — drops under the price, right-aligned,
+      as originally intended), the price figures may shrink, and the
+      deal body clips any residual overflow.
+   2. CATALOGUE PRICE BASELINES. §3j A3 reserved only one meta line
+      (min-height 1.6rem), but .card-meta wraps variably — two lines
+      wherever a long duration range ("3 Months – 18 Months") joins
+      the plans + stock items (measured 26px vs 56px at desktop), so
+      the meta block's height differed card to card. Fix: reserve a
+      uniform meta height everywhere — two pill lines on desktop,
+      three at ≤640px where the narrow two-column cards wrap the
+      three items onto three lines (measured 73px) — so the §3k
+      baseline maths starts from the same offset on every card.
+   3. FEATURED PILL CONTRAST. card-premium.css paints
+      .store-badge-featured as a translucent amber wash
+      (rgba(245,158,11,.42)) with pale-yellow #fde68a text; the badge
+      sits over the white logo banners, so it washed out in BOTH
+      themes. Fix: the §3g solid treatment — deep amber #92400e with
+      white text (6.9:1), unscoped so dark and light resolve the
+      same; position and size class untouched.
+   4. POPUP BANNER CROPPED + FOOTER CLEARANCE. §3n made .pd-banner
+      `display:grid; place-items:center` with the img at
+      width/height:100%. For a grid item the percentage height is
+      circular (the implicit row's height depends on the item), so
+      real browsers fall back to the image's aspect height — measured
+      428px tall (Prime SVG) / 481px (Gemini Plus WebP) inside the
+      200px banner, top-aligned and clipped by overflow:hidden: Prime
+      oversized and cut at the bottom, Gemini Plus a sliver at the
+      bottom edge. Fix: the banner becomes a plain block box with a
+      definite height, so height:100% resolves against it and
+      object-fit:contain works as intended for bundled SVGs and
+      uploaded banners alike (the .brand-detail-emblem fallback is
+      width/height:100% and centres itself, so it is unaffected).
+      The same item: .pd-scroll gains bottom padding equal to the
+      measured sticky-footer height (264px desktop / 259px phone —
+      17rem covers both) so scrolled content can never sit hidden
+      behind the footer.
+   -------------------------------------------------------------------------- */
+
+/* 1 — Deal price row: wrap at every width; pill drops under the
+   price, right-aligned (margin-left:auto stands from §3m). */
+.flash-deal-card.fdc-rich .fdc-price-row {
+  flex-wrap: wrap;
+  row-gap: .3rem;
+}
+.flash-deal-card.fdc-rich .fdc-price-row .fdc-price,
+.flash-deal-card.fdc-rich .fdc-price-row .fdc-was {
+  min-width: 0;
+}
+.flash-deal-card.fdc-rich .fdc-body {
+  overflow: hidden;
+}
+
+/* 2 — Uniform reserved meta height (supersedes the §3j A3 value). */
+.product-card .card-meta {
+  min-height: 3.5rem;
+}
+@media (max-width: 640px) {
+  .product-card .card-meta {
+    min-height: 4.6rem;
+  }
+}
+
+/* 3 — FEATURED pill: solid deep amber + white text, both themes. */
+.product-card .card-badges .store-badge-featured {
+  background: #92400e;
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, .35);
+  font-weight: 700;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .35);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* 4 — Popup banner: definite-height block box (see header note);
+   .pd-scroll bottom clearance ≥ the sticky footer's height. */
+.pd-banner {
+  display: block;
+}
+.pd-banner img {
+  display: block;
+}
+.pd-scroll {
+  padding-bottom: 17rem;
+}
+
+/* --------------------------------------------------------------------------
+   3q. FINAL FIX ROUND (PR #31) — the two defects left from the
+   pre-publish re-check, both diagnosed with headless-Chromium
+   measurements against the real catalogue payloads before fixing.
+
+   1. MIXED-ROW PRICE BLOCKS. Grouped cards render "FROM" as a
+      stacked label above the price (card-premium's .price-main
+      small is width:100% inside store-ui's column flex), so their
+      .price-main block is two lines tall — measured 41.2px vs a
+      single card's 24px at desktop, 31.7px vs 16.8px at ≤640px —
+      and in mixed rows the grouped price BLOCKS start one label
+      line (17.2px desktop / 14.9px phone) above their neighbours,
+      so the price line reads ragged down the row even where the
+      §3k bottom anchor keeps the figures themselves level.
+      First choice was an INLINE label ("FROM NPR 99" on one line);
+      it was measured and rejected on two counts: baseline-aligning
+      the small label beside the price still leaves grouped blocks
+      1.4px taller (25.4 vs 24px), which put the figures 1.3–1.4px
+      out in mixed rows, and at 360px the wider one-line block
+      pushes the Buy control 5px past the card's right edge on
+      grouped cards. Fallback taken (the brief's own): reserve the
+      label line on EVERY card — .price-main gets the two-line
+      height as a minimum and its column is end-justified, so a
+      single card's price sits at the bottom of the same block a
+      grouped card fills with FROM + price. Measured after the fix:
+      .price-main is a uniform 41.3px (desktop) / 31.8px (≤640px)
+      on every card, and both the price figures and the block tops
+      spread 0px within every row at 1920 / 390 / 360px. §3k's
+      pinning and §3p's meta reservation are untouched.
+   2. POPUP FOOTER OVERFLOW AT SHORT VIEWPORTS. §3n's structure
+      was already in-flow (shell flex column, .pd-scroll flex:1,
+      footer flex:0 0 auto) — the overlap came from §3p item 4's
+      .pd-scroll bottom padding of 17rem (272px), written when the
+      footer was treated as an overlay. A border-box flex item
+      cannot shrink below its own padding, so 272px became a hard
+      floor on .pd-scroll's height: at a 600px-tall viewport the
+      column needed 272 + 13.6 margin + the 263.7px footer =
+      549.3px inside a 510px shell, and the footer was pushed
+      39.3px past the dialog's bottom edge (footer bottom 570.3 vs
+      dialog bottom 566) and clipped — reading, at first open, as
+      the footer crowding the plan cards above it. With the footer
+      in-flow it needs no clearance at all: the padding drops to a
+      normal 1rem and the flex structure is re-asserted below as
+      the final word. Measured after the fix at 1280×600: the
+      footer sits fully inside the dialog (281–545 inside
+      14–566), .pd-scroll takes its true share (233px), and
+      scrolled to the bottom the last content clears the footer's
+      top edge (252 < 281). The footer's wired buttons
+      (#start-order / #start-whatsapp-order) and the PR #27
+      page-scroll save/restore are untouched.
+   -------------------------------------------------------------------------- */
+
+/* 1 — Uniform reserved label line on every card's price block. */
+.product-card .price-row .price-main {
+  justify-content: flex-end;
+  min-height: 2.58rem;
+}
+@media (max-width: 640px) {
+  .product-card .price-row .price-main {
+    min-height: 1.99rem;
+  }
+}
+
+/* 2 — Popup: in-flow footer, true flex share for the scroller,
+   normal bottom padding (supersedes §3p item 4's 17rem). */
+.pd-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: 1rem;
+}
+.pd-footer {
+  flex: 0 0 auto;
+}
+
+/* --------------------------------------------------------------------------
+   3r. POPUP FOOTER, ROUND 2 (PR #31) — the first-open clip the
+   earlier rounds' measurements kept missing.
+
+   §3q's diagnosis was right that §3n's structure is in-flow, and
+   its box measurements were accurate — for the boxes it measured.
+   It never re-measured the plan pills at FIRST OPEN (its verify
+   scrolled the pill into view first), so the defect the owner kept
+   seeing survived. Reproduced headlessly against the real
+   catalogue payloads at 1920x998, first open, Prime Video:
+     .pd-scroll   50 .. 626.7  (577px scrollport)
+     plan cards   474.2 .. 657.2  — bottoms ~31px PAST the
+                  scrollport's bottom edge
+     1M Save pill 570 .. 593.6  — fully visible
+     6M Save pill 618 .. 641.6  — clipped at 626.7, and its box
+                  crosses the footer's top edge (640.3)
+     .pd-footer   640.3 .. 904  (in-flow, flex: 0 0 auto)
+   Culprit rules, precisely:
+   (i)  app.js planOptionCard emits .price-save LAST inside
+        .plan-option's flex column (mobile-ux.css), and §3o's
+        .plan-best-tag + .plan-per-month lines exist only on the
+        multi-month card — so the 6M pill sits ~48px lower than
+        the 1M pill, at the very bottom of the card, exactly
+        where the scrollport runs out.
+   (ii) §3n's .pd-banner{height:200px} plus the head / trust
+        chips / section heading stack ~424px above the cards;
+        against the 577px scrollport (the dialog is capped by
+        store-ui's max-height:min(92vh,56rem)) the 183px cards
+        end ~31px too low. §3n's .pd-footer{margin-top:.85rem}
+        leaves only 13.6px between the scrollport's clip edge
+        and the footer's top edge, so content clipped at the
+        edge — at first open and while scrolling — reads as
+        sliced by / sliding under the footer.
+   (iii) style.css leaves the dialog height:auto (fit-content,
+        clamped by max-height). Chromium resolves the §3n flex
+        chain against the clamped height, but the shell's height
+        is never definite; engines that resolve flex against an
+        indefinite container height size .pd-scroll to content
+        and push the footer out of the dialog entirely.
+
+   Fix (this section is the final word on all four points):
+   1. DEFINITE HEIGHT. The open product dialog takes
+      height:min(92vh,56rem) — the same value as its max-height —
+      so the flex chain (dialog → #product-detail → .pd-shell →
+      .pd-scroll + .pd-footer) resolves against a definite size
+      in every engine. The chain is re-asserted below: the
+      dialog never scrolls, only .pd-scroll does, and the footer
+      is an in-flow flex sibling that cannot overlap content.
+      (≤639px the sheets already force height:100% !important.)
+   2. SAVE PILL MOVES UP. Flex order inside .plan-option puts
+      .price-save directly under .plan-price — above the
+      per-month and was lines — so every card's pill sits at the
+      same high position instead of last at the bottom. DOM and
+      keyboard order are unchanged (the §3k technique).
+   3. BANNER 200px → 148px. With (2), the plan cards and both
+      pills now end well inside the scrollport at first open
+      (measured below in the PR comment).
+   4. SHORT-VIEWPORT COMPACT MODE (max-height:720px, ≥640px
+      wide — landscape laptops and small windows): the dialog
+      takes 96vh, the banner drops to 64px, the summary clamps
+      to one line, the trust chips and the footer's payment
+      chips hide (the same facts remain one scroll away / in
+      the order flow), the footer buttons sit side by side,
+      and plan cards shed their per-month / was lines (the
+      footer still shows the selected plan's strikethrough +
+      Save %). First open at 1280x600 then fits the plan cards
+      and both Save pills inside the scrollport too.
+   -------------------------------------------------------------------------- */
+
+/* 1 — Definite dialog height + the shell chain, re-asserted. */
+.product-dialog[open] {
+  height: min(92vh, 56rem);
+}
+.product-dialog #product-detail {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.pd-shell {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.pd-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.pd-footer {
+  flex: 0 0 auto;
+}
+
+/* 2 — Save pill directly under the price on every plan card. */
+.product-dialog .plan-option .plan-duration {
+  order: 1;
+}
+.product-dialog .plan-option .plan-best-tag {
+  order: 2;
+}
+.product-dialog .plan-option .plan-price {
+  order: 3;
+}
+.product-dialog .plan-option .price-save {
+  order: 4;
+}
+.product-dialog .plan-option .plan-per-month {
+  order: 5;
+}
+.product-dialog .plan-option .plan-was {
+  order: 6;
+}
+.product-dialog .plan-option .plan-out {
+  order: 7;
+}
+
+/* 3 — Banner: 148px (supersedes §3n's 200px and its ≤640px
+   140px; one height at every width). */
+.pd-banner {
+  height: 148px;
+}
+
+/* 4 — Short-viewport compact mode. */
+@media (max-height: 720px) and (min-width: 640px) {
+  .product-dialog[open] {
+    height: 96vh;
+    max-height: 96vh;
+    padding: .75rem 1.1rem;
+  }
+  .pd-banner {
+    height: 64px;
+  }
+  .product-dialog .pd-summary {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .product-dialog .plan-grid {
+    margin-top: .4rem;
+  }
+  .product-dialog .pd-trust-chips {
+    display: none;
+  }
+  .product-dialog .pd-footer {
+    padding: .7rem .9rem;
+  }
+  .pd-footer .pd-pay-chips {
+    display: none;
+  }
+  .product-dialog .pd-actions {
+    display: flex;
+    gap: .55rem;
+  }
+  .product-dialog .pd-actions .button {
+    flex: 1 1 0;
+    min-height: 3rem;
+  }
+  .product-dialog .plan-option {
+    padding: .6rem .9rem;
+  }
+  .product-dialog .plan-option .plan-per-month,
+  .product-dialog .plan-option .plan-was {
+    display: none;
   }
 }

@@ -382,10 +382,10 @@ const BRAND_LOGOS = {
   'netflix 4k': '/logos/netflix.svg?v=2',
   'spotify premium': '/logos/spotify.svg',
   'canva pro': '/logos/canva.svg',
-  'chatgpt plus': '/logos/chatgpt.svg',
-  'gemini ai pro': '/logos/gemini.svg?v=2',
+  'chatgpt plus': '/logos/chatgpt.svg?v=2',
+  'gemini ai pro': '/logos/gemini.svg?v=3',
   'capcut pro': '/logos/capcut.svg',
-  'prime video': '/logos/prime-video.svg'
+  'prime video': '/logos/prime-video.svg?v=2'
 };
 function brandLogoFor(name) { return BRAND_LOGOS[baseKey(name || '')] || ''; }
 
@@ -562,7 +562,7 @@ function groupProducts(products) {
     g.minPrice = Math.min(...g.variants.map(v => Number(v.price || 0)));
     g.featured = g.variants.some(v => Number(v.featured) === 1);
     // Card-level stock-out banner only when EVERY variant is flagged out;
-    // a single flagged plan is handled per-pill (see durationPills) so the
+    // a single flagged plan is handled per-plan (see the popup options) so the
     // card stays sellable while other plans remain. For a single-variant
     // group this is identical to the old any-variant rule.
     g.stockOut = g.variants.every(v => Number(v.stock_out) === 1);
@@ -578,18 +578,6 @@ function groupProducts(products) {
     g.maxPrice = withSaving.length ? withSaving[0].v.original_price || withSaving[0].v.compare_price : null;
     return g;
   });
-}
-
-/* Short, consistent pill label for a duration ("1 Month" -> "1M", "1 Year" -> "1Yr"). */
-function durationPillLabel(variant) {
-  const d = durationOf(variant);
-  if (!d) return null;
-  if (d === 'Lifetime') return 'Life';
-  const m = d.match(/(\d+)\s*(Month|Year|Week|Day)/i);
-  if (!m) return d;
-  const n = m[1];
-  const unit = m[2].charAt(0).toUpperCase() + m[2].slice(1, 2).toLowerCase();
-  return n + (unit === 'Year' ? 'Yr' : unit.charAt(0));
 }
 
 /* Counts how many variants of a family share the same duration. When two
@@ -610,80 +598,6 @@ function duplicateDurations(variants) {
 function planVariantTail(variant) {
   const m = String(variant.name || '').match(/\(([^)]+)\)/);
   return m ? m[1].trim() : 'Standard';
-}
-
-/* Card pill label — duration-first. When a family's plans differ by
-   duration, the FULL duration leads the pill ("1 Month", "6 Months",
-   "1 Year") via the shared planLabelFor() rule the popup uses, instead
-   of the old terse abbreviations ("1M", "6M", "1Yr"). When every plan
-   shares one duration, the plans differ by something else (tokens,
-   devices, warranty), so the distinguishing tail stays the label —
-   exactly the fallback the pills have always used for those families. */
-function cardPillLabel(variant, variants) {
-  const durations = new Set(variants.map(v => durationOf(v) || v.name));
-  if (durations.size > 1 && durationOf(variant)) {
-    return planLabelFor(variant, duplicateDurations(variants));
-  }
-  const dupes = duplicateDurations(variants);
-  return dupes.get(durationOf(variant) || variant.name) > 1 ? planVariantTail(variant) : (durationPillLabel(variant) || variant.name);
-}
-
-/* Builds the clickable duration pill row for a multi-variant group.
-   Each pill maps to one duration variant; the cheapest is selected by default.
-   When two variants share a duration the pill falls back to the variant's
-   distinguishing tail ("Standard", "2 Devices") instead of a duplicate "1M". */
-function durationPills(group) {
-  const variants = selectedGroupVariants(group).filter(v => {
-    const inStock = v.stock === undefined || v.stock === null || Number(v.stock) > 0;
-    return inStock;
-  });
-  if (!variants.length) return '';
-  const pills = variants.map(v => {
-    const label = cardPillLabel(v, variants);
-    // A plan flagged stock_out (but not stock-count exhausted) stays visible
-    // as a disabled pill so customers can see the plan exists, but it cannot
-    // be selected or ordered.
-    if (Number(v.stock_out) === 1) {
-      return '<button type="button" class="dur-pill is-out" data-pill-variant="' + escapeHtml(v.id) + '" disabled aria-disabled="true" title="Out of stock">' +
-        '<span class="dur-pill-label">' + escapeHtml(label) + '</span>' +
-        '<span class="dur-pill-out">Out of stock</span>' +
-      '</button>';
-    }
-    return '<button type="button" class="dur-pill" data-pill-variant="' + escapeHtml(v.id) + '" aria-pressed="false">' +
-      '<span class="dur-pill-label">' + escapeHtml(label) + '</span>' +
-      '<span class="dur-pill-price">' + formatMoney(v.price) + '</span>' +
-    '</button>';
-  }).join('');
-  return '<div class="duration-pills" role="group" aria-label="Choose a plan duration">' + pills + '</div>';
-}
-
-/* After a card is rendered, bind its duration pills: clicking one updates the
-   card's displayed NPR price and marks the chosen variant so Buy Now carries it. */
-function wireDurationPills(card) {
-  const pills = card.querySelectorAll('.duration-pills .dur-pill');
-  if (!pills.length) return;
-  const priceEl = card.querySelector('[data-card-price]');
-  const ctxEl = card.querySelector('.price-context');
-  const buyBtn = card.querySelector('.card-buy[data-group-view]');
-  const activate = (pill) => {
-    if (!pill || pill.disabled) return;
-    pills.forEach(p => {
-      const on = p === pill;
-      p.classList.toggle('active', on);
-      if (!p.disabled) p.setAttribute('aria-pressed', String(on));
-    });
-    const variantId = pill.dataset.pillVariant;
-    const group = state.groupByKey?.get(card.dataset.groupKey);
-    const variant = group ? group.variants.find(v => v.id === variantId) : null;
-    if (!variant) return;
-    if (priceEl) priceEl.textContent = formatMoney(variant.price);
-    if (ctxEl) ctxEl.textContent = 'SELECTED';
-    if (buyBtn) buyBtn.dataset.selectedVariant = variant.id;
-  };
-  pills.forEach(pill => { pill.onclick = (e) => { e.stopPropagation(); if (!pill.disabled) activate(pill); }; });
-  // Default-select the first selectable (in-stock) pill, never a disabled one.
-  const defaultPill = card.querySelector('.duration-pills .dur-pill:not([disabled])');
-  if (defaultPill) { activate(defaultPill); }
 }
 
 function productCard(group) {
@@ -717,14 +631,22 @@ function productCard(group) {
 
   const isFreeFire = group.name.toLowerCase().includes('free fire');
   const arrowSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>';
+  // Cards carry no plan picker: the price row shows FROM + the group's
+  // minimum price and the plans live in the popup. The Buy control
+  // targets the cheapest selectable variant — the minimum-price plan
+  // in the normal case — through data-selected-variant, which the grid
+  // click delegation reads as dataset.selectedVariant (the mechanism
+  // the old card pills used). View Details and card clicks carry no
+  // selection, so the popup opens on its default plan via openGroup.
+  const buyVariant = group.variants.find(v => Number(v.stock_out) !== 1 && (v.stock === undefined || v.stock === null || Number(v.stock) > 0)) || group.variants[0];
   // The Buy control rides on the price row as a red text action (the
   // reference layout). It keeps the exact classes and data attributes
-  // the grid click delegation and wireDurationPills() have always used,
-  // so the selected-plan order flow is unchanged.
+  // the grid click delegation has always used, so the order flow is
+  // unchanged.
   const buyAction = isFreeFire
     ? '<button type="button" class="card-buy card-action" data-freefire="true" aria-label="Top up Free Fire Diamonds"><span class="card-buy-text">Top Up</span>' + arrowSvg + '</button>'
     : (multi
-        ? '<button type="button" class="card-buy card-action" data-group-view="' + escapeHtml(group.key) + '"' + (group.inStock ? '' : ' disabled') + ' aria-label="Buy ' + escapeHtml(group.name) + '"><span class="card-buy-text">Buy</span>' + arrowSvg + '</button>'
+        ? '<button type="button" class="card-buy card-action" data-group-view="' + escapeHtml(group.key) + '" data-selected-variant="' + escapeHtml(buyVariant.id) + '"' + (group.inStock ? '' : ' disabled') + ' aria-label="Buy ' + escapeHtml(group.name) + '"><span class="card-buy-text">Buy</span>' + arrowSvg + '</button>'
         : '<button type="button" class="card-buy card-action" data-buy="' + escapeHtml(group.variants[0].id) + '"' + (group.inStock ? '' : ' disabled') + ' aria-label="Buy ' + escapeHtml(group.name) + '"><span class="card-buy-text">Buy</span>' + arrowSvg + '</button>');
   // One full-width pill at the bottom of the card opens the same
   // popup / group view the old Plans / Details buttons opened.
@@ -745,7 +667,6 @@ function productCard(group) {
         (multi ? '<span class="card-meta-item card-meta-plans"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>' + group.variants.length + ' plans</span>' : '') +
         '<span class="card-meta-stock' + (group.inStock ? '' : ' is-out') + '">' + (group.inStock ? 'Available now' : 'Currently unavailable') + '</span>' +
       '</div>' +
-      (multi ? '<span class="plan-choose-label">Choose plan:</span>' + durationPills(group) : '') +
       '<div class="price-row">' +
         '<div class="price-main">' + (multi ? '<small class="price-context">FROM</small>' : '') + '<span class="price" data-card-price>' + formatMoney(group.minPrice) + '</span></div>' +
         buyAction +
@@ -777,7 +698,6 @@ async function loadProducts() {
     state.groups = groupProducts(products);
     state.groupByKey = new Map(state.groups.map(g => [g.key, g]));
     $('product-grid').innerHTML = state.groups.map(productCard).join('') || '';
-    $('product-grid').querySelectorAll('.product-card[data-group-key]').forEach(wireDurationPills);
     $('catalog-empty').hidden = state.groups.length > 0;
     renderCatalogStatus(products.length);
     renderDeals(state.allCatalog || products);
@@ -1142,8 +1062,9 @@ function detailVisual(product) {
     '<div class="brand-detail-emblem" style="display:none">' + brandVisual + '</div>';
 }
 
-function detailRelated(product) {
-  const related = state.catalog.filter(item => item.id !== product.id && item.category_id === product.category_id).slice(0, 3);
+function detailRelated(product, excludeIds) {
+  const excluded = new Set(excludeIds && excludeIds.length ? excludeIds : [product.id]);
+  const related = state.catalog.filter(item => !excluded.has(item.id) && item.category_id === product.category_id).slice(0, 3);
   if (!related.length) return '';
   return '<section class="pd-block"><h2>More in ' + escapeHtml(product.category_name || 'this category') + '</h2><div class="pd-related">' +
     related.map(item => '<button type="button" class="pd-related-card" data-related="' + escapeHtml(item.id) + '">' +
@@ -1160,7 +1081,7 @@ function detailStaticBlocks() {
       '<li class="pd-step-item"><div class="pd-step-body"><b>You get your details.</b> Access details are shared once the order is approved, and the status updates in your account.</div></li>' +
     '</ol></section>' +
     '<section class="pd-block pd-faq"><h2>Common questions</h2>' +
-      '<details><summary>Which payment methods can I use?</summary><p>eSewa, Khalti, bank transfer and QR payment. You will see the available options at checkout.</p></details>' +
+      '<details open><summary>Which payment methods can I use?</summary><p>eSewa, Khalti, bank transfer and QR payment. You will see the available options at checkout.</p></details>' +
       '<details><summary>How do I know my order went through?</summary><p>After you submit your payment receipt, the order appears under “My orders” with its current status. You get an update when it is approved.</p></details>' +
       '<details><summary>Who do I contact if something is wrong?</summary><p>Message us on WhatsApp or use the contact form. Include your order reference so we can find it quickly.</p></details>' +
     '</section>';
@@ -1170,7 +1091,18 @@ function selectedGroupVariants(group) {
   return (group?.variants || []).slice().sort((a, b) => Number(a.price) - Number(b.price));
 }
 
-function planOptionCard(variant, selected, dupes) {
+/* Months in a plan's duration, for per-month maths: "6 Months" -> 6,
+   "1 Year" -> 12, "18 Months" -> 18. Anything without a countable
+   month/year figure (Lifetime, token packs, device tiers) returns 0. */
+function durationMonths(variant) {
+  const d = durationOf(variant) || '';
+  const m = d.match(/(\d+(?:\.\d+)?)\s*(months?|years?)/i);
+  if (!m) return 0;
+  const n = parseFloat(m[1]);
+  return m[2].toLowerCase().startsWith('year') ? n * 12 : n;
+}
+
+function planOptionCard(variant, selected, dupes, extra) {
   const duration = durationOf(variant);
   const saving = savingsOf(variant);
   const inStock = variant.stock === undefined || variant.stock === null || Number(variant.stock) > 0;
@@ -1184,11 +1116,34 @@ function planOptionCard(variant, selected, dupes) {
   const variantTail = !duplicateDuration ? '' : ('<span class="plan-tail"> · ' + escapeHtml(planVariantTail(variant)) + '</span>');
   return '<button type="button" class="plan-option' + (selected ? ' selected' : '') + (flaggedOut ? ' is-out' : '') + '" data-plan="' + escapeHtml(variant.id) + '"' + (unavailable ? ' disabled' : '') + ' aria-pressed="' + (selected ? 'true' : 'false') + '">' +
     '<span class="plan-duration">' + escapeHtml(duration || variant.name) + variantTail + '</span>' +
+    '<span class="plan-selected-chip" aria-hidden="true">✓ Selected</span>' +
+    (extra && extra.best ? '<span class="plan-best-tag">⭐ BEST VALUE</span>' : '') +
     '<span class="plan-price">' + formatMoney(variant.price) + '</span>' +
+    (extra && extra.perMonth ? '<span class="plan-per-month">≈ ' + formatMoney(extra.perMonth) + '/month</span>' : '') +
     (variant.original_price && Number(variant.original_price) > Number(variant.price) ? '<span class="plan-was">' + formatMoney(variant.original_price) + '</span>' : '') +
     (saving ? '<span class="price-save">Save ' + saving.percent + '%</span>' : '') +
     (flaggedOut ? '<span class="plan-out">Out of stock</span>' : (!inStock ? '<span class="plan-out">Unavailable</span>' : '')) +
   '</button>';
+}
+
+/* Footer price side for the currently selected plan: strikethrough
+   original + Save % pill. Shared by the group detail render and its
+   plan-switch handler so the pinned footer always matches the plan. */
+function priceSideHtml(variant) {
+  const saving = savingsOf(variant);
+  if (!saving) return '';
+  return '<s>' + formatMoney(variant.original_price) + '</s><span class="price-save">Save ' + saving.percent + '%</span><span class="pd-save-amount">You save ' + formatMoney(saving.amount) + '</span>';
+}
+
+/* Compact trust chips under the popup title (both detail renders). */
+function detailTrustChips() {
+  return '<div class="pd-trust-chips" aria-label="Store promises"><span>⚡ Instant delivery</span><span>🛡️ Activation warranty</span><span>💬 WhatsApp support</span></div>';
+}
+
+/* Payment-method chips pinned inside the popup footer, so the options
+   are visible without scrolling (both detail renders). */
+function detailPayChips() {
+  return '<div class="pd-pay-chips" aria-label="Payment methods"><span>eSewa</span><span>Khalti</span><span>IME Pay</span><span>Bank QR</span></div>';
 }
 
 /* Price-card label for the chosen plan: the duration, with a distinguishing
@@ -1198,58 +1153,104 @@ function planLabelFor(variant, dupes) {
   return dupes && dupes.get(durationOf(variant) || variant.name) > 1 ? duration + ' · ' + planVariantTail(variant) : duration;
 }
 
+/* The "What you get" list for one product/variant: its stored
+   features when it has them; otherwise the selling points the admin
+   record carries in its description instead. Some records (Gemini
+   Plus is the known case — features: [] in BOTH the catalogue and
+   the detail payloads, verified against the live API) keep
+   everything in the description, which is written as feature
+   sentences, so the list splits the product's OWN description on
+   sentence boundaries — no copy is invented. Decimals ("Gemini 3.1
+   Pro") are safe: a split needs ". " and a decimal point is never
+   followed by a space. */
+function featuresOf(product) {
+  if (product && Array.isArray(product.features) && product.features.length) return product.features;
+  const desc = String((product && product.description) || '').replace(/\s+/g, ' ').trim();
+  if (!desc) return [];
+  return desc.split(/\.\s+/).map(s => s.replace(/\.\s*$/, '').trim()).filter(s => s.length >= 12).slice(0, 8);
+}
+
 function renderGroupDetail(group, preselectVariantId) {
   const variants = selectedGroupVariants(group);
   const preIndex = preselectVariantId ? variants.findIndex(v => v.id === preselectVariantId) : -1;
   const chosen = preIndex >= 0 ? variants[preIndex] : null;
   const fallback = chosen || variants.find(v => Number(v.stock_out) !== 1 && (v.stock === undefined || v.stock === null || Number(v.stock) > 0)) || variants[0];
-  const features = (fallback.features || []).map(feature => '<li>' + escapeHtml(feature) + '</li>').join('');
   const dupes = duplicateDurations(variants);
-  $('product-detail').innerHTML = '<div class="pd-layout">' +
-    '<div class="pd-media">' +
-      '<div class="product-detail-image">' + detailVisual({ name: group.name, image_url: group.image_url || fallback.image_url }) + (group.stockOut ? '<span class="stock-out-banner">Out of Stock</span>' : '') + '</div>' +
-    '</div>' +
-    '<div class="pd-main">' +
-      '<div class="pd-head">' +
-        '<p class="pd-category">' + escapeHtml((group.category_name || 'SUBSCRIPTION').toUpperCase()) + '</p>' +
-        '<h1 id="product-title">' + escapeHtml(group.name) + '</h1>' +
-        '<p class="pd-summary">' + escapeHtml(fallback.description || 'Choose a plan, then start your order.') + '</p>' +
-      '</div>' +
-      '<section class="pd-block pd-plans" aria-label="Choose a plan"><h2>Choose plan: ' + variants.length + ' options</h2><div class="plan-grid" id="plan-grid">' +
-        variants.map(v => planOptionCard(v, v.id === fallback.id, dupes)).join('') +
-      '</div></section>' +
-      '<div class="pd-price-card">' +
-        '<div class="pd-price-top">' +
-          '<span class="pd-price-main"><small id="pd-plan-label">' + escapeHtml(planLabelFor(fallback, dupes).toUpperCase()) + '</small><b id="pd-plan-price">' + formatMoney(fallback.price) + '</b></span>' +
+  // BEST VALUE = lowest per-month cost, only meaningful when 2+ plans
+  // have a parseable duration; multi-month plans also get a per-month
+  // line under their price.
+  const monthlies = variants.map(v => ({ v, months: durationMonths(v) })).filter(x => x.months > 0);
+  const bestValueId = monthlies.length >= 2 ? monthlies.reduce((best, x) => (Number(x.v.price) / x.months < Number(best.v.price) / best.months ? x : best)).v.id : null;
+  const planExtra = (v) => {
+    const months = durationMonths(v);
+    return { best: v.id === bestValueId, perMonth: months > 1 ? Math.round(Number(v.price) / months) : 0 };
+  };
+  $('product-detail').innerHTML = '<div class="pd-shell">' +
+    '<div class="pd-scroll">' +
+      '<div class="pd-banner">' + detailVisual({ name: group.name, image_url: group.image_url || fallback.image_url }) + (group.stockOut ? '<span class="stock-out-banner">Out of Stock</span>' : '') + '</div>' +
+      '<div class="pd-layout">' +
+        '<div class="pd-head">' +
+          '<p class="pd-category">' + escapeHtml((group.category_name || 'SUBSCRIPTION').toUpperCase()) + '</p>' +
+          '<h1 id="product-title">' + escapeHtml(group.name) + '</h1>' +
+          '<p class="pd-summary" id="pd-summary">' + escapeHtml(fallback.description || 'Choose a plan, then start your order.') + '</p>' +
         '</div>' +
-        '<div class="pd-actions">' +
-          '<button type="button" class="button" id="start-order" data-id="' + escapeHtml(fallback.id) + '"><span class="card-buy-text">Buy now with eSewa / Khalti / QR</span> <span aria-hidden="true">→</span></button>' +
-          '<button type="button" class="button button-whatsapp" id="start-whatsapp-order" data-id="' + escapeHtml(fallback.id) + '">' + WHATSAPP_ICON_SVG + '<span>Order via WhatsApp</span></button>' +
-        '</div>' +
+        detailTrustChips() +
+        '<section class="pd-block pd-plans" aria-label="Choose a plan"><h2>Choose plan: ' + variants.length + ' options</h2><div class="plan-grid" id="plan-grid">' +
+          variants.map(v => planOptionCard(v, v.id === fallback.id, dupes, planExtra(v))).join('') +
+        '</div></section>' +
         '<ul class="pd-reassure">' +
           '<li>Pay with eSewa, Khalti, bank transfer or QR</li>' +
           '<li>Every payment receipt is checked by our team</li>' +
           '<li>Track the status of your order from your account</li>' +
         '</ul>' +
+        '<section class="pd-block" id="pd-features"><h2>What you get</h2><ul class="feature-list" id="pd-features-list"></ul></section>' +
+        detailStaticBlocks() +
+        detailRelated({ id: fallback.id, category_id: group.category_id, category_name: group.category_name }, variants.map(v => v.id)) +
       '</div>' +
-      (features ? '<section class="pd-block"><h2>What you get</h2><ul class="feature-list">' + features + '</ul></section>' : '') +
-      detailStaticBlocks() +
     '</div>' +
+    '<footer class="pd-footer pd-price-card">' +
+      '<div class="pd-price-top">' +
+        '<span class="pd-price-main"><small id="pd-plan-label">' + escapeHtml(planLabelFor(fallback, dupes).toUpperCase()) + '</small><b id="pd-plan-price">' + formatMoney(fallback.price) + '</b></span>' +
+        '<span class="pd-price-side" id="pd-price-side">' + priceSideHtml(fallback) + '</span>' +
+      '</div>' +
+      '<div class="pd-actions">' +
+        '<button type="button" class="button" id="start-order" data-id="' + escapeHtml(fallback.id) + '"><span class="card-buy-text">Buy now with eSewa / Khalti / QR</span> <span aria-hidden="true">→</span></button>' +
+        '<button type="button" class="button button-whatsapp" id="start-whatsapp-order" data-id="' + escapeHtml(fallback.id) + '">' + WHATSAPP_ICON_SVG + '<span>Order via WhatsApp</span></button>' +
+      '</div>' +
+      detailPayChips() +
+    '</footer>' +
   '</div>';
+  const renderFeatures = (v) => {
+    const section = $('pd-features');
+    const list = $('pd-features-list');
+    if (!section || !list) return;
+    const feats = featuresOf(v);
+    section.style.display = feats.length ? '' : 'none';
+    list.innerHTML = feats.map(feature => '<li>' + escapeHtml(feature) + '</li>').join('');
+  };
   const byId = new Map(variants.map(v => [v.id, v]));
+  // ONE update path for the selected plan: the initial render and
+  // every plan switch run through applyPlan(), so the description,
+  // "What you get", price side and order buttons always move
+  // together — whichever entry opened the popup (View Details, card
+  // Buy, a Hot Sale deal, search results or a #product link).
+  const applyPlan = (v) => {
+    $('plan-grid').querySelectorAll('[data-plan]').forEach(b => { const on = b.dataset.plan === v.id; b.classList.toggle('selected', on); b.setAttribute('aria-pressed', String(on)); });
+    $('pd-plan-label').textContent = planLabelFor(v, dupes).toUpperCase();
+    $('pd-plan-price').textContent = formatMoney(v.price);
+    $('pd-price-side').innerHTML = priceSideHtml(v);
+    $('pd-summary').textContent = v.description || 'Choose a plan, then start your order.';
+    renderFeatures(v);
+    $('start-order').dataset.id = v.id;
+    $('start-whatsapp-order').dataset.id = v.id;
+  };
   $('plan-grid').querySelectorAll('[data-plan]').forEach(btn => {
-    btn.onclick = () => {
-      const v = byId.get(btn.dataset.plan);
-      if (!v) return;
-      $('plan-grid').querySelectorAll('[data-plan]').forEach(b => { b.classList.toggle('selected', b === btn); b.setAttribute('aria-pressed', String(b === btn)); });
-      $('pd-plan-label').textContent = planLabelFor(v, dupes).toUpperCase();
-      $('pd-plan-price').textContent = formatMoney(v.price);
-      $('start-order').dataset.id = v.id;
-      $('start-whatsapp-order').dataset.id = v.id;
-    };
+    btn.onclick = () => { const v = byId.get(btn.dataset.plan); if (v) applyPlan(v); };
   });
+  applyPlan(fallback);
   $('start-order').onclick = () => startOrder($('start-order').dataset.id);
   $('start-whatsapp-order').onclick = () => startWhatsAppOrder($('start-whatsapp-order').dataset.id);
+  $('product-detail').querySelectorAll('[data-related]').forEach(button => { button.onclick = () => openProduct(button.dataset.related); });
 }
 
 function openGroup(key) {
@@ -1274,7 +1275,7 @@ function openGroupWithPlan(key, variantId) {
 
 async function openProduct(id) {
   showDialog('product-dialog');
-  $('product-detail').innerHTML = '<div class="pd-layout"><div class="pd-media"><div class="product-detail-image skeleton"></div></div><div><p class="eyebrow">LOADING DETAILS</p><h1 id="product-title">Subscription</h1></div></div>';
+  $('product-detail').innerHTML = '<div class="pd-shell"><div class="pd-scroll"><div class="pd-banner skeleton"></div><div class="pd-layout"><p class="eyebrow">LOADING DETAILS</p><h1 id="product-title">Subscription</h1></div></div></div>';
   try {
     const product = await api('/products/' + encodeURIComponent(id));
     if (product.name && product.name.toLowerCase().includes('free fire')) {
@@ -1284,7 +1285,15 @@ async function openProduct(id) {
     }
     const byKey = baseKey(product.name);
     const group = state.groupByKey?.get(byKey);
-    if (group && group.variants.length > 1) { renderGroupDetail(group, id); return; }
+    if (group && group.variants.length > 1) {
+      // The detail payload just fetched is the canonical record for
+      // the entry variant: overlay its description/features onto the
+      // catalogue copy, so the popup opens (and switches) on the
+      // freshest per-plan text for the plan the customer came in on.
+      const merged = { ...group, variants: group.variants.map(v => v.id === product.id ? { ...v, description: product.description, features: product.features } : v) };
+      renderGroupDetail(merged, id);
+      return;
+    }
     const saving = savingsOf(product);
     const duration = durationOf(product);
     const badge = product.offer_label || product.badge;
@@ -1292,37 +1301,40 @@ async function openProduct(id) {
     if (saving) badges.push('<span class="store-badge store-badge-save">-' + saving.percent + '% off</span>');
     if (badge) badges.push(saleBadge(badge));
     if (duration) badges.push('<span class="store-badge store-badge-plain">' + escapeHtml(duration) + '</span>');
-    const features = (product.features || []).map(feature => '<li>' + escapeHtml(feature) + '</li>').join('');
-    $('product-detail').innerHTML = '<div class="pd-layout">' +
-      '<div class="pd-media">' +
-        '<div class="product-detail-image">' + detailVisual(product) + (Number(product.stock_out) === 1 ? '<span class="stock-out-banner">Out of Stock</span>' : '') + '</div>' +
-        (badges.length ? '<div class="pd-badges">' + badges.join('') + '</div>' : '') +
-      '</div>' +
-      '<div class="pd-main">' +
-        '<div class="pd-head">' +
-          '<p class="pd-category">' + escapeHtml((product.category_name || 'SUBSCRIPTION').toUpperCase()) + '</p>' +
-          '<h1 id="product-title">' + escapeHtml(product.name) + '</h1>' +
-          '<p class="pd-summary">' + escapeHtml(product.description || 'Review this subscription and start your order when ready.') + '</p>' +
-        '</div>' +
-        '<div class="pd-price-card">' +
-          '<div class="pd-price-top">' +
-            '<span class="pd-price-main"><small>' + (duration ? escapeHtml(duration.toUpperCase()) : 'TOTAL PRICE') + '</small><b>' + formatMoney(product.price) + '</b></span>' +
-            (saving ? '<span class="pd-price-side"><s>' + formatMoney(product.original_price) + '</s><span class="price-save">You save ' + formatMoney(saving.amount) + '</span></span>' : '') +
+    const catalogEntry = state.catalog.find(item => item.id === product.id);
+    const featureSource = (product.features && product.features.length) ? product.features : ((catalogEntry && catalogEntry.features && catalogEntry.features.length) ? catalogEntry.features : featuresOf(product));
+    const features = featureSource.map(feature => '<li>' + escapeHtml(feature) + '</li>').join('');
+    $('product-detail').innerHTML = '<div class="pd-shell">' +
+      '<div class="pd-scroll">' +
+        '<div class="pd-banner">' + detailVisual(product) + (Number(product.stock_out) === 1 ? '<span class="stock-out-banner">Out of Stock</span>' : '') + (badges.length ? '<div class="pd-badges">' + badges.join('') + '</div>' : '') + '</div>' +
+        '<div class="pd-layout">' +
+          '<div class="pd-head">' +
+            '<p class="pd-category">' + escapeHtml((product.category_name || 'SUBSCRIPTION').toUpperCase()) + '</p>' +
+            '<h1 id="product-title">' + escapeHtml(product.name) + '</h1>' +
+            '<p class="pd-summary">' + escapeHtml(product.description || 'Review this subscription and start your order when ready.') + '</p>' +
           '</div>' +
-          '<div class="pd-actions">' +
-            '<button type="button" class="button" id="start-order" data-id="' + escapeHtml(product.id) + '"><span class="card-buy-text">Buy now with eSewa / Khalti / QR</span> <span aria-hidden="true">→</span></button>' +
-            '<button type="button" class="button button-whatsapp" id="start-whatsapp-order" data-id="' + escapeHtml(product.id) + '">' + WHATSAPP_ICON_SVG + '<span>Order via WhatsApp</span></button>' +
-          '</div>' +
+          detailTrustChips() +
           '<ul class="pd-reassure">' +
             '<li>Pay with eSewa, Khalti, bank transfer or QR</li>' +
             '<li>Every payment receipt is checked by our team</li>' +
             '<li>Track the status of your order from your account</li>' +
           '</ul>' +
+          (features ? '<section class="pd-block"><h2>What you get</h2><ul class="feature-list">' + features + '</ul></section>' : '') +
+          detailStaticBlocks() +
+          detailRelated(product) +
         '</div>' +
-        (features ? '<section class="pd-block"><h2>What you get</h2><ul class="feature-list">' + features + '</ul></section>' : '') +
-        detailStaticBlocks() +
-        detailRelated(product) +
       '</div>' +
+      '<footer class="pd-footer pd-price-card">' +
+        '<div class="pd-price-top">' +
+          '<span class="pd-price-main"><small>' + (duration ? escapeHtml(duration.toUpperCase()) : 'TOTAL PRICE') + '</small><b>' + formatMoney(product.price) + '</b></span>' +
+          (saving ? '<span class="pd-price-side">' + priceSideHtml(product) + '</span>' : '') +
+        '</div>' +
+        '<div class="pd-actions">' +
+          '<button type="button" class="button" id="start-order" data-id="' + escapeHtml(product.id) + '"><span class="card-buy-text">Buy now with eSewa / Khalti / QR</span> <span aria-hidden="true">→</span></button>' +
+          '<button type="button" class="button button-whatsapp" id="start-whatsapp-order" data-id="' + escapeHtml(product.id) + '">' + WHATSAPP_ICON_SVG + '<span>Order via WhatsApp</span></button>' +
+        '</div>' +
+        detailPayChips() +
+      '</footer>' +
     '</div>';
     $('start-order').onclick = () => startOrder(product.id);
     $('start-whatsapp-order').onclick = () => startWhatsAppOrder(product.id);
@@ -2176,8 +2188,11 @@ function bindUI() {
           openFreeFireProduct();
           return;
         }
-        // If a duration pill was picked on a multi-plan Buy Now, order that variant directly.
-        if (groupView.classList.contains('card-buy') && groupView.dataset.selectedVariant) {
+        // Only the Buy control carries a preselected variant (the
+        // group's minimum-price plan, set in productCard markup), so
+        // Buy opens the group view on that plan; View Details carries
+        // none and opens on the popup's default plan via openGroup.
+        if (groupView.dataset.selectedVariant) {
           openGroupWithPlan(groupView.dataset.groupView, groupView.dataset.selectedVariant);
           return;
         }
@@ -2214,7 +2229,10 @@ function bindUI() {
     grid.addEventListener('keydown', event => {
       if (event.key !== 'Enter' && event.key !== ' ') return;
       const card = event.target.closest('.product-card[data-group-key]');
-      if (card && event.target === card) { event.preventDefault(); openGroup(card.dataset.groupKey); }
+      if (card && event.target === card) {
+        event.preventDefault();
+        openGroup(card.dataset.groupKey);
+      }
     });
   }
 
