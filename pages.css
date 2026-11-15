@@ -1,5 +1,12 @@
 /* ── Shared styles for static pages (About, Contact, Privacy, Terms, Refund) ── */
 
+/* The homepage gets border-box from style.css; these pages do not load
+   style.css, so padded fixed-width shells (e.g. .page-nav-shell at
+   width:min(1220px,100%) + 34px padding + border) overflowed the
+   viewport by their padding+border on every width. Match the
+   homepage's box model. */
+*, *::before, *::after { box-sizing: border-box; }
+
 .page-header {
   position: sticky;
   top: 1rem;
@@ -726,6 +733,18 @@
 .page-footer .container {
   width: min(var(--container), calc(100% - 3rem));
   margin: auto;
+}
+/* The footer brand wordmark (digi-prime-nepal-logo.png, 512×179) had
+   no size rule on these pages — the header's 36px cap is scoped to
+   .page-nav-shell and the homepage's cap lives in style.css, which
+   static pages do not load — so it painted at natural size, 512px
+   wide on a 390px phone: the page grew to 544px wide and every other
+   column read as squeezed into the left ~60%. Cap it like a footer
+   logo should be capped. */
+.page-footer .brand img {
+  width: auto;
+  height: auto;
+  max-width: 200px;
 }
 .page-footer-grid {
   display: grid;

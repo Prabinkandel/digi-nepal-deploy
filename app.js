@@ -1159,6 +1159,30 @@ function detailPayChips() {
   return '<div class="pd-pay-chips" aria-label="Payment methods"><span>eSewa</span><span>Khalti</span><span>IME Pay</span><span>Bank QR</span></div>';
 }
 
+/* Description clamp for the detail popup (both renders): the full
+   text stays in the DOM; CSS clamps it to 3 lines and this helper
+   shows the Read more toggle only when the text actually overflows
+   the clamp. applyPlan() re-runs it on every plan switch so the
+   clamp and toggle always match the selected plan's text. */
+function summaryClamp() {
+  const s = $('pd-summary');
+  const b = $('pd-readmore');
+  if (!s) return;
+  s.classList.add('is-clamped');
+  if (b) {
+    b.hidden = true;
+    b.textContent = 'Read more';
+    b.onclick = () => {
+      const clamped = s.classList.toggle('is-clamped');
+      b.textContent = clamped ? 'Read more' : 'Read less';
+    };
+  }
+  requestAnimationFrame(() => {
+    if (!s.isConnected || !b) return;
+    b.hidden = !(s.scrollHeight > s.clientHeight + 2);
+  });
+}
+
 /* Price-card label for the chosen plan: the duration, with a distinguishing
    tail appended when two plans share a duration. */
 function planLabelFor(variant, dupes) {
@@ -1225,18 +1249,14 @@ function renderGroupDetail(group, preselectVariantId) {
         '<div class="pd-head">' +
           '<p class="pd-category">' + escapeHtml((group.category_name || 'SUBSCRIPTION').toUpperCase()) + '</p>' +
           '<h1 id="product-title">' + escapeHtml(group.name) + '</h1>' +
-          '<p class="pd-summary" id="pd-summary">' + escapeHtml(fallback.description || 'Choose a plan, then start your order.') + '</p>' +
         '</div>' +
-        detailTrustChips() +
         '<section class="pd-block pd-plans" aria-label="Choose a plan"><h2>Choose plan: ' + variants.length + ' options</h2><div class="plan-grid" id="plan-grid">' +
           variants.map(v => planOptionCard(v, v.id === fallback.id, dupes, planExtra(v))).join('') +
         '</div></section>' +
-        '<ul class="pd-reassure">' +
-          '<li>Pay with eSewa, Khalti, bank transfer or QR</li>' +
-          '<li>Every payment receipt is checked by our team</li>' +
-          '<li>Track the status of your order from your account</li>' +
-        '</ul>' +
+        '<p class="pd-summary is-clamped" id="pd-summary">' + escapeHtml(fallback.description || 'Choose a plan, then start your order.') + '</p>' +
+        '<button type="button" class="pd-readmore" id="pd-readmore" hidden>Read more</button>' +
         '<section class="pd-block" id="pd-features"><h2>What you get</h2><ul class="feature-list" id="pd-features-list"></ul></section>' +
+        detailTrustChips() +
         detailStaticBlocks() +
         detailRelated({ id: fallback.id, category_id: group.category_id, category_name: group.category_name }, variants.map(v => v.id)) +
       '</div>' +
@@ -1275,6 +1295,7 @@ function renderGroupDetail(group, preselectVariantId) {
     const lane = $('pd-badges');
     if (lane) lane.innerHTML = popupBadgesFor(v);
     $('pd-summary').textContent = v.description || 'Choose a plan, then start your order.';
+    summaryClamp();
     renderFeatures(v);
     $('start-order').dataset.id = v.id;
     $('start-whatsapp-order').dataset.id = v.id;
@@ -1308,11 +1329,44 @@ function openGroupWithPlan(key, variantId) {
   renderGroupDetail(group, variantId);
 }
 
+/* Monotonic token guarding openProduct's async continuations: if the
+   customer closes this popup and opens another product before a
+   background fetch resolves, the stale continuation must not render
+   the old product into the new popup. */
+let pdOpenToken = 0;
+
 async function openProduct(id) {
+  const openToken = ++pdOpenToken;
   showDialog('product-dialog');
+  // Instant local render for grouped products: the catalogue already
+  // carries every variant's price, description and features, so the
+  // popup opens fully rendered with no network wait (measured open
+  // cost was ~760ms, all of it the detail round-trip for data the
+  // page already had). The detail fetch then overlays the entry
+  // variant's freshest text in the background — the same merged
+  // render the fetch-first flow produced — preserving the plan the
+  // customer has selected in the meantime. Singles keep the
+  // fetch-first flow below: their detail payload is the only
+  // complete source.
+  const localEntry = state.catalog.find(item => item.id === id);
+  const localGroup = localEntry ? state.groupByKey?.get(baseKey(localEntry.name)) : null;
+  if (localGroup && localGroup.variants.length > 1 && !localEntry.name.toLowerCase().includes('free fire')) {
+    renderGroupDetail(localGroup, id);
+    try {
+      const product = await api('/products/' + encodeURIComponent(id));
+      if (openToken !== pdOpenToken) return;
+      const dialog = $('product-dialog');
+      if (!dialog || !dialog.open) return;
+      const selectedId = ($('start-order') && $('start-order').dataset.id) || id;
+      const merged = { ...localGroup, variants: localGroup.variants.map(v => v.id === product.id ? { ...v, description: product.description, features: product.features } : v) };
+      renderGroupDetail(merged, selectedId);
+    } catch (error) { /* the local render is already on screen */ }
+    return;
+  }
   $('product-detail').innerHTML = '<div class="pd-shell"><div class="pd-scroll"><div class="pd-banner skeleton"></div><div class="pd-layout"><p class="eyebrow">LOADING DETAILS</p><h1 id="product-title">Subscription</h1></div></div></div>';
   try {
     const product = await api('/products/' + encodeURIComponent(id));
+    if (openToken !== pdOpenToken) return;
     if (product.name && product.name.toLowerCase().includes('free fire')) {
       closeDialog('product-dialog');
       openFreeFireProduct();
@@ -1346,15 +1400,11 @@ async function openProduct(id) {
           '<div class="pd-head">' +
             '<p class="pd-category">' + escapeHtml((product.category_name || 'SUBSCRIPTION').toUpperCase()) + '</p>' +
             '<h1 id="product-title">' + escapeHtml(product.name) + '</h1>' +
-            '<p class="pd-summary">' + escapeHtml(product.description || 'Review this subscription and start your order when ready.') + '</p>' +
+            '<p class="pd-summary is-clamped" id="pd-summary">' + escapeHtml(product.description || 'Review this subscription and start your order when ready.') + '</p>' +
           '</div>' +
-          detailTrustChips() +
-          '<ul class="pd-reassure">' +
-            '<li>Pay with eSewa, Khalti, bank transfer or QR</li>' +
-            '<li>Every payment receipt is checked by our team</li>' +
-            '<li>Track the status of your order from your account</li>' +
-          '</ul>' +
+          '<button type="button" class="pd-readmore" id="pd-readmore" hidden>Read more</button>' +
           (features ? '<section class="pd-block"><h2>What you get</h2><ul class="feature-list">' + features + '</ul></section>' : '') +
+          detailTrustChips() +
           detailStaticBlocks() +
           detailRelated(product) +
         '</div>' +
@@ -1371,6 +1421,7 @@ async function openProduct(id) {
         detailPayChips() +
       '</footer>' +
     '</div>';
+    summaryClamp();
     $('start-order').onclick = () => startOrder(product.id);
     $('start-whatsapp-order').onclick = () => startWhatsAppOrder(product.id);
     $('product-detail').querySelectorAll('[data-related]').forEach(button => { button.onclick = () => openProduct(button.dataset.related); });
