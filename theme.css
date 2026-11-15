@@ -2933,3 +2933,39 @@
     max-height: 26px;
   }
 }
+
+/* --------------------------------------------------------------------------
+   §4 SEO: homepage footer product-link list (build-injected links).
+   The <nav class="seo-product-links"> shell lives in index.html's footer;
+   server/scripts/seo.js fills its link list from the live catalogue at
+   build time. Styled as a quiet footer row so it reads as part of the
+   footer, not a bolted-on block: small muted links that wrap, brightening
+   on hover like the other footer links.
+   -------------------------------------------------------------------------- */
+.seo-product-links {
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+}
+.seo-product-links h3 {
+  font-size: .78rem;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  margin: 0 0 .8rem;
+}
+.seo-product-link-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .45rem 1.1rem;
+  margin: 0;
+  max-width: none;
+}
+.seo-product-link-list a {
+  display: inline;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: .85rem;
+}
+.seo-product-link-list a:hover {
+  color: #fff;
+}

@@ -128,6 +128,13 @@ async function main() {
       }
     }
   }
+  // SEO generation: per-family product pages, sitemap.xml, robots.txt and
+  // llms.txt, generated from the live public catalogue API, plus the
+  // homepage footer product-link list. Throws (failing the build) when the
+  // API is unreachable or empty, so a deploy never ships stale/empty pages.
+  const { generateSeo } = require('./seo');
+  await generateSeo(output);
+
   console.log('Public site build complete. Server source and private data are excluded.');
 }
 

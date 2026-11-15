@@ -478,7 +478,7 @@ function saleBadge(labelOrObj) {
   /* ── Special: campaign label with admin-configured banner image ── */
   if (type === 'campaign' && labelOrObj && labelOrObj.banner) {
     return '<span class="store-badge store-badge-campaign sb-campaign sb-campaign-banner" data-campaign="campaign">' +
-      '<img src="' + escapeHtml(labelOrObj.banner) + '" alt="On sale" class="campaign-banner-img" loading="lazy">' +
+      '<img src="' + escapeHtml(labelOrObj.banner) + '" alt="' + escapeHtml(label || 'On sale') + '" class="campaign-banner-img" loading="lazy">' +
     '</span>';
   }
 
@@ -941,14 +941,14 @@ function dealThumb(product) {
      fallback logo, then the generic brand emblem. */
   const override = brandLogoOverrideFor(product.name);
   if (override) {
-    return '<img class="deal-thumb" src="' + override + '" alt="" loading="lazy" decoding="async">';
+    return '<img class="deal-thumb" src="' + override + '" alt="' + escapeHtml(product.name || '') + '" loading="lazy" decoding="async">';
   }
   if (product.image_url) {
-    return '<img class="deal-thumb" src="' + escapeHtml(product.image_url) + '" alt="" loading="lazy" decoding="async" onerror="this.style.display=\'none\';if(this.nextElementSibling)this.nextElementSibling.style.display=\'flex\';"><div style="display:none" class="brand-fallback-wrap">' + getBrandEmblem(product.name) + '</div>';
+    return '<img class="deal-thumb" src="' + escapeHtml(product.image_url) + '" alt="' + escapeHtml(product.name || '') + '" loading="lazy" decoding="async" onerror="this.style.display=\'none\';if(this.nextElementSibling)this.nextElementSibling.style.display=\'flex\';"><div style="display:none" class="brand-fallback-wrap">' + getBrandEmblem(product.name) + '</div>';
   }
   const logo = brandLogoFor(product.name);
   if (logo) {
-    return '<img class="deal-thumb" src="' + logo + '" alt="" loading="lazy" decoding="async">';
+    return '<img class="deal-thumb" src="' + logo + '" alt="' + escapeHtml(product.name || '') + '" loading="lazy" decoding="async">';
   }
   return getBrandEmblem(product.name);
 }
