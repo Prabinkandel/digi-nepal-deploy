@@ -2882,3 +2882,54 @@
 .dialog:modal {
   position: fixed;
 }
+
+/* --------------------------------------------------------------------------
+   3u. POPUP BADGE LANE — a promo emblem stays a tag (PR #33, Part C;
+   owner report 2026-11-15, phone screenshots of the live site).
+
+   The Netflix 4K CARD shows the red NETFLIX wordmark, but its View
+   Details popup banner appeared to be a wide DASHAIN SALE creative.
+   Measured root cause — the banner image itself was never wrong:
+   detailVisual() and the card's productVisual() resolve identically
+   (override → own image → bundled logo → emblem), Netflix has no
+   saved image_url in either the catalogue or the detail payload, and
+   both surfaces render /logos/netflix.svg (verified: card img src ==
+   banner img src). The invader is the BADGE lane: the single-product
+   popup renders saleBadge(product.badge) inside .pd-badges, and
+   Netflix's badge is 'dashain', whose saleBadge variant is an <img>
+   of the transparent festive creative (964×263, aspect 3.66:1). On
+   cards, card-premium.css caps that emblem at 34px tall / 130px wide
+   in the badge slot — but the rule is scoped to .card-badges, so in
+   the popup the §3s banner-img caps (max-height 108px) were the only
+   limit: measured in the harness with the real creative, the emblem
+   painted 340×93 on desktop and 306×84 on a 369px phone banner —
+   most of the 148px banner — swamping the wordmark behind it.
+
+   Fix: the popup badge lane gets the card lane's emblem treatment —
+   same 34px / 130px cap (26px / 105px at ≤640px, mirroring
+   card-premium's mobile values) — so a festive badge reads as a tag
+   beside the -30% OFF and duration pills, and the product's own
+   visual owns the banner. Specificity (0,3,0) outranks the §3n/§3s
+   .pd-banner img rules (0,1,1) for this img only; the banner art
+   itself is untouched.
+   -------------------------------------------------------------------------- */
+.pd-banner .pd-badges .sb-dashain-emblem {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+}
+.pd-banner .pd-badges .dashain-emblem-img {
+  height: 34px;
+  width: auto;
+  max-width: 130px;
+  max-height: 34px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, .35));
+}
+@media (max-width: 640px) {
+  .pd-banner .pd-badges .dashain-emblem-img {
+    height: 26px;
+    max-width: 105px;
+    max-height: 26px;
+  }
+}
