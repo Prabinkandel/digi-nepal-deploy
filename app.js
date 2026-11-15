@@ -1348,6 +1348,7 @@ async function startOrder(productId) {
   if (!productId) return;
   if (!state.user) {
     state.pendingAction = { type: 'order', productId };
+    authPurchaseContext = true;
     closeDialog('product-dialog');
     openAuth('login');
     toast('Please sign in or create an account to place an order.');
@@ -1551,8 +1552,56 @@ async function initAccount() {
   renderAccount();
 }
 
+/* ── Pending purchase summary for the auth dialog ─────────────────────
+   When sign-in is opened from a Buy action, state.pendingAction holds
+   the chosen plan's product id and startOrder sets authPurchaseContext.
+   The auth dialog then shows what is being bought — product image,
+   name, plan and price — as a card in the aside on wide layouts and as
+   a compact strip above the form on narrow ones (auth.css decides
+   which one is visible). The flag, not the pending action itself,
+   gates the display: it clears when the auth dialog closes, so a
+   later header Sign in shows no summary, while resumePendingAction()
+   still consumes state.pendingAction after a successful sign-in
+   exactly as before. The image goes through productVisual(), keeping
+   the override → own image → bundled logo → emblem resolution order. */
+let authPurchaseContext = false;
+
+function pendingPurchase() {
+  if (!authPurchaseContext) return null;
+  const a = state.pendingAction;
+  if (!a || (a.type !== 'order' && a.type !== 'whatsapp') || !a.productId) return null;
+  let product = null;
+  for (const pool of [state.catalog, state.allCatalog, state.campaignItems]) {
+    if (!Array.isArray(pool)) continue;
+    product = pool.find(p => p && p.id === a.productId) || null;
+    if (product) break;
+  }
+  if (!product) return null;
+  const all = (state.allCatalog && state.allCatalog.length) ? state.allCatalog : state.catalog;
+  const group = groupProducts(all).find(g => g.variants.some(v => v.id === product.id)) || null;
+  const name = group ? group.name : (GROUP_DISPLAY_NAMES[baseKey(product.name)] || displayNameOf(product.name));
+  let plan = '';
+  if (durationOf(product)) plan = group ? planLabelFor(product, duplicateDurations(group.variants)) : durationOf(product);
+  else { const tail = planVariantTail(product); plan = (tail && tail !== 'Standard') ? tail : ''; }
+  return { product, name, plan, price: product.price };
+}
+
+function authSummaryHtml() {
+  const p = pendingPurchase();
+  if (!p) return { aside: '', strip: '' };
+  const visual = '<div class="auth-order-visual">' + productVisual(p.product, true) + '</div>';
+  const meta = '<span class="auth-order-meta"><small class="auth-order-kicker">You are buying</small>' +
+    '<strong>' + escapeHtml(p.name) + '</strong>' +
+    '<small class="auth-order-plan">' + (p.plan ? escapeHtml(p.plan) + ' · ' : '') + formatMoney(p.price) + '</small></span>';
+  return {
+    aside: '<div class="auth-order-summary"><div class="auth-order-row">' + visual + meta + '</div></div>',
+    strip: '<div class="auth-order-strip">' + visual + meta + '</div>'
+  };
+}
+
 function authFrame(eyebrow, title, description, body) {
-  return '<div class="auth-shell"><aside class="auth-aside" aria-hidden="true"><img src="digi-prime-nepal-logo.png?v=2" alt="Digi Prime Nepal"><div><p class="auth-kicker">DIGI PRIME NEPAL ACCOUNT</p><h3>Premium access,<br>kept simple.</h3><p>Manage orders, payment updates, and subscriptions from one protected place.</p></div><span class="auth-aside-mark">Trusted digital subscriptions</span></aside><section class="auth-panel"><p class="eyebrow">' + eyebrow + '</p><h2 id="auth-title">' + title + '</h2><p class="auth-description">' + description + '</p>' + body + '</section></div>';
+  const summary = authSummaryHtml();
+  return '<div class="auth-shell"><aside class="auth-aside" aria-hidden="true"><img src="digi-prime-nepal-logo.png?v=2" alt="Digi Prime Nepal"><div><p class="auth-kicker">DIGI PRIME NEPAL ACCOUNT</p><h3>Premium access,<br>kept simple.</h3><p>Manage orders, payment updates, and subscriptions from one protected place.</p></div>' + summary.aside + '<span class="auth-aside-mark">Trusted digital subscriptions</span></aside><section class="auth-panel">' + summary.strip + '<p class="eyebrow">' + eyebrow + '</p><h2 id="auth-title">' + title + '</h2><p class="auth-description">' + description + '</p>' + body + '</section></div>';
 }
 
 function authAlert(message) {
@@ -1583,6 +1632,7 @@ function setSubmitting(form, submitting, label) {
 }
 
 function resumePendingAction() {
+  authPurchaseContext = false;
   if (state.pendingAction) {
     const a = state.pendingAction;
     state.pendingAction = null;
@@ -1593,6 +1643,11 @@ function resumePendingAction() {
 
 function openAuth(mode = 'login', data = {}) {
   showDialog('auth-dialog');
+  const authDialog = $('auth-dialog');
+  if (authDialog && !authDialog.dataset.purchaseContextBound) {
+    authDialog.dataset.purchaseContextBound = '1';
+    authDialog.addEventListener('close', () => { authPurchaseContext = false; });
+  }
   const email = escapeHtml(data.email || '');
   if (mode === 'signup') {
     const googleBtnHtml = '<a class="auth-google-direct" href="/api/auth/google/start" id="auth-google-signup">' +
