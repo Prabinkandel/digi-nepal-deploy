@@ -1297,102 +1297,17 @@
   }
 }
 
-/* --- Sticky mobile CTA bar (index.html only) --------------------------
-   Hidden entirely on desktop. Token surface with blur + top border +
-   safe-area padding; buttons keep a 44px touch height. */
-.sticky-cta-bar {
-  display: none;
-}
-
-@media (max-width: 768px) {
-  .sticky-cta-bar {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 40;
-    display: flex;
-    gap: .6rem;
-    padding: .55rem .75rem calc(.55rem + env(safe-area-inset-bottom, 0px));
-    background: var(--surface);
-    background: color-mix(in srgb, var(--surface) 88%, transparent);
-    border-top: 1px solid var(--line);
-    backdrop-filter: blur(16px) saturate(1.4);
-    -webkit-backdrop-filter: blur(16px) saturate(1.4);
-  }
-
-  .sticky-cta-btn {
-    flex: 1 1 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: .45rem;
-    min-height: 44px;
-    padding: .55rem .8rem;
-    border-radius: .7rem;
-    font-size: .92rem;
-    font-weight: 700;
-    line-height: 1.2;
-    text-align: center;
-    transition: transform var(--motion-base), background-color var(--motion-base);
-  }
-
-  .sticky-cta-btn:active {
-    transform: scale(.98);
-  }
-
-  /* White on solid --red is the site-wide .button pairing: 4.79:1. */
-  .sticky-cta-plans {
-    background: var(--red);
-    color: #fff;
-  }
-
-  /* --text on --surface-raised: 16.31:1 dark, 15.86:1 light. */
-  .sticky-cta-wa {
-    background: var(--surface-raised);
-    color: var(--text);
-    border: 1px solid var(--line-strong);
-  }
-
-  /* The bar exists only in index.html, so :has() scopes this padding
-     to the storefront — the footer is never covered by the bar. */
-  body:has(.sticky-cta-bar) {
-    padding-bottom: calc(62px + env(safe-area-inset-bottom, 0px));
-  }
-
-  .whatsapp-float {
-    bottom: calc(62px + env(safe-area-inset-bottom, 0px) + .85rem);
-  }
-
-  .toast-region {
-    bottom: calc(62px + env(safe-area-inset-bottom, 0px) + .75rem);
-  }
-}
-
-@media (max-width: 639px) {
-  /* Dock above .mob-bottom-nav (mobile-ux.css tokens) — never overlap. */
-  .sticky-cta-bar {
-    bottom: calc(var(--mob-bottom-nav, 62px) + var(--mob-safe-bottom, 0px));
-    padding-bottom: .55rem;
-  }
-
-  body:has(.sticky-cta-bar) {
-    padding-bottom: calc(var(--mob-bottom-nav, 62px) + var(--mob-safe-bottom, 0px) + 62px);
-  }
-
-  .whatsapp-float {
-    bottom: calc(var(--mob-bottom-nav, 62px) + var(--mob-safe-bottom, 0px) + 62px + .85rem);
-  }
-
-  .toast-region {
-    bottom: calc(var(--mob-bottom-nav, 62px) + var(--mob-safe-bottom, 0px) + 62px + .5rem);
-  }
-
-  /* mobile-ux.css pins this with !important; match and extend it. */
-  .social-proof-region {
-    bottom: calc(var(--mob-bottom-nav, 62px) + var(--mob-safe-bottom, 0px) + 62px + 1.2rem) !important;
-  }
-}
+/* --- Sticky mobile CTA bar — REMOVED (owner decision, 2026-11-15).
+   The PR #25 "Browse Plans / WhatsApp" bar that docked above
+   .mob-bottom-nav is gone: the bottom nav already has Browse, the
+   floating WhatsApp bubble already exists, and the hero has its own
+   CTA — the bar only covered content. Its markup (index.html), its
+   rules, the body:has(.sticky-cta-bar) bottom padding and the
+   bar-clearance offsets it imposed on .whatsapp-float /
+   .toast-region / .social-proof-region are all removed; those
+   elements fall back to their mobile-ux.css / store-ui.css offsets
+   (bottom nav height + the original gaps). .mob-bottom-nav itself,
+   the WhatsApp bubble and the hero buttons are untouched. */
 
 /* --- Footer: payment chips + column spacing tidy ----------------------
    The .footer-pay row already exists in index.html (store-ui.css gives
@@ -1424,8 +1339,7 @@
   .product-card:hover,
   .product-card:active,
   .flash-deal-card.fdc-rich:hover,
-  .flash-deal-card.fdc-rich:active,
-  .sticky-cta-btn:active {
+  .flash-deal-card.fdc-rich:active {
     transform: none !important;
   }
 }
@@ -2969,3 +2883,4 @@
 .seo-product-link-list a:hover {
   color: #fff;
 }
+
