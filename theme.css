@@ -2884,3 +2884,129 @@
   color: #fff;
 }
 
+/* --------------------------------------------------------------------------
+   3v. POPUP OPTIMIZATION (PR #36; owner, on the Canva Edu popup:
+   "Optimize this page", 2026-11-15). Audit-first: every change below
+   was measured in the harness against the real catalogue before and
+   after (390×844 phone, 1280×900 desktop, 1280×600 for §3r compact).
+
+   BEFORE (phone): banner box 148px with the logo at the §3s cap;
+   the Netflix description ran 8 lines (398 chars) ahead of the plan
+   cards, so the last of 4 plan cards needed 358px of scrolling to
+   reach; the trust story was told THREE times — .pd-trust-chips,
+   a .pd-reassure checkmark list (79px), and the footer's payment
+   chips; the banner's duration pill (.store-badge-plain: white 5%
+   wash, muted text) sat on the white banner at ~1.1:1 contrast —
+   the owner's "1 YEAR" label was effectively invisible; and the
+   rotating purchase bubble (.proof-bubble, fixed, bottom-left)
+   geometrically overlapped the popup footer (it paints beneath the
+   modal's top layer, but it had no business being there at all).
+
+   1. BANNER COMPACTION. §3s capped the img but the box stayed
+      148px at every width. The box now hugs the logo: 132px on
+      desktop, 112px on phones, img caps 96px / 84px — still
+      aspect-true and centred, still no crop (§3s construction
+      unchanged), and §3r's short-viewport compact mode keeps its
+      64px box / 52px cap (re-asserted below, this section is later
+      in the file). A shorter banner only moves the plan cards UP,
+      so §3r's first-open Save-pill clearance grows, never shrinks.
+   2. DESCRIPTION CLAMP. .pd-summary clamps to 3 lines with a
+      Read more / Read less toggle (app.js summaryClamp(); the full
+      text stays in the DOM). §3r compact mode still clamps to 1
+      line and hides the toggle (re-asserted below at higher
+      specificity, since this section follows §3r).
+   3. ORDER + DEDUP (app.js markup, no CSS): the group popup now
+      runs banner → category/title → plan cards → description →
+      What you get → ONE trust-chip row → delivery/FAQ → related;
+      the single popup runs banner → title → description → What
+      you get → trust row → delivery/FAQ → related, with the price
+      in the sticky footer as before. The .pd-reassure checkmark
+      list is deleted from both renders — its three facts live on
+      in the trust chips, the footer's payment chips and the
+      delivery steps. The trust chips also stop wrapping to two
+      rows on phones (one compact row, ≤640px rules below).
+   4. BADGE CONTRAST. In the banner lane only, .store-badge-plain
+      becomes a dark pill (near-black 86% + white text) so duration
+      labels read on light AND dark banner art. Card badges are
+      untouched.
+   5. PURCHASE BUBBLE. While any dialog is open the rotating
+      purchase bubble is display:none — it can never sit under or
+      against the popup's buy footer again. The functional toast
+      region (sign-in prompts, errors) is NOT touched.
+   -------------------------------------------------------------------------- */
+
+/* 1 — Banner compaction (supersedes §3r's flat 148px). */
+.pd-banner {
+  height: 132px;
+}
+.pd-banner img {
+  max-height: 96px;
+}
+@media (max-width: 640px) {
+  .pd-banner {
+    height: 112px;
+  }
+  .pd-banner img {
+    max-height: 84px;
+  }
+}
+
+/* 2 — Description clamp + toggle. */
+.product-dialog .pd-summary.is-clamped {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.pd-readmore {
+  justify-self: start;
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--red-bright);
+  font-weight: 700;
+  font-size: .8rem;
+  cursor: pointer;
+}
+
+/* 3 — One compact trust row on phones (no wrap to two rows). */
+@media (max-width: 640px) {
+  .pd-trust-chips {
+    flex-wrap: nowrap;
+  }
+  .pd-trust-chips span {
+    white-space: nowrap;
+    font-size: .58rem;
+    padding: .26rem .42rem;
+  }
+}
+
+/* §3r compact mode re-asserted over the rules above (this section
+   is later in the file): 64px banner / 52px img cap, summary to
+   one line, no Read more toggle. */
+@media (max-height: 720px) and (min-width: 640px) {
+  .pd-banner {
+    height: 64px;
+  }
+  .pd-banner img {
+    max-height: 52px;
+  }
+  .product-dialog .pd-summary.is-clamped {
+    -webkit-line-clamp: 1;
+  }
+  .pd-readmore {
+    display: none;
+  }
+}
+
+/* 4 — Duration pill reads on any banner art (popup lane only). */
+.pd-banner .pd-badges .store-badge-plain {
+  background: rgba(9, 9, 12, .86);
+  border-color: rgba(255, 255, 255, .25);
+  color: #fff;
+}
+
+/* 5 — No purchase bubble while a dialog is open. */
+body:has(dialog[open]) .proof-bubble {
+  display: none !important;
+}
