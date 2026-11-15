@@ -2779,3 +2779,79 @@
     display: none;
   }
 }
+
+/* --------------------------------------------------------------------------
+   3s. POPUP BANNER IMAGE SIZE (PR #32) — owner report 2026-11-15:
+   "Not PC or tablet responsive because the logo is enlarged" (his
+   phone screenshot of the Canva Edu popup), plus a wide promo banner
+   seen filling/cropping in the Netflix popup banner.
+
+   ROOT CAUSE. §3n sized the banner img at width:100% / height:100%
+   of the .pd-banner box with object-fit:contain. The box is 148px
+   tall at every width (§3r) but its WIDTH follows the dialog —
+   ~359px on a phone, ~1012px on desktop (store-ui sets the dialog
+   to min(66rem, …)). So the painted artwork always stretched to the
+   full 148px height, and wide artwork painted far wider on PC than
+   on a phone (measured BEFORE, real catalogue payloads, local
+   snapshot == production theme.css by blob SHA): Canva Edu's
+   1200×675 banner painted 263×148 at both widths; the 964×263
+   Dashain promo painted 359×98 on a 390px phone but 542×148 at
+   1280px — the rendered size was a function of dialog width, i.e.
+   not responsive in the owner's sense. Under any stale/forced
+   cover fit the same 100%×100% box crops wide artwork outright,
+   because the element box itself is not aspect-true.
+
+   FIX. The banner box is unchanged (148px, white, §3r geometry
+   untouched) but the img now keeps its natural aspect and is
+   capped: max-height 108px, max-width min(400px, 86%), centred by
+   flex on the banner (the §3q block box becomes a centred flex
+   box; .pd-badges and .stock-out-banner are absolutely positioned
+   and unaffected, and the .brand-detail-emblem fallback keeps its
+   own 100%×100% flex sizing). Explicit px caps — no height:100%,
+   no grid placement — so the §3o circular-sizing trap (img height
+   resolving against itself, ballooning to 428–481px) cannot recur:
+   the element box is aspect-true by construction, and contain is
+   kept as belt-and-braces so no fit can crop the artwork. In §3r's
+   short-viewport compact mode the banner shrinks to 64px, so the
+   cap tightens to 52px to keep the img inside it. Card and deal
+   images are NOT touched — full-bleed cover there is the owner's
+   PR #29 decision.
+   -------------------------------------------------------------------------- */
+.pd-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pd-banner img {
+  width: auto;
+  height: auto;
+  max-width: min(400px, 86%);
+  max-height: 108px;
+  object-fit: contain;
+}
+@media (max-height: 720px) and (min-width: 640px) {
+  .pd-banner img {
+    max-height: 52px;
+  }
+}
+
+/* §3s rider — sticky-footer was-price breathing room. The live
+   verification of PR #31 found the footer's struck-through
+   was-price (NPR 299 / NPR 897) half-clipped at the panel's top
+   edge. Measured cause: .pd-price-side is the taller column in
+   .pd-price-top, so its first row — the <s> — starts flush at the
+   footer's content-box top (ink 16.6px below the footer's border
+   edge with the production font, 15.6px with a fallback font;
+   zero spare room above the line box), so any device whose font
+   metrics run larger paints the digits into the card's top edge
+   and its 2px shimmer line. Fix: .25rem of padding-top on the
+   side column plus a tighter 1.3 line-height on the <s> itself —
+   the ink moves ~6px clear of the edge while the column's total
+   height is unchanged (73.7px → ~73.9px), so the §3r footer's
+   height and the plan cards' scrollport clearance are untouched. */
+.pd-footer .pd-price-side {
+  padding-top: .25rem;
+}
+.pd-footer .pd-price-side s {
+  line-height: 1.3;
+}
