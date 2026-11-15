@@ -2855,3 +2855,30 @@
 .pd-footer .pd-price-side s {
   line-height: 1.3;
 }
+
+/* --------------------------------------------------------------------------
+   3t. MODAL DIALOGS BELONG TO THE VIEWPORT — store-ui.css carries
+   `body > * { position: relative; z-index: 1 }` (page sections stack
+   above the body::before backdrop). Every <dialog> is a direct child
+   of <body>, so that author rule overrides the UA stylesheet's
+   `:modal` fixed positioning: a modal dialog computes to
+   position:absolute and is centred inside the initial containing
+   block — a viewport-sized box anchored at the DOCUMENT top. Opened
+   from deep in the catalogue (Buy → sign-in, the payment dialog after
+   it, My orders), the dialog rendered thousands of pixels above the
+   visible area and the page lurched as autofocus scrolled it into
+   view (measured on the auth dialog: rect y = −2,197px at scrollY
+   2,376; page jump of −2,283px on Netflix Buy). The §3n scroll
+   save/restore masked this for the product popup only.
+
+   Fix: hand modal dialogs back their fixed positioning. `.dialog`
+   (0,1,0) + `:modal` (0,1,0) outranks `body > *` (0,0,1), and the UA
+   :modal inset-block:0 + margin:auto centring takes over again, so
+   every modal — product, auth, payment, orders, account — opens
+   centred in the viewport at any scroll position and opening one no
+   longer moves the page. Non-modal uses are untouched (no .dialog is
+   ever shown non-modally), and the admin panel uses no .dialog.
+   -------------------------------------------------------------------------- */
+.dialog:modal {
+  position: fixed;
+}
