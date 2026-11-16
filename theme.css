@@ -3365,3 +3365,115 @@ body:has(dialog[open]) .proof-bubble {
   .flash-sale-header-right { display: flex; }
   .flash-sale-header-right .flash-see-all { display: none; }
 }
+
+/* ------------------------------------------------------------------
+   §3z FLASH SALE V2 CARDS (owner redesign 2026-11-16, from his phone
+   screenshot): rectangle cards where the product photo is FULL -
+   one single image filling the card, nothing layered over it (the
+   ambient backdrop and the emblem fallback are gone from deal cards;
+   a failed image removes itself and leaves the dark card). Only the
+   name + price sit on a bottom gradient scrim, with a round buy
+   button; no category strip, duration, was-price or description.
+   The carousel now auto-scrolls (app.js setupFlashCarousel). The
+   mobile header also stacks (.flash-sale-top column) so the title
+   and subtitle get the full width instead of a crushed centre
+   column between the badge and the countdown card.
+   ------------------------------------------------------------------ */
+.flash-deal-card.fdc-rich.fdc-v2 {
+  position: relative;
+  flex: 0 0 auto;
+  width: min(300px, 78vw);
+  max-width: 300px;
+  aspect-ratio: 1.3;
+  height: auto;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 1rem;
+  background: #0a0a0c;
+  cursor: pointer;
+}
+.flash-deal-card.fdc-rich.fdc-v2 .fdc-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+.flash-deal-card.fdc-rich.fdc-v2 .fdc-info {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: .6rem;
+  padding: 2.2rem .85rem .7rem;
+  background: linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,.85));
+  color: #fff;
+}
+.flash-deal-card.fdc-rich.fdc-v2 .fdc-name {
+  margin: 0;
+  font-size: .98rem;
+  font-weight: 800;
+  line-height: 1.15;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+}
+.flash-deal-card.fdc-rich.fdc-v2 .fdc-price-row {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  margin-top: .25rem;
+}
+.flash-deal-card.fdc-rich.fdc-v2 .fdc-price {
+  font-size: 1.05rem;
+  font-weight: 850;
+  color: #fff;
+}
+.flash-deal-card.fdc-rich.fdc-v2 .fdc-save-pill {
+  background: #065f46;
+  color: #fff;
+  font-size: .66rem;
+  font-weight: 800;
+  padding: .14rem .45rem;
+  border-radius: 999px;
+}
+.flash-deal-card.fdc-rich.fdc-v2 .fdc-out-stock {
+  margin: .2rem 0 0;
+  font-size: .68rem;
+  color: #ffb3ab;
+}
+.flash-deal-card.fdc-rich.fdc-v2 .fdc-btn-buy {
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+  border: none;
+  border-radius: 50%;
+  background: #e50914;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(229, 9, 20, .45);
+}
+.flash-deal-card.fdc-rich.fdc-v2 .fdc-btn-buy:disabled {
+  opacity: .45;
+  cursor: default;
+  box-shadow: none;
+}
+@media (max-width: 640px) {
+  .flash-sale-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .55rem;
+  }
+  .flash-sale-title-wrap { width: 100%; }
+}
