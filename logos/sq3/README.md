@@ -1,0 +1,1 @@
+sq3 — designed brand-colour square artworks (1024x1024), composed 2026-11-16 from the sq lockups: logo keyed off white, black wordmarks recoloured white, brand-glow dark background. Supersedes sq2 (plain white tiles) on owner feedback.
