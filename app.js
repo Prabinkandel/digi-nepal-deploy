@@ -892,41 +892,40 @@ function renderDeals(products) {
   renderFlashCards(top);
 }
 
+function dealImageUrl(product) {
+  /* Same resolution order as productVisual, URL only: override-family
+     bundled logo, then the product's own image, then the bundled logo. */
+  const override = brandLogoOverrideFor(product.name);
+  if (override) return override;
+  if (product.image_url) return product.image_url;
+  return brandLogoFor(product.name) || '';
+}
+
 function renderFlashCards(deals) {
   const carousel = $('flash-carousel');
   if (!carousel) return;
 
   carousel.innerHTML = deals.map(({ product, saving }) => {
-    const duration = durationOf(product);
     const inStock = product.stock === undefined || product.stock === null || Number(product.stock) > 0;
     const theme = getBrandTheme(product.name, product.category_name, product.brand_color || product.brandColor);
     const tvars = themeVarsString(theme);
-    // Same ambient treatment as the catalogue cards (§3w): the deal
-    // thumb's own image, cover + blurred behind the contained thumb.
-    // Card dimensions are unchanged — only the top's paint changes.
-    const backdropUrl = cardBackdropUrlFor(product);
-    const backdropHtml = backdropUrl
-      ? '<span class="fdc-ambient" style="background-image:url(\'' + escapeHtml(backdropUrl) + '\')" aria-hidden="true"></span>'
-      : '';
-    return '<div class="flash-deal-card fdc-rich" role="listitem" data-flash-id="' + escapeHtml(product.id) + '" style="' + tvars + '">' +
-      '<div class="card-glow" aria-hidden="true"></div>' +
-      '<div class="fdc-top">' + backdropHtml +
-        '<div class="fdc-thumb">' + dealThumb(product) + '</div>' +
-      '</div>' +
-      '<div class="fdc-cat-strip">' + escapeHtml(product.category_name || 'DIGITAL SERVICE') + '</div>' +
-      '<div class="fdc-body">' +
-        '<h3 class="fdc-name">' + escapeHtml(product.name) + '</h3>' +
-        (duration ? '<p class="fdc-dur">' + escapeHtml(duration) + '</p>' : '') +
-        '<div class="fdc-price-row">' +
-          '<span class="fdc-price">' + formatMoney(product.price) + '</span>' +
-          '<span class="fdc-was">' + formatMoney(product.original_price) + '</span>' +
-          '<span class="fdc-save-pill">-' + saving.percent + '% OFF</span>' +
+    const img = dealImageUrl(product);
+    // Owner redesign 2026-11-16: rectangle card, the product photo FULL
+    // (nothing layered over it - no ambient, no emblem), and only the
+    // name + price under it. The whole card opens the product; the round
+    // button buys. No category strip, duration or description.
+    return '<div class="flash-deal-card fdc-rich fdc-v2" role="listitem" data-flash-id="' + escapeHtml(product.id) + '" style="' + tvars + '">' +
+      (img ? '<img class="fdc-photo" src="' + escapeHtml(img) + '" alt="' + escapeHtml(product.name || '') + '" loading="lazy" decoding="async" onerror="this.remove()">' : '') +
+      '<div class="fdc-info">' +
+        '<div class="fdc-info-text">' +
+          '<h3 class="fdc-name">' + escapeHtml(product.name) + '</h3>' +
+          '<div class="fdc-price-row">' +
+            '<span class="fdc-price">' + formatMoney(product.price) + '</span>' +
+            (saving && saving.percent ? '<span class="fdc-save-pill">-' + saving.percent + '%</span>' : '') +
+          '</div>' +
+          (!inStock ? '<p class="fdc-out-stock">Currently unavailable</p>' : '') +
         '</div>' +
-        '<div class="fdc-actions">' +
-          '<button class="fdc-btn-buy" type="button"' + (inStock ? '' : ' disabled') + ' aria-label="Buy ' + escapeHtml(product.name) + '"><span class="card-buy-text">Buy Now</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>' +
-          '<button class="fdc-btn-detail" type="button" aria-label="Details for ' + escapeHtml(product.name) + '">Details</button>' +
-        '</div>' +
-        (!inStock ? '<p class="fdc-out-stock">Currently unavailable</p>' : '') +
+        '<button class="fdc-btn-buy" type="button"' + (inStock ? '' : ' disabled') + ' aria-label="Buy ' + escapeHtml(product.name) + '"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>' +
       '</div>' +
     '</div>';
   }).join('');
@@ -936,9 +935,7 @@ function renderFlashCards(deals) {
   carousel.querySelectorAll('[data-flash-id]').forEach(card => {
     const id = card.dataset.flashId;
     const buyBtn = card.querySelector('.fdc-btn-buy');
-    const detailBtn = card.querySelector('.fdc-btn-detail');
     if (buyBtn) buyBtn.onclick = e => { e.stopPropagation(); startOrder(id); };
-    if (detailBtn) detailBtn.onclick = e => { e.stopPropagation(); openProduct(id); };
     card.onclick = () => openProduct(id);
   });
 
@@ -979,7 +976,16 @@ function setupFlashCarousel(deals) {
   const next = () => scrollTo(currentIdx + 1);
   const prev = () => scrollTo(currentIdx - 1);
 
-  // No autoplay: customers browse offers at their own pace.
+  // Autoplay (owner 2026-11-16): advance every 3s with wrap-around;
+  // pause while the customer touches or hovers, then resume.
+  if (carousel._autoTimer) { clearInterval(carousel._autoTimer); carousel._autoTimer = null; }
+  const startAuto = () => { if (!carousel._autoTimer) carousel._autoTimer = setInterval(next, 3000); };
+  const stopAuto = () => { if (carousel._autoTimer) { clearInterval(carousel._autoTimer); carousel._autoTimer = null; } };
+  startAuto();
+  carousel.addEventListener('pointerdown', stopAuto);
+  carousel.addEventListener('mouseenter', stopAuto);
+  carousel.addEventListener('mouseleave', startAuto);
+  carousel.addEventListener('touchend', () => { stopAuto(); setTimeout(startAuto, 4000); }, { passive: true });
 
   const prevBtn = $('flash-prev'); const nextBtn = $('flash-next');
   if (prevBtn) prevBtn.onclick = () => { prev(); };
