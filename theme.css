@@ -3303,3 +3303,26 @@ body:has(dialog[open]) .proof-bubble {
 .flash-deal-card.fdc-rich:hover .fdc-top .deal-thumb {
   transform: none;
 }
+
+/* ------------------------------------------------------------------
+   §3x FLASH SALE (owner rename 2026-11-16: "Hot Sale" -> "Flash Sale")
+   + deal tops restaged for the sq3 artwork. The sq3 squares are dark
+   designed tiles (brand glow on near-black), so the §3w blurred
+   ambient behind a contained thumb is retired on deal cards: the top
+   becomes one dark stage (#08080a, both themes) and the full square
+   shows whole and centred on it — its own near-black edges blend
+   into the stage, no crop at any width (icons stay whole, unlike a
+   cover fill in this wide ~2.7:1 box). Dimensions, carousel
+   mechanics and every function are untouched — paint only.
+   ------------------------------------------------------------------ */
+.flash-deal-card.fdc-rich .fdc-top {
+  background: #08080a;
+}
+.flash-deal-card.fdc-rich .fdc-top .fdc-ambient {
+  display: none;
+}
+.flash-deal-card.fdc-rich .fdc-top .deal-thumb {
+  object-fit: contain;
+  object-position: center;
+  background: transparent;
+}
