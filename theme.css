@@ -37,6 +37,10 @@
        210px, desktop capped at 235px; supersedes the §3m pins of
        76vw/300px and 19rem and the first narrowing to
        64vw/250px, 270px and 280px).
+   3w. Royal-combined cards — square 1:1 photo stage (Royal Sewa
+       geometry) with Digi's wide wordmarks contained whole over an
+       ambient backdrop of the same image; Royal badge stack and
+       price cluster; category/rating/meta lines in Royal order.
    4. Global prefers-reduced-motion support.
 
    The theme attribute is set before first paint by an inline snippet in
@@ -3009,4 +3013,293 @@
 /* 5 — No purchase bubble while a dialog is open. */
 body:has(dialog[open]) .proof-bubble {
   display: none !important;
+}
+
+/* --------------------------------------------------------------------------
+   3w. ROYAL-COMBINED CARDS (owner: combine royalsewa.com/store card
+   design with Digi's — "only product photo design cards design and
+   not change function"). DESIGN ONLY: grouping, min-price logic, the
+   Buy → action, the View Details pill, click targets/handlers, search,
+   tabs, Hot Sale mechanics, the popup and login are byte-identical in
+   behaviour; only card markup structure (app.js productCard /
+   renderFlashCards) and the card CSS below change.
+
+   Borrowed from Royal: the SQUARE 1:1 photo stage, flush full-bleed
+   to the card's top/sides with the card's top corners and a straight
+   cut into the text block; the badge STACK over the photo (discount
+   pill, Featured directly below it; grey Sold Out pill + desaturated
+   photo instead of a ribbon); the text-block order (small uppercase
+   category line, bold name, gold-star rating row); the price cluster
+   (price + grey strikethrough was-price + small % pill).
+   Kept from Digi: the accent stays Digi red (never Royal's gold);
+   the category strip's full-width band becomes Royal's small red
+   category LINE inside the body; the info chips become one muted
+   line ("1 Month – 1 Year · 4 plans"); FROM stays grouped-only.
+
+   THE LOGO PROBLEM AND ITS ANSWER. Royal's artwork is square brand
+   art; Digi's is WIDE wordmarks (Netflix ~2.9:1, bundled 2:1
+   canvases, 1.78:1 uploads) — cover-cropping them into 1:1 would cut
+   most of the wordmark (the §3m audit's maths at 4/3 already failed
+   five marks). So the foreground image renders CONTAINED + centred,
+   always 100% whole, and the square fills with an AMBIENT BACKDROP:
+   the same image URL (cardBackdropUrlFor in app.js — productVisual's
+   own resolution order, relative path, so it is the same cache entry
+   and costs no extra download) painted cover + blurred + darkened
+   behind the logo. Royal's "card colour = brand colour" effect with
+   zero foreground cropping; the backdrop's own crop is intended (it
+   is blurred). Emblem-fallback products resolve to no URL and keep
+   the plain §3j stage.
+
+   ONE GEOMETRY ADAPTATION. Royal's price row ends with the % pill
+   because Royal cards have no buttons; Digi's row carries the Buy →
+   action at its end, and at phone width the row has zero slack
+   (measured: price + Buy already fill the 147px inner width), so
+   the was-price + % pill sit as a cluster directly UNDER the price
+   inside .price-main — same elements, same reading order (price →
+   was → −%), stacked instead of beside. §3q's uniform-baseline
+   discipline is kept by rendering all three .price-main slots on
+   every card (an invisible reserved label line on singles, an empty
+   reserved .price-extra line when the FROM variant has no saving)
+   and top-anchoring the block instead of §3q's bottom anchor.
+   -------------------------------------------------------------------------- */
+
+/* W1. Square stage, flush; ambient backdrop; contained logo. The
+   §3m M2 frame selector is reused at the same specificity (0,3,0),
+   later in the sheet, so 1/1 supersedes 3/2; the 12px stage inset
+   the old frame carried goes to 0 so the stage is truly flush. */
+.product-card .card-visual {
+  overflow: hidden;
+  border-radius: calc(1rem - 1px) calc(1rem - 1px) 0 0;
+}
+.product-card .card-visual .product-image {
+  aspect-ratio: 1 / 1;
+  padding: 0;
+}
+.product-card .card-ambient {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-size: cover;
+  background-position: center;
+  filter: blur(22px) saturate(1.3) brightness(.78);
+  transform: scale(1.3);
+  pointer-events: none;
+}
+[data-theme="light"] .product-card .card-ambient {
+  filter: blur(22px) saturate(1.25) brightness(.97);
+}
+/* With a backdrop present the §3j stage surface goes transparent so
+   the brand colours show around the logo; without one (emblem
+   fallback) the plain stage stands. */
+.product-card .card-visual:has(.card-ambient) .product-image {
+  background: transparent;
+}
+.product-card .card-visual .product-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  padding: 0;
+  filter: none;
+  transform: none;
+}
+/* The §3l hover zoom scaled the img box past the frame — harmless
+   under cover, a momentary crop under contain. It goes; the card's
+   own hover lift (card-clean) still gives the motion. */
+.product-card:hover .card-visual .product-image img {
+  transform: none;
+}
+/* The §3j A2 badge-lane top margin centred the emblem under the old
+   badge row; in the square stage the emblem simply centres. */
+.product-card .product-image .banner-logo-wrap,
+.product-card .product-image .brand-fallback-wrap {
+  margin-top: 0;
+}
+/* Sold out: the photo desaturates (Royal) — foreground and backdrop. */
+.product-card.is-out .card-visual .product-image img {
+  filter: grayscale(1);
+  opacity: .55;
+}
+.product-card.is-out .card-ambient {
+  filter: blur(22px) saturate(.25) brightness(.62) grayscale(.5);
+}
+[data-theme="light"] .product-card.is-out .card-ambient {
+  filter: blur(22px) saturate(.25) brightness(.9) grayscale(.5);
+}
+
+/* W2. Badge stack: the left slot becomes a column (discount on top,
+   Featured directly below — app.js renders both now). The discount
+   pill trades §3g's green for the Digi-red gradient (Royal's red
+   pill, Digi's red); the Sold Out pill is Royal's grey. Featured
+   keeps §3p's solid amber. Same (0,3,0) selectors as §3g/§3p, later
+   in the sheet. */
+.product-card .card-badges {
+  justify-content: flex-start;
+}
+.product-card .badge-slot-left {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: .35rem;
+}
+.product-card .card-badges .store-badge-save {
+  background: linear-gradient(135deg, var(--red-bright), var(--red));
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, .35);
+  font-weight: 800;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .35);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.product-card .card-badges .store-badge-soldout {
+  background: #52525b;
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, .3);
+  font-weight: 800;
+  letter-spacing: .04em;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .35);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* W3. Text block, Royal order: red category line, name (the §3j
+   two-line reservation stands), gold rating row, ONE muted meta
+   line. The old .card-cat-strip band and .card-meta chip row no
+   longer render on catalogue cards (deal cards keep .fdc-cat-strip);
+   their earlier rules are inert for this markup. */
+.product-card .card-cat {
+  color: var(--red-bright);
+  font-size: .66rem;
+  font-weight: 800;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: .3rem;
+}
+[data-theme="light"] .product-card .card-cat {
+  color: #c00711;
+}
+.product-card .card-rating {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  margin-top: .35rem;
+}
+.product-card .card-stars {
+  position: relative;
+  display: inline-block;
+  font-size: .78rem;
+  line-height: 1;
+  letter-spacing: .1em;
+  color: rgba(160, 165, 180, .45);
+}
+.product-card .card-stars-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  letter-spacing: .1em;
+  color: #f5b301;
+}
+.product-card .card-rating-num {
+  font-size: .78rem;
+  font-weight: 800;
+  color: var(--text);
+}
+[data-theme="light"] .product-card .card-stars {
+  color: rgba(90, 95, 110, .35);
+}
+.product-card .card-meta-line {
+  color: var(--text-muted);
+  font-size: .76rem;
+  font-weight: 600;
+  line-height: 1.35;
+  min-height: 1.15em;
+  margin: .45rem 0 0;
+}
+/* At phone width the long range lines ("1 Month – 1 Year · 4 plans")
+   wrap to two lines; reserve both (§3p's uniform-row discipline) so
+   a wrapped neighbour cannot stretch its row. Wider cards always
+   fit the line on one. */
+@media (max-width: 640px) {
+  .product-card .card-meta-line {
+    min-height: 2.05rem;
+  }
+}
+
+/* W4. Price cluster. .price-main top-anchors (supersedes §3q's
+   flex-end) over three always-rendered slots — label line, price,
+   was/+pill line — so price figures share one line in every row;
+   the min-height is §3q's plus the reserved extra line. */
+.product-card .price-row .price-main {
+  justify-content: flex-start;
+  min-height: 4.05rem;
+}
+@media (max-width: 640px) {
+  .product-card .price-row .price-main {
+    min-height: 3.55rem;
+  }
+}
+.product-card .price-extra {
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  min-height: 1.25rem;
+  margin-top: .28rem;
+}
+.product-card .price-row .was-price {
+  font-size: .8rem;
+}
+.product-card .price-off-pill {
+  padding: .16rem .5rem;
+  border-radius: 999px;
+  background: var(--red-wash);
+  border: 1px solid rgba(229, 9, 20, .4);
+  color: var(--red-bright);
+  font-size: .68rem;
+  font-weight: 800;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+[data-theme="light"] .product-card .price-off-pill {
+  color: #c00711;
+}
+
+/* W5. Hot Sale deal tops: same contain + ambient treatment INSIDE
+   the existing .fdc-top box — deal-card dimensions, the §3m-add
+   width pins and the carousel mechanics are untouched. The (0,4,0)
+   selector ties §3l L2 and wins on order; the two tall-mark
+   exceptions are re-stated at their own (0,5,1) so their white
+   letterbox paint and padding go too — contain is now the rule for
+   every deal thumb, and the ambient fills what the letterbox did. */
+.flash-deal-card.fdc-rich .fdc-top .fdc-ambient {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-size: cover;
+  background-position: center;
+  filter: blur(18px) saturate(1.3) brightness(.78);
+  transform: scale(1.3);
+  pointer-events: none;
+}
+[data-theme="light"] .flash-deal-card.fdc-rich .fdc-top .fdc-ambient {
+  filter: blur(18px) saturate(1.25) brightness(.97);
+}
+.flash-deal-card.fdc-rich .fdc-top .deal-thumb {
+  object-fit: contain;
+  object-position: center;
+  padding: 0;
+}
+.flash-deal-card.fdc-rich .fdc-top img.deal-thumb[src*="logos/chatgpt.svg"],
+.flash-deal-card.fdc-rich .fdc-top img.deal-thumb[src*="logos/gemini.svg"] {
+  object-fit: contain;
+  background: transparent;
+  padding: 0;
+}
+/* Contain must never crop, including mid-hover: the store-ui hover
+   zoom on deal thumbs goes (same reasoning as W1). */
+.flash-deal-card.fdc-rich:hover .fdc-top .deal-thumb {
+  transform: none;
 }
