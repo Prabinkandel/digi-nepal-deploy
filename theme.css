@@ -3326,3 +3326,42 @@ body:has(dialog[open]) .proof-bubble {
   object-position: center;
   background: transparent;
 }
+
+/* ------------------------------------------------------------------
+   §3y FLASH SALE COUNTDOWN CARD (owner 2026-11-16: "small card for
+   flash sale section with 24 hours counts"). A compact red card in
+   the section header; app.js startFlashCountdown() ticks it down to
+   midnight Asia/Kathmandu — a daily 24-hour sale window, the same
+   for every visitor. On phones the header-right group was
+   display:none (store-ui.css); the timer stays visible there while
+   View all remains hidden, exactly as before.
+   ------------------------------------------------------------------ */
+.flash-timer-card {
+  display: inline-flex;
+  align-items: center;
+  gap: .55rem;
+  background: linear-gradient(135deg, #e50914, #9d060f);
+  color: #fff;
+  border-radius: .8rem;
+  padding: .45rem .8rem;
+  box-shadow: 0 6px 18px rgba(229, 9, 20, .35);
+  white-space: nowrap;
+}
+.flash-timer-card .ftc-label {
+  font-size: .66rem;
+  font-weight: 800;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  opacity: .95;
+}
+.flash-timer-card .ftc-time {
+  font-size: 1.12rem;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .05em;
+  line-height: 1;
+}
+@media (max-width: 640px) {
+  .flash-sale-header-right { display: flex; }
+  .flash-sale-header-right .flash-see-all { display: none; }
+}

@@ -841,6 +841,21 @@ function applyCampaignSection(campaign) {
   if (cta && campaign.cta_text) cta.textContent = campaign.cta_text;
 }
 
+function startFlashCountdown() {
+  const el = document.getElementById('flash-countdown');
+  if (!el) return;
+  const pad = n => String(n).padStart(2, '0');
+  const tick = () => {
+    const npt = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kathmandu' }));
+    const end = new Date(npt);
+    end.setHours(24, 0, 0, 0);
+    const s = Math.max(0, Math.floor((end - npt) / 1000));
+    el.textContent = pad(Math.floor(s / 3600)) + ':' + pad(Math.floor((s % 3600) / 60)) + ':' + pad(s % 60);
+  };
+  tick();
+  setInterval(tick, 1000);
+}
+
 function renderDeals(products) {
   const section = $('flash-sale');
   const carousel = $('flash-carousel');
@@ -2542,6 +2557,7 @@ async function startWhatsAppOrder(productId) {
 async function init() {
   if ($('year')) $('year').textContent = new Date().getFullYear();
   bindUI();
+  startFlashCountdown();
   setupSearch();
   setupMotion();
   setProductLoading();
