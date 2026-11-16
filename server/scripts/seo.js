@@ -481,9 +481,176 @@ function buildProductPage(group, siblings, settings) {
 `;
 }
 
+const HUB_PATH = '/cheapest-subscriptions-in-nepal/';
+const HUB_CSS = `
+table.prices{width:100%;border-collapse:collapse;margin:0 0 .5rem}
+table.prices th,table.prices td{padding:.8rem .7rem;border-bottom:1px solid #232329;text-align:left;vertical-align:middle}
+table.prices th{color:#8b8b93;font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+table.prices td{color:#d4d4d8}
+table.prices .p-name a{color:#fff;font-weight:700;text-decoration:none}
+table.prices .p-name a:hover{color:#ff4655}
+table.prices .p-price{color:#fff;font-weight:800;white-space:nowrap}
+table.prices .p-save{background:#123526;color:#4ade80;border-radius:999px;padding:.14rem .55rem;font-size:.72rem;font-weight:700;white-space:nowrap}
+table.prices .p-view{color:#ff4655;font-weight:700;text-decoration:none;white-space:nowrap}
+@media (max-width:640px){table.prices .p-cat{display:none}}
+`;
+
+function buildHubPage(groups, settings) {
+  const pageUrl = SITE_ORIGIN + HUB_PATH;
+  const byPrice = [...groups].sort((a, b) => Number(a.minPrice) - Number(b.minPrice));
+  const cheapest = byPrice[0];
+  const netflix = groups.find(g => baseKey(g.name) === 'netflix 4k');
+  const prime = groups.find(g => baseKey(g.name) === 'prime video');
+
+  const title = 'Cheapest Subscriptions in Nepal (2026) — Netflix, Prime Video, ChatGPT Plus & More | Digi Nepal';
+  const metaDesc = ('Looking for the cheapest subscriptions in Nepal? Compare live NPR prices at Digi Nepal: Netflix 4K from ' +
+    (netflix ? formatMoney(netflix.minPrice) : 'NPR 350') + ', Prime Video from ' + (prime ? formatMoney(prime.minPrice) : 'NPR 99') +
+    ', ChatGPT Plus, Spotify, Canva Pro & more. Instant delivery, activation warranty, pay with eSewa, Khalti, IME Pay or Bank QR.').slice(0, 300);
+
+  const faqs = [
+    {
+      q: 'Where can I buy the cheapest subscriptions in Nepal?',
+      a: 'Digi Nepal (diginepalnp.com) sells premium subscriptions at some of the lowest prices in Nepal — Netflix 4K from ' + (netflix ? formatMoney(netflix.minPrice) : 'NPR 350') + ' per month and Prime Video from ' + (prime ? formatMoney(prime.minPrice) : 'NPR 99') + ' per month — with instant delivery after payment, an activation warranty, and payment by eSewa, Khalti, IME Pay or Bank QR. Every price on this page is the live store price in NPR.'
+    },
+    {
+      q: 'What is the cheapest Netflix plan in Nepal?',
+      a: 'At Digi Nepal, Netflix 4K costs ' + (netflix ? formatMoney(netflix.minPrice) : 'NPR 350') + ' for 1 month — a private profile on a premium 4K plan, signed in with email + OTP, renewed on the same account so your profile, watchlist and history carry over. Longer plans cost less per month: the 1 Year plan works out cheapest per month.'
+    },
+    {
+      q: 'Why are subscriptions cheaper at Digi Nepal than the official price?',
+      a: 'Official subscriptions bill in US dollars and need an international card, which adds conversion and bank fees. Digi Nepal supplies shared and private-profile plans bought in bulk and paid for locally, so the saving passes to you — the same premium apps, at local NPR prices, with no international card needed.'
+    },
+    {
+      q: 'Is it safe to buy cheap subscriptions online in Nepal?',
+      a: 'Yes, when the store stands behind the sale. Every Digi Nepal order is receipt-verified, tracked in your account, and covered by an activation warranty — if access is blocked, it is re-activated or replaced free. Support is on WhatsApp at +977 9705985657.'
+    },
+    {
+      q: 'How do I pay for a subscription at Digi Nepal?',
+      a: 'Pay with eSewa, Khalti, IME Pay, or any bank app using Bank QR / bank transfer. Choose a plan on the product page, sign in, start the order, and delivery follows as soon as the payment is approved.'
+    }
+  ];
+
+  const listLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: 'Cheapest subscriptions in Nepal — price list',
+    itemListElement: byPrice.map((g, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: g.name,
+      url: SITE_ORIGIN + '/product/' + g.slug + '/'
+    }))
+  };
+  const faqLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map(f => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } }))
+  };
+  const crumbsLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_ORIGIN + '/' },
+      { '@type': 'ListItem', position: 2, name: 'Cheapest Subscriptions in Nepal', item: pageUrl }
+    ]
+  };
+
+  const rowsHtml = byPrice.map(g => {
+    const savings = g.variants.map(v => savingsOf(v)).filter(Boolean);
+    const bestPct = savings.length ? Math.max(...savings.map(s => s.percent)) : 0;
+    const durs = [...new Set(g.variants.map(v => durationOf(v)).filter(Boolean))];
+    const rangeLabel = durs.length > 1 ? durs[0] + ' – ' + durs[durs.length - 1] : (durs[0] || '');
+    return '<tr>' +
+      '<td class="p-name"><a href="/product/' + g.slug + '/">' + escapeHtml(g.name) + '</a></td>' +
+      '<td class="p-cat">' + escapeHtml(g.category_name || '') + '</td>' +
+      '<td>' + (rangeLabel ? escapeHtml(rangeLabel) + ' · ' : '') + g.variants.length + (g.variants.length > 1 ? ' plans' : ' plan') + '</td>' +
+      '<td class="p-price">' + escapeHtml(formatMoney(g.minPrice)) + '</td>' +
+      '<td>' + (bestPct ? '<span class="p-save">Save up to ' + bestPct + '%</span>' : '') + '</td>' +
+      '<td><a class="p-view" href="/product/' + g.slug + '/">View →</a></td>' +
+      '</tr>';
+  }).join('\n        ');
+
+  const faqHtml = faqs.map(f => '<details><summary>' + escapeHtml(f.q) + '</summary><p>' + escapeHtml(f.a) + '</p></details>').join('\n        ');
+
+  const pillsHtml = groups.map(g => '<a href="/product/' + g.slug + '/">' + escapeHtml(g.name) + ' — from ' + escapeHtml(formatMoney(g.minPrice)) + '</a>').join('');
+
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>${escapeHtml(title)}</title>
+  <meta name="description" content="${escapeHtml(metaDesc)}">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="${pageUrl}">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="${pageUrl}">
+  <meta property="og:title" content="${escapeHtml(title)}">
+  <meta property="og:description" content="${escapeHtml(metaDesc)}">
+  <meta property="og:site_name" content="${STORE_NAME}">
+  <meta property="og:locale" content="en_NP">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="${escapeHtml(title)}">
+  <meta name="twitter:description" content="${escapeHtml(metaDesc)}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+  <style>${PAGE_CSS}</style>
+  <style>${HUB_CSS}</style>
+  <script type="application/ld+json">${JSON.stringify(listLd)}</script>
+  <script type="application/ld+json">${JSON.stringify(faqLd)}</script>
+  <script type="application/ld+json">${JSON.stringify(crumbsLd)}</script>
+</head>
+<body>
+  <header class="pp-head"><div class="wrap"><a class="pp-brand" href="/">Digi <em>Nepal</em> · Digi Prime Nepal</a></div></header>
+  <div class="wrap">
+    <nav class="crumbs" aria-label="Breadcrumb"><a href="/">Home</a> › <span aria-current="page">Cheapest Subscriptions in Nepal</span></nav>
+    <main>
+      <p class="pp-cat">Price list · Updated at every publish</p>
+      <h1>Cheapest Subscriptions in Nepal</h1>
+      <p class="pp-from">Premium apps at local prices — starting from just <strong>${escapeHtml(formatMoney(cheapest.minPrice))}</strong></p>
+      <p class="pp-desc">Buying Netflix, Prime Video, ChatGPT Plus or Spotify from Nepal usually means a US-dollar price and an international card. Digi Nepal sells the same premium subscriptions at local NPR prices — pay with eSewa, Khalti, IME Pay or Bank QR, get instant delivery after payment approval, and stay covered by an activation warranty. Below is the full live price list, cheapest first.</p>
+      <div class="cta-row">
+        <a class="btn btn-buy" href="/#catalog">Browse all subscriptions →</a>
+        <a class="btn btn-wa" href="https://wa.me/${settings.whatsapp}" target="_blank" rel="noopener">Ask on WhatsApp</a>
+      </div>
+      <h2>Subscription price list in Nepal (NPR)</h2>
+      <table class="prices">
+        <thead><tr><th>Subscription</th><th class="p-cat">Category</th><th>Plans</th><th>From</th><th>Saving</th><th></th></tr></thead>
+        <tbody>
+        ${rowsHtml}
+        </tbody>
+      </table>
+      <p class="pp-desc">Prices are the live store prices in Nepali Rupees and can change with supplier rates. Tap a subscription to see every plan, per-month prices and exactly what you get.</p>
+      <h2>Why buy from Digi Nepal?</h2>
+      <div class="facts">
+        <div class="fact"><b>⚡ Instant delivery</b><span>Delivered right after your payment is approved.</span></div>
+        <div class="fact"><b>💳 No international card</b><span>eSewa, Khalti, IME Pay or Bank QR / bank transfer.</span></div>
+        <div class="fact"><b>🛡️ Activation warranty</b><span>Free re-activation or replacement if access is blocked.</span></div>
+        <div class="fact"><b>💬 WhatsApp support</b><span>Message us any time at +977 9705985657.</span></div>
+      </div>
+      <h2>Frequently asked questions</h2>
+      <div class="faq">
+        ${faqHtml}
+      </div>
+      <h2>All subscriptions</h2>
+      <div class="more">${pillsHtml}</div>
+    </main>
+  </div>
+  <footer class="pp-foot"><div class="wrap">© Digi Prime Nepal (Digi Nepal) · Prices shown in NPR · <a href="/">diginepalnp.com</a> · WhatsApp <a href="https://wa.me/${settings.whatsapp}">+977 9705985657</a></div></footer>
+</body>
+</html>
+`;
+}
+
 function buildSitemap(groups, buildDate) {
   const statics = [
     { loc: SITE_ORIGIN + '/', changefreq: 'daily', priority: '1.0' },
+    { loc: SITE_ORIGIN + '/cheapest-subscriptions-in-nepal/', changefreq: 'weekly', priority: '0.9' },
     { loc: SITE_ORIGIN + '/about', changefreq: 'monthly', priority: '0.7' },
     { loc: SITE_ORIGIN + '/contact', changefreq: 'monthly', priority: '0.7' },
     { loc: SITE_ORIGIN + '/privacy', changefreq: 'yearly', priority: '0.4' },
@@ -536,6 +703,7 @@ function buildLlms(groups, settings) {
     '',
     '## Useful pages',
     '',
+    '- [Cheapest Subscriptions in Nepal — full price list](' + SITE_ORIGIN + '/cheapest-subscriptions-in-nepal/)',
     '- [All subscriptions](' + SITE_ORIGIN + '/#catalog)',
     '- [About Digi Nepal](' + SITE_ORIGIN + '/about)',
     '- [Contact](' + SITE_ORIGIN + '/contact)',
@@ -573,6 +741,10 @@ async function generateSeo(outputDir) {
     fs.writeFileSync(path.join(dir, 'index.html'), buildProductPage(g, siblings, settings));
   }
 
+  const hubDir = path.join(outputDir, 'cheapest-subscriptions-in-nepal');
+  fs.mkdirSync(hubDir, { recursive: true });
+  fs.writeFileSync(path.join(hubDir, 'index.html'), buildHubPage(groups, settings));
+
   fs.writeFileSync(path.join(outputDir, 'sitemap.xml'), buildSitemap(groups, buildDate));
   fs.writeFileSync(path.join(outputDir, 'robots.txt'), ROBOTS_TXT);
   fs.writeFileSync(path.join(outputDir, 'llms.txt'), buildLlms(groups, settings));
@@ -584,7 +756,8 @@ async function generateSeo(outputDir) {
   const indexHtml = fs.readFileSync(indexPath, 'utf8');
   const marker = '<!-- SEO_CATALOG_LINKS -->';
   if (!indexHtml.includes(marker)) throw new Error('SEO build: ' + marker + ' marker missing from dist/index.html — cannot inject the product link list.');
-  const links = groups.map(g => '<a href="/product/' + g.slug + '/">' + escapeHtml(g.name) + ' — from ' + escapeHtml(formatMoney(g.minPrice)) + '</a>').join('');
+  const links = '<a href="/cheapest-subscriptions-in-nepal/">Cheapest Subscriptions in Nepal — full price list</a>' +
+    groups.map(g => '<a href="/product/' + g.slug + '/">' + escapeHtml(g.name) + ' — from ' + escapeHtml(formatMoney(g.minPrice)) + '</a>').join('');
   fs.writeFileSync(indexPath, indexHtml.replace(marker, links));
 
   console.log('SEO build: generated ' + groups.length + ' product pages, sitemap.xml, robots.txt, llms.txt and the homepage product links.');
