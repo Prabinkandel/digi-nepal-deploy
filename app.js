@@ -910,12 +910,17 @@ function renderFlashCards(deals) {
     const theme = getBrandTheme(product.name, product.category_name, product.brand_color || product.brandColor);
     const tvars = themeVarsString(theme);
     const img = dealImageUrl(product);
-    // Owner redesign 2026-11-16: rectangle card, the product photo FULL
-    // (nothing layered over it - no ambient, no emblem), and only the
-    // name + price under it. The whole card opens the product; the round
-    // button buys. No category strip, duration or description.
-    return '<div class="flash-deal-card fdc-rich fdc-v2" role="listitem" data-flash-id="' + escapeHtml(product.id) + '" style="' + tvars + '">' +
-      (img ? '<img class="fdc-photo" src="' + escapeHtml(img) + '" alt="' + escapeHtml(product.name || '') + '" loading="lazy" decoding="async" onerror="this.remove()">' : '') +
+    // Owner redesign 2026-11-16 (v3): the product photo FULL and never
+    // cropped — the whole image shows (contain) over a blurred copy of
+    // itself, so ANY product image (square, wide, tall) fills the media
+    // area edge-to-edge with nothing layered over it. Name + price sit
+    // in a solid strip BELOW the photo. Works unchanged for any future
+    // product pushed into a sale campaign. The whole card opens the
+    // product; the round button buys.
+    return '<div class="flash-deal-card fdc-rich fdc-v3" role="listitem" data-flash-id="' + escapeHtml(product.id) + '" style="' + tvars + '">' +
+      (img
+        ? '<div class="fdc-media"><img class="fdc-bg" src="' + escapeHtml(img) + '" alt="" aria-hidden="true" loading="lazy" decoding="async" onerror="this.remove()"><img class="fdc-photo" src="' + escapeHtml(img) + '" alt="' + escapeHtml(product.name || '') + '" loading="lazy" decoding="async" onerror="this.remove()"></div>'
+        : '<div class="fdc-media fdc-media-mono"><span class="fdc-mono">' + escapeHtml((product.name || '?').trim().charAt(0).toUpperCase()) + '</span></div>') +
       '<div class="fdc-info">' +
         '<div class="fdc-info-text">' +
           '<h3 class="fdc-name">' + escapeHtml(product.name) + '</h3>' +
