@@ -132,13 +132,13 @@ function featuresOf(product) {
 }
 
 const BRAND_LOGOS = {
-  'netflix 4k': '/logos/sq2/netflix-4k.png',
-  'spotify premium': '/logos/sq2/spotify-premium.png',
-  'canva pro': '/logos/sq2/canva-pro.png',
-  'chatgpt plus': '/logos/sq2/chatgpt-plus.png',
-  'gemini ai pro': '/logos/sq2/gemini-ai-pro.png',
-  'capcut pro': '/logos/sq2/capcut-pro.png',
-  'prime video': '/logos/sq2/prime-video.png'
+  'netflix 4k': '/logos/sq3/netflix-4k.png',
+  'spotify premium': '/logos/sq3/spotify-premium.png',
+  'canva pro': '/logos/sq3/canva-pro.png',
+  'chatgpt plus': '/logos/sq3/chatgpt-plus.png',
+  'gemini ai pro': '/logos/sq3/gemini-ai-pro.png',
+  'capcut pro': '/logos/sq3/capcut-pro.png',
+  'prime video': '/logos/sq3/prime-video.png'
 };
 function brandLogoFor(name) { return BRAND_LOGOS[baseKey(name || '')] || ''; }
 const BRAND_LOGO_OVERRIDE = new Set(['chatgpt plus', 'capcut pro', 'prime video']);
