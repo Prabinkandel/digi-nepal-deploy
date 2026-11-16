@@ -3569,3 +3569,116 @@ body:has(dialog[open]) .proof-bubble {
   .mob-nav-item.mob-nav-buy:hover .mob-nav-buy-wrap,
   .mob-nav-item.mob-nav-buy:active .mob-nav-buy-wrap { transform: none; box-shadow: none; }
 }
+
+/* ------------------------------------------------------------------
+   §3x FLASH SALE v3 — FULL PHOTO, NEVER CROPPED (owner, 2026-11-16)
+   v2 stretched the square artwork across a 1.3:1 rectangle with
+   object-fit:cover, so the brand lockup was clipped at the edges and
+   the name/price scrim sat on top of the picture. v3: a media area
+   shows the WHOLE image (contain) over a blurred, darkened copy of
+   the same image — edge-to-edge colour for any image shape, nothing
+   over the photo — and the name + price move to a solid strip below.
+   dealImageUrl() already resolves override → own image → bundled
+   logo, so any product the owner later pushes into a sale campaign
+   gets this treatment with no per-product work.
+   ------------------------------------------------------------------ */
+.flash-deal-card.fdc-rich.fdc-v3 {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  width: min(300px, 78vw);
+  max-width: 300px;
+  aspect-ratio: auto;
+  height: auto;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 1rem;
+  background: var(--card);
+  cursor: pointer;
+}
+.flash-deal-card.fdc-rich.fdc-v3 .fdc-media {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1.5;
+  overflow: hidden;
+  background: #0a0a0c;
+  flex: 0 0 auto;
+}
+.flash-deal-card.fdc-rich.fdc-v3 .fdc-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: blur(22px) brightness(.55) saturate(1.25);
+  transform: scale(1.25);
+  display: block;
+}
+.flash-deal-card.fdc-rich.fdc-v3 .fdc-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 3%;
+  box-sizing: border-box;
+  display: block;
+}
+.flash-deal-card.fdc-rich.fdc-v3 .fdc-media-mono {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: hsl(var(--bh, 220) var(--bs, 25%) var(--bl, 24%));
+}
+.flash-deal-card.fdc-rich.fdc-v3 .fdc-mono {
+  font-size: 3.4rem;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1;
+}
+.flash-deal-card.fdc-rich.fdc-v3 .fdc-info {
+  position: static;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .6rem;
+  padding: .6rem .85rem .7rem;
+  background: transparent;
+  color: var(--text);
+}
+.flash-deal-card.fdc-rich.fdc-v3 .fdc-info-text { flex: 1 1 auto; min-width: 0; }
+.flash-deal-card.fdc-rich.fdc-v3 .fdc-name {
+  margin: 0;
+  font-size: .98rem;
+  font-weight: 800;
+  line-height: 1.15;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: none;
+}
+.flash-deal-card.fdc-rich.fdc-v3 .fdc-price-row {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  margin-top: .25rem;
+}
+.flash-deal-card.fdc-rich.fdc-v3 .fdc-price {
+  font-size: 1.05rem;
+  font-weight: 850;
+  color: var(--text);
+}
+.flash-deal-card.fdc-rich.fdc-v3 .fdc-save-pill {
+  background: #065f46;
+  color: #fff;
+  font-size: .66rem;
+  font-weight: 800;
+  padding: .14rem .45rem;
+  border-radius: 999px;
+}
+.flash-deal-card.fdc-rich.fdc-v3 .fdc-out-stock {
+  margin: .2rem 0 0;
+  font-size: .68rem;
+  color: #dc2626;
+}
