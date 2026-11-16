@@ -421,6 +421,19 @@ function productImageUrlFor(product) {
   return logo ? absoluteMediaUrl(logo) : '';
 }
 
+/* Site-relative twin of productImageUrlFor(): the same resolution order
+   (override → own image → bundled logo) but keeping the relative path, so
+   a CSS backdrop built from it is the very same cache entry as the <img>
+   the card already loads — the ambient layer costs no extra download.
+   '' when the product resolves to the generic emblem (no bitmap). */
+function cardBackdropUrlFor(product) {
+  if (!product) return '';
+  const override = brandLogoOverrideFor(product.name);
+  if (override) return override;
+  if (product.image_url) return product.image_url;
+  return brandLogoFor(product.name) || '';
+}
+
 function productVisual(product, compact = false) {
   const brandVisual = getBrandEmblem(product.name);
   const cls = 'product-image' + (compact ? ' compact-product-image' : '');
@@ -619,28 +632,44 @@ function productCard(group) {
   const theme = getBrandTheme(group.name, group.category_name, group.brand_color);
   const tvars = themeVarsString(theme);
 
-  // ONE badge pill over the image (reference layout): the discount pill
-  // wins, then FEATURED, then the product's own badge (offer label /
-  // campaign). The rotated stock-out ribbon is a separate element and
-  // stays in the visual; the campaign banner strip inside saleBadge()
-  // output is likewise untouched when it is the primary badge.
-  const discountBadge = saving ? '<span class="store-badge store-badge-save">-' + saving.percent + '% OFF</span>' : '';
+  // Badge STACK over the photo (Royal Sewa layout): the discount pill
+  // first (Digi red, "−30%" format), ⭐ Featured directly below it, and
+  // the product's own badge (offer label / campaign) only when it would
+  // have been the primary badge under the old one-badge rule (no
+  // discount and no Featured above it) — so nothing that shows today
+  // disappears, and the Dashain emblem's festive treatment is kept.
+  // Stock-out replaces the rotated ribbon with a grey Sold Out pill at
+  // the top of the stack (photo desaturation is theme.css §3w).
+  const discountBadge = saving ? '<span class="store-badge store-badge-save">-' + saving.percent + '%</span>' : '';
   const campaignBadgeHtml = group.variants
     .map(v => campaignBadge(v, saving))
     .find(Boolean) || '';
   const featuredBadge = group.featured ? '<span class="store-badge store-badge-featured">⭐ Featured</span>' : '';
-  const stockOutBanner = group.stockOut ? '<span class="stock-out-banner">Out of Stock</span>' : '';
+  const soldOutBadge = '<span class="store-badge store-badge-soldout">Sold Out</span>';
   const statusBadge = group.offer_label ? saleBadge(group.offer_label) : campaignBadgeHtml;
-  const primaryBadge = discountBadge || featuredBadge || statusBadge;
-  const badgesHtml = primaryBadge
+  const badgeStack = [];
+  if (group.stockOut) badgeStack.push(soldOutBadge);
+  else if (discountBadge) badgeStack.push(discountBadge);
+  if (featuredBadge) badgeStack.push(featuredBadge);
+  if (!discountBadge && !featuredBadge && statusBadge) badgeStack.push(statusBadge);
+  const badgesHtml = badgeStack.length
     ? '<div class="card-badges">' +
-        '<div class="badge-slot-left">' + primaryBadge + '</div>' +
+        '<div class="badge-slot-left">' + badgeStack.join('') + '</div>' +
       '</div>'
     : '';
 
-  const visual = group.image_url
-    ? productVisual({ name: group.name, image_url: group.image_url })
-    : productVisual(group.rep);
+  const visualProduct = group.image_url
+    ? { name: group.name, image_url: group.image_url }
+    : group.rep;
+  const visual = productVisual(visualProduct);
+  // Ambient backdrop: the SAME image the card already loads, painted
+  // cover + blurred behind the contained logo (theme.css §3w), so the
+  // square stage fills with the brand's own colours. Emblem-fallback
+  // products resolve to '' and keep the plain stage.
+  const backdropUrl = cardBackdropUrlFor(visualProduct);
+  const backdropHtml = backdropUrl
+    ? '<span class="card-ambient" style="background-image:url(\'' + escapeHtml(backdropUrl) + '\')" aria-hidden="true"></span>'
+    : '';
 
   const isFreeFire = group.name.toLowerCase().includes('free fire');
   const arrowSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>';
@@ -669,19 +698,38 @@ function productCard(group) {
         ? '<button type="button" class="card-view card-action" data-group-view="' + escapeHtml(group.key) + '">View Details</button>'
         : '<button type="button" class="card-view card-action" data-product="' + escapeHtml(group.variants[0].id) + '">View Details</button>');
 
+  // Royal-order text block data: rating row (gold stars + number) when
+  // the family carries a rating, and the old info chips (duration range,
+  // plan count, availability) folded into ONE muted line — same data,
+  // no chip row. "Available now" is dropped from the line (the Sold Out
+  // pill / disabled Buy carry the negative state); "Currently
+  // unavailable" (stock count) is kept.
+  const rating = Number(group.rep && group.rep.rating) || 0;
+  const ratingHtml = rating > 0
+    ? '<div class="card-rating" aria-label="Rated ' + rating.toFixed(1) + ' out of 5"><span class="card-stars" aria-hidden="true"><span class="card-stars-fill" style="width:' + Math.round((rating / 5) * 100) + '%">★★★★★</span>★★★★★</span><span class="card-rating-num">' + rating.toFixed(1) + '</span></div>'
+    : '';
+  const metaParts = [];
+  if (group.durationLabel) metaParts.push(escapeHtml(group.durationLabel));
+  if (multi) metaParts.push(group.variants.length + ' plans');
+  if (!group.inStock) metaParts.push('Currently unavailable');
+  // Royal price cluster: the was-price + % pill of the very variant the
+  // FROM price belongs to (the cheapest variant, group.rep), so the
+  // three figures always describe the same plan.
+  const repSaving = savingsOf(group.rep);
+  const priceExtra = repSaving
+    ? '<span class="price-extra"><span class="was-price">' + formatMoney(group.rep.original_price) + '</span><span class="price-off-pill">-' + repSaving.percent + '%</span></span>'
+    : '<span class="price-extra" aria-hidden="true"></span>';
+
   return '<article class="product-card' + (group.stockOut ? ' is-out' : '') + '" data-group-key="' + escapeHtml(group.key) + '" style="' + tvars + '" tabindex="0" role="button" aria-label="View ' + escapeHtml(group.name) + ' plans">' +
     '<div class="card-glow" aria-hidden="true"></div>' +
-    '<div class="card-visual">' + visual + badgesHtml + stockOutBanner + '</div>' +
-    '<div class="card-cat-strip">' + escapeHtml(group.category_name || 'DIGITAL SERVICE') + '</div>' +
+    '<div class="card-visual">' + backdropHtml + visual + badgesHtml + '</div>' +
     '<div class="card-body">' +
+      '<div class="card-cat">' + escapeHtml(group.category_name || 'DIGITAL SERVICE') + '</div>' +
       '<h3>' + escapeHtml(group.name) + '</h3>' +
-      '<div class="card-meta">' +
-        (group.durationLabel ? '<span class="card-meta-item"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>' + escapeHtml(group.durationLabel) + '</span>' : '') +
-        (multi ? '<span class="card-meta-item card-meta-plans"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>' + group.variants.length + ' plans</span>' : '') +
-        '<span class="card-meta-stock' + (group.inStock ? '' : ' is-out') + '">' + (group.inStock ? 'Available now' : 'Currently unavailable') + '</span>' +
-      '</div>' +
+      ratingHtml +
+      '<p class="card-meta-line">' + metaParts.join(' · ') + '</p>' +
       '<div class="price-row">' +
-        '<div class="price-main">' + (multi ? '<small class="price-context">FROM</small>' : '') + '<span class="price" data-card-price>' + formatMoney(group.minPrice) + '</span></div>' +
+        '<div class="price-main">' + (multi ? '<small class="price-context">FROM</small>' : '<small class="price-context" aria-hidden="true">&nbsp;</small>') + '<span class="price" data-card-price>' + formatMoney(group.minPrice) + '</span>' + priceExtra + '</div>' +
         buyAction +
       '</div>' +
       '<div class="product-actions">' +
@@ -838,9 +886,16 @@ function renderFlashCards(deals) {
     const inStock = product.stock === undefined || product.stock === null || Number(product.stock) > 0;
     const theme = getBrandTheme(product.name, product.category_name, product.brand_color || product.brandColor);
     const tvars = themeVarsString(theme);
+    // Same ambient treatment as the catalogue cards (§3w): the deal
+    // thumb's own image, cover + blurred behind the contained thumb.
+    // Card dimensions are unchanged — only the top's paint changes.
+    const backdropUrl = cardBackdropUrlFor(product);
+    const backdropHtml = backdropUrl
+      ? '<span class="fdc-ambient" style="background-image:url(\'' + escapeHtml(backdropUrl) + '\')" aria-hidden="true"></span>'
+      : '';
     return '<div class="flash-deal-card fdc-rich" role="listitem" data-flash-id="' + escapeHtml(product.id) + '" style="' + tvars + '">' +
       '<div class="card-glow" aria-hidden="true"></div>' +
-      '<div class="fdc-top">' +
+      '<div class="fdc-top">' + backdropHtml +
         '<div class="fdc-thumb">' + dealThumb(product) + '</div>' +
       '</div>' +
       '<div class="fdc-cat-strip">' + escapeHtml(product.category_name || 'DIGITAL SERVICE') + '</div>' +
