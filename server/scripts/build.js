@@ -116,17 +116,13 @@ async function main() {
       }
     }
   }
-  // Copy bundled brand logo banners to dist if present
+  // Copy bundled brand logo banners to dist if present — recursively, so
+  // artwork in subfolders (e.g. logos/sq/) is published too; a flat copy
+  // silently drops subdirectories and those URLs fall back to HTML.
   const logosSource = path.join(root, 'logos');
   const logosDest = path.join(output, 'logos');
   if (fs.existsSync(logosSource)) {
-    fs.mkdirSync(logosDest, { recursive: true });
-    for (const item of fs.readdirSync(logosSource)) {
-      const srcFile = path.join(logosSource, item);
-      if (fs.statSync(srcFile).isFile()) {
-        fs.copyFileSync(srcFile, path.join(logosDest, item));
-      }
-    }
+    fs.cpSync(logosSource, logosDest, { recursive: true });
   }
   // SEO generation: per-family product pages, sitemap.xml, robots.txt and
   // llms.txt, generated from the live public catalogue API, plus the
