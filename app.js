@@ -379,13 +379,13 @@ function themeVarsString(theme) {
    fallback: it is used only when a product has no image of its own — an image
    uploaded in the admin otherwise wins. */
 const BRAND_LOGOS = {
-  'netflix 4k': '/logos/sq3/netflix-4k.png',
-  'spotify premium': '/logos/sq3/spotify-premium.png',
-  'canva pro': '/logos/sq3/canva-pro.png',
-  'chatgpt plus': '/logos/sq3/chatgpt-plus.png',
-  'gemini ai pro': '/logos/sq3/gemini-ai-pro.png',
-  'capcut pro': '/logos/sq3/capcut-pro.png',
-  'prime video': '/logos/sq3/prime-video.png'
+  'netflix 4k': '/logos/sq4/netflix-4k.webp',
+  'spotify premium': '/logos/sq4/spotify-premium.webp',
+  'canva pro': '/logos/sq4/canva-pro.webp',
+  'chatgpt plus': '/logos/sq4/chatgpt-plus.webp',
+  'gemini ai pro': '/logos/sq4/gemini-ai-pro.webp',
+  'capcut pro': '/logos/sq4/capcut-pro.webp',
+  'prime video': '/logos/sq4/prime-video.webp'
 };
 function brandLogoFor(name) { return BRAND_LOGOS[baseKey(name || '')] || ''; }
 
