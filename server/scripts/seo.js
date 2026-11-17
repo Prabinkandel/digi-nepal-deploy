@@ -260,7 +260,6 @@ function whatsappOrderUrl(group, settings) {
   const rep = group.rep;
   const dupes = duplicateDurations(group.variants);
   const plan = planLabelFor(rep, dupes);
-  const imageUrl = familyImageUrlFor(group);
   const lines = [
     '*🛒 New Order — Digi Nepal*',
     '━━━━━━━━━━━━━━━',
@@ -268,10 +267,11 @@ function whatsappOrderUrl(group, settings) {
   ];
   if (plan && plan !== rep.name) lines.push('🗓️ *Plan:* ' + plan);
   lines.push('💰 *Price:* ' + formatMoney(rep.price));
-  lines.push('🔗 *Product:* ' + SITE_ORIGIN + '/#product=' + encodeURIComponent(rep.id));
-  if (imageUrl) lines.push('🖼️ ' + imageUrl);
   lines.push('━━━━━━━━━━━━━━━');
   lines.push('Please share the payment details (eSewa / Khalti / QR). Thank you! 🙏');
+  // Product link LAST, no image line — same format as the storefront's
+  // buildWhatsAppOrderMessage (owner, 2026-11-17).
+  lines.push('🔗 *Product:* ' + SITE_ORIGIN + '/#product=' + encodeURIComponent(rep.id));
   return 'https://wa.me/' + settings.whatsapp + '?text=' + encodeURIComponent(lines.join('\n'));
 }
 
