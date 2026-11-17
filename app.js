@@ -2479,12 +2479,11 @@ function setupDiscoveryAutoScroll() {
 }
 
 /* Designed WhatsApp order message (WhatsApp formatting: *bold*, emojis,
-   separator lines). Includes the product's own page link (#product=<id>,
-   which opens its detail dialog), its image/logo as an absolute URL on its
-   own line (WhatsApp renders a preview thumbnail for a URL in the message —
-   a wa.me text message cannot attach an image file), the plan/duration,
-   price, order date in Asia/Kathmandu time, the order reference when an
-   order was created, and the customer's name/email when logged in. */
+   separator lines): product, plan/duration, price, order date in
+   Asia/Kathmandu time, the order reference when an order was created,
+   and the customer's name/email when logged in. No product link and no
+   image line — the owner removed both on 2026-11-17 (the links made
+   WhatsApp render a big preview card and the message looked messy). */
 function buildWhatsAppOrderMessage({ product, order, user } = {}) {
   const name = (order && order.product_name) || (product ? product.name : 'Subscription');
   const price = order ? formatMoney(order.price) : (product ? formatMoney(product.price) : '');
@@ -2498,8 +2497,6 @@ function buildWhatsAppOrderMessage({ product, order, user } = {}) {
     timeZone: 'Asia/Kathmandu', day: 'numeric', month: 'short', year: 'numeric',
     hour: 'numeric', minute: '2-digit', hour12: true
   });
-  const imageUrl = productImageUrlFor(product);
-  const productId = (order && order.product_id) || (product ? product.id : '');
   const lines = [
     '*🛒 New Order — Digi Nepal*',
     '━━━━━━━━━━━━━━━',
@@ -2513,8 +2510,6 @@ function buildWhatsAppOrderMessage({ product, order, user } = {}) {
     if (user.name) lines.push('👤 *Name:* ' + user.name);
     if (user.email) lines.push('📧 *Email:* ' + user.email);
   }
-  if (productId) lines.push('🔗 *Product:* ' + SITE_ORIGIN + '/#product=' + encodeURIComponent(productId));
-  if (imageUrl) lines.push('🖼️ ' + imageUrl);
   lines.push('━━━━━━━━━━━━━━━');
   lines.push(order
     ? 'Please confirm my order. Thank you! 🙏'
