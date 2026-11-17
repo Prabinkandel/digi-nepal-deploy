@@ -3682,3 +3682,59 @@ body:has(dialog[open]) .proof-bubble {
   font-size: .68rem;
   color: #dc2626;
 }
+
+/* ==========================================================================
+   §3zb — Hero 3D product movement + hero→Flash Sale band optimization
+   (owner, 2026-11-17: "Add 3d products movement on discovery order
+   tracking section" + "optimize the section between explore
+   subscription and flash sale"). Design/motion only: the three service
+   cards keep their tuned intro/float animations; four product tiles
+   (.hero-prod markup in index.html) float in true 3D around them.
+   The band: hero bottom padding, the trust strip and the flash
+   section's top edge are tightened so the hero flows into Flash Sale
+   with less dead space. No data or function changes.
+   -------------------------------------------------------------------------- */
+
+/* --- 3D product tiles ---------------------------------------------------- */
+.hero-art { perspective: 1100px; }
+.hero-prod {
+  position: absolute;
+  z-index: 3;
+  border-radius: 22%;
+  pointer-events: none;
+  transform-style: preserve-3d;
+  box-shadow: 0 18px 38px rgba(0, 0, 0, .5), 0 4px 12px rgba(0, 0, 0, .4),
+    inset 0 0 0 1px rgba(255, 255, 255, .08);
+  animation: hero-prod-float 7s ease-in-out infinite;
+}
+.hp-1 { width: 86px; height: 86px; top: -6px; right: 4%;  animation-duration: 7.2s; }
+.hp-2 { width: 74px; height: 74px; bottom: 2%; right: 26%; animation-duration: 8.1s; animation-delay: -2.4s; }
+.hp-3 { width: 66px; height: 66px; top: 44%; left: -8px;  animation-duration: 6.6s; animation-delay: -1.2s; }
+.hp-4 { width: 58px; height: 58px; bottom: -4px; left: 30%; animation-duration: 7.7s; animation-delay: -3.6s; }
+
+@keyframes hero-prod-float {
+  0%, 100% { transform: translateZ(70px) rotateY(-16deg) rotateX(7deg) translateY(0); }
+  50%      { transform: translateZ(70px) rotateY(16deg) rotateX(-7deg) translateY(-13px); }
+}
+
+/* Tablet hero (640–899px, art height 280px): smaller tiles */
+@media (max-width: 899px) {
+  .hp-1 { width: 62px; height: 62px; }
+  .hp-2 { width: 54px; height: 54px; }
+  .hp-3 { width: 48px; height: 48px; }
+  .hp-4 { width: 44px; height: 44px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-prod { animation: none; }
+}
+
+/* --- Band optimization: hero → trust strip → Flash Sale ------------------ */
+@media (min-width: 900px) {
+  .hero { padding-bottom: 3.4rem; }
+  .hero-trust-strip { margin-top: 1.1rem; padding-top: .95rem; gap: .5rem 1.15rem; font-size: .86rem; }
+  .flash-sale-top { padding-top: 1.15rem; }
+}
+@media (max-width: 768px) {
+  .hero-trust-strip { margin-top: .7rem; padding-top: .7rem; }
+}

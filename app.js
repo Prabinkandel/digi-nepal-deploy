@@ -383,7 +383,8 @@ const BRAND_LOGOS = {
   'spotify premium': '/logos/sq4/spotify-premium.webp',
   'canva pro': '/logos/sq4/canva-pro.webp',
   'chatgpt plus': '/logos/sq4/chatgpt-plus.webp',
-  'gemini ai pro': '/logos/sq4/gemini-ai-pro.webp',
+  'gemini ai pro': '/logos/sq5/gemini.webp',
+  'gemini plus': '/logos/sq5/gemini.webp',
   'capcut pro': '/logos/sq4/capcut-pro.webp',
   'prime video': '/logos/sq4/prime-video.webp'
 };
