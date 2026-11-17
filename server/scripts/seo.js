@@ -138,6 +138,7 @@ const BRAND_LOGOS = {
   'canva pro': '/logos/sq4/canva-pro.webp',
   'chatgpt plus': '/logos/sq4/chatgpt-plus.webp',
   'gemini ai pro': '/logos/sq5/gemini.webp',
+  // (sq5 = official Gemini lockup tile, 2026-11-17; rebuild after admin repoint so static pages bake it in)
   'gemini plus': '/logos/sq5/gemini.webp',
   'capcut pro': '/logos/sq4/capcut-pro.webp',
   'prime video': '/logos/sq4/prime-video.webp'
