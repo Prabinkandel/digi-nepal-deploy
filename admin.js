@@ -267,16 +267,23 @@ function showRecoveryCodes(codes){
 }
 
 // PRODUCTS
+function adminStripDuration(name){return String(name||'').trim().replace(/[\s\-\u2013\u2014]*\b\d+\s*(months?|years?|days?|weeks?)\s*$/i,'').trim();}
+function adminBaseKey(name){const k=String(name||'').trim().toLowerCase();const st=adminStripDuration(k)||k;const np=st.replace(/\s*\([^)]*\)\s*$/,'').trim();return np||st;}
+function adminFamilyName(name){const raw=String(name||'').trim();const st=adminStripDuration(raw)||raw;const np=st.replace(/\s*\([^)]*\)\s*$/,'').trim();return np||st;}
+
 async function renderProducts(){
   $('page-content').innerHTML=`<div style="color:var(--text3);text-align:center;padding:40px">Loading...</div>`;
   const [productResult,categoryResult]=await Promise.all([api('/products/all?limit=100'),api('/categories/all?limit=100')]);
   const products=list(productResult),cats=list(categoryResult);
   const catMap={};cats.forEach(c=>catMap[c.id]=c);
+  const hiddenCount=products.filter(p=>!p.is_active).length;
+  const familyCount=new Set(products.map(p=>adminBaseKey(p.name))).size;
   $('page-content').innerHTML=`
     <div class="section-header">
       <h2>Products <span style="color:var(--text3);font-weight:400;font-size:1rem">(${products.length})</span></h2>
       <button class="btn-primary" id="add-product-btn">+ Add Product</button>
     </div>
+    <p class="prod-summary">${products.length} products · ${familyCount} families · ${hiddenCount} hidden</p>
     <div class="table-wrap">
       <div class="table-header">
         <h3>All Products</h3>
@@ -286,7 +293,16 @@ async function renderProducts(){
             <option value="">All Categories</option>
             ${cats.map(c=>`<option value="${c.id}">${c.name}</option>`).join('')}
           </select>
+          <select class="filter-select" id="prod-status-filter">
+            <option value="">All Status</option>
+            <option value="active">Active</option>
+            <option value="hidden">Hidden</option>
+          </select>
         </div>
+      </div>
+      <div class="bulk-bar" id="bulk-bar" style="display:none">
+        <span id="bulk-label"></span>
+        <button class="btn-danger btn-sm" id="del-all-hidden" type="button">Delete all hidden</button>
       </div>
       <div style="overflow-x:auto"><table>
         <thead><tr><th>Product</th><th>Category</th><th>Duration</th><th>Price</th><th>Stock</th><th>Badge</th><th>Status</th><th>Actions</th></tr></thead>
@@ -294,22 +310,39 @@ async function renderProducts(){
       </table></div>
     </div>`;
   $('add-product-btn').onclick=()=>openProductForm(null,cats);
-  $('prod-search').addEventListener('input',()=>{
+  const applyFilters=()=>{
     const q=$('prod-search').value.toLowerCase();
-    const filtered=products.filter(p=>p.name.toLowerCase().includes(q));
-    $('prod-tbody').innerHTML=renderProductRows(filtered,catMap);
-    attachProductActions(filtered,cats);
-  });
-  $('prod-cat-filter').addEventListener('change',()=>{
     const cid=$('prod-cat-filter').value;
-    const filtered=cid?products.filter(p=>p.category_id===cid):products;
+    const st=$('prod-status-filter').value;
+    const filtered=products.filter(p=>(!q||p.name.toLowerCase().includes(q))&&(!cid||p.category_id===cid)&&(!st||(st==='active'?!!p.is_active:!p.is_active)));
     $('prod-tbody').innerHTML=renderProductRows(filtered,catMap);
     attachProductActions(filtered,cats);
-  });
+    const bar=$('bulk-bar');
+    if(st==='hidden'&&hiddenCount){
+      bar.style.display='flex';
+      $('bulk-label').textContent=`${hiddenCount} hidden product${hiddenCount>1?'s':''} — these never show on the store.`;
+      $('del-all-hidden').textContent=`Delete all hidden (${hiddenCount})`;
+    }else{
+      bar.style.display='none';
+    }
+  };
+  $('prod-search').addEventListener('input',applyFilters);
+  $('prod-cat-filter').addEventListener('change',applyFilters);
+  $('prod-status-filter').addEventListener('change',applyFilters);
+  $('del-all-hidden').onclick=()=>{
+    const hidden=products.filter(p=>!p.is_active);
+    if(!hidden.length)return;
+    confirm(`Permanently delete ALL ${hidden.length} hidden products? This cannot be undone.`,async()=>{
+      let ok=0;
+      for(const p of hidden){try{await api(`/products/${p.id}/permanent`,{method:'DELETE'});ok++;}catch(e){}}
+      toast(`Deleted ${ok} of ${hidden.length} hidden products`);
+      renderProducts();
+    });
+  };
   attachProductActions(products,cats);
 }
 
-function renderProductRows(products,catMap){
+function renderProductRowList(products,catMap){
   if(!products.length)return`<tr class="empty-row"><td colspan="8">No products found</td></tr>`;
   return products.map(p=>`
     <tr data-id="${p.id}">
@@ -326,8 +359,23 @@ function renderProductRows(products,catMap){
       <td><div class="td-actions">
         <button class="btn-outline btn-sm edit-prod" data-id="${p.id}">Edit</button>
         <button class="btn-danger btn-sm del-prod" data-id="${p.id}">${p.is_active?'Hide':'Show'}</button>
+        ${p.is_active?'':`<button class="btn-danger btn-sm perm-del-prod" data-id="${p.id}" title="Permanently delete this hidden product">Delete</button>`}
       </div></td>
     </tr>`).join('');
+}
+
+function renderProductRows(products,catMap){
+  if(!products.length)return`<tr class="empty-row"><td colspan="8">No products found</td></tr>`;
+  const groups=new Map();
+  products.forEach(p=>{const k=adminBaseKey(p.name);if(!groups.has(k))groups.set(k,[]);groups.get(k).push(p);});
+  let html='';
+  groups.forEach(items=>{
+    const fam=adminFamilyName(items[0].name);
+    const minPrice=Math.min(...items.map(i=>Number(i.price)||0));
+    html+=`<tr class="fam-row"><td colspan="8">${fam}<span class="fam-meta">${items.length} plan${items.length>1?'s':''} · from ${fmt(minPrice)}</span></td></tr>`;
+    html+=renderProductRowList(items,catMap);
+  });
+  return html;
 }
 
 function attachProductActions(products,cats){
@@ -339,6 +387,15 @@ function attachProductActions(products,cats){
     confirm(`${p.is_active?'Hide':'Show'} "${p.name}"?`,async()=>{
       await api(`/products/${p.id}`,{method:p.is_active?'DELETE':'PUT',body:JSON.stringify({...p,is_active:1})});
       toast('Product updated'); renderProducts();
+    });
+  });
+  document.querySelectorAll('.perm-del-prod').forEach(b=>b.onclick=()=>{
+    const p=products.find(x=>x.id===b.dataset.id);if(!p)return;
+    confirm(`Permanently delete "${p.name}"? This cannot be undone.`,async()=>{
+      try{
+        await api(`/products/${p.id}/permanent`,{method:'DELETE'});
+        toast('Product deleted forever');renderProducts();
+      }catch(e){toast(e.message||'Could not delete','error');}
     });
   });
   document.querySelectorAll('.stock-input').forEach(inp=>{
