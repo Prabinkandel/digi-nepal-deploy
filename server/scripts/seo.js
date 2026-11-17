@@ -1,4 +1,5 @@
-/* SEO + AI-SEO build step for Digi Nepal.
+/* SEO pages regenerated 2026-11-17 for the sq4 artwork set and the .com Domain product.
+ SEO + AI-SEO build step for Digi Nepal.
  *
  * Runs at the end of server/scripts/build.js and generates, from the LIVE
  * public catalogue API (so prices and plans are true at deploy time):
