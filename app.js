@@ -2481,9 +2481,10 @@ function setupDiscoveryAutoScroll() {
 /* Designed WhatsApp order message (WhatsApp formatting: *bold*, emojis,
    separator lines): product, plan/duration, price, order date in
    Asia/Kathmandu time, the order reference when an order was created,
-   and the customer's name/email when logged in. No product link and no
-   image line — the owner removed both on 2026-11-17 (the links made
-   WhatsApp render a big preview card and the message looked messy). */
+   and the customer's name/email when logged in. The product link is the
+   LAST line of the message (owner, 2026-11-17: link provided, but not at
+   the top); the image line stays removed (it made WhatsApp render a big
+   preview card and the message looked messy). */
 function buildWhatsAppOrderMessage({ product, order, user } = {}) {
   const name = (order && order.product_name) || (product ? product.name : 'Subscription');
   const price = order ? formatMoney(order.price) : (product ? formatMoney(product.price) : '');
@@ -2514,6 +2515,8 @@ function buildWhatsAppOrderMessage({ product, order, user } = {}) {
   lines.push(order
     ? 'Please confirm my order. Thank you! 🙏'
     : 'Please share the payment details (eSewa / Khalti / QR). Thank you! 🙏');
+  const productId = (order && order.product_id) || (product ? product.id : '');
+  if (productId) lines.push('🔗 *Product:* ' + SITE_ORIGIN + '/#product=' + encodeURIComponent(productId));
   return lines.join('\n');
 }
 
