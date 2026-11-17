@@ -1590,7 +1590,7 @@ async function openPayment(order) {
 
     $('pay-opt-whatsapp').onclick = () => {
       closeDialog('payment-dialog');
-      startWhatsAppOrder(order.product_id);
+      startWhatsAppOrder(order.product_id, order);
     };
     $('pay-opt-qr').onclick = () => renderPaymentQrView(order, settings, methods);
   } catch (error) {
@@ -2520,7 +2520,10 @@ function buildWhatsAppOrderMessage({ product, order, user } = {}) {
   return lines.join('\n');
 }
 
-async function startWhatsAppOrder(productId) {
+/* With existingOrder (from the payment dialog, which startOrder already
+   created) the message reuses THAT order — one order, one reference
+   everywhere. Without it, a signed-in user gets a fresh order here. */
+async function startWhatsAppOrder(productId, existingOrder) {
   if (!productId) return;
 
   let product = (state.catalog || []).find(p => p.id === productId);
@@ -2545,7 +2548,7 @@ async function startWhatsAppOrder(productId) {
 
   if (state.user) {
     try {
-      const order = await api('/orders', { method: 'POST', body: JSON.stringify({ product_id: productId, request_key: generateUUID() }) });
+      const order = existingOrder || await api('/orders', { method: 'POST', body: JSON.stringify({ product_id: productId, request_key: generateUUID() }) });
       const message = buildWhatsAppOrderMessage({ product, order, user: state.user });
       window.open('https://wa.me/' + waNumber + '?text=' + encodeURIComponent(message), '_blank', 'noopener');
       closeDialog('product-dialog');
