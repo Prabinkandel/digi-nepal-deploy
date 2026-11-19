@@ -924,7 +924,12 @@ function renderFlashCards(deals) {
     // in a solid strip BELOW the photo. Works unchanged for any future
     // product pushed into a sale campaign. The whole card opens the
     // product; the round button buys.
-    return '<div class="flash-deal-card fdc-rich fdc-v3" role="listitem" data-flash-id="' + escapeHtml(product.id) + '" style="' + tvars + '">' +
+    // Owner 2026-11-19: CapCut Pro and Prime Video are the highlighted
+    // offers — animated glow + HIGHLIGHT ribbon in the Special Offers row.
+    const hlKey = baseKey(product.name || '');
+    const isHighlight = hlKey === 'capcut pro' || hlKey === 'prime video';
+    return '<div class="flash-deal-card fdc-rich fdc-v3' + (isHighlight ? ' fdc-highlight' : '') + '" role="listitem" data-flash-id="' + escapeHtml(product.id) + '" style="' + tvars + '">' +
+      (isHighlight ? '<span class="fdc-hl-tag">★ HIGHLIGHT</span>' : '') +
       (img
         ? '<div class="fdc-media"><img class="fdc-bg" src="' + escapeHtml(img) + '" alt="" aria-hidden="true" loading="lazy" decoding="async" onerror="this.remove()"><img class="fdc-photo" src="' + escapeHtml(img) + '" alt="' + escapeHtml(product.name || '') + '" loading="lazy" decoding="async" onerror="this.remove()"></div>'
         : '<div class="fdc-media fdc-media-mono"><span class="fdc-mono">' + escapeHtml((product.name || '?').trim().charAt(0).toUpperCase()) + '</span></div>') +

@@ -3769,3 +3769,12 @@ body:has(dialog[open]) .proof-bubble {
 [data-theme="light"] .reviews-section .review-text { color: var(--text); }
 [data-theme="light"] .reviews-section .review-author strong { color: var(--text); }
 [data-theme="light"] .review-form-msg.error { color: #b4232f; }
+
+/* --- §3zd Highlighted offers (2026-11-19): CapCut Pro + Prime Video in the
+   Special Offers row get an animated glow ring + HIGHLIGHT ribbon. The row
+   itself already auto-scrolls (3s autoplay carousel in app.js). ---------- */
+.fdc-v3.fdc-highlight{position:relative;animation:fdcHlGlow 2.4s ease-in-out infinite}
+.fdc-hl-tag{position:absolute;top:.65rem;left:.65rem;z-index:3;background:linear-gradient(120deg,#ff4655,#f5a623);color:#fff;font-size:.62rem;font-weight:800;letter-spacing:.12em;padding:.28rem .55rem;border-radius:999px;box-shadow:0 4px 14px rgba(255,70,85,.45);animation:fdcHlTag 2.4s ease-in-out infinite}
+@keyframes fdcHlGlow{0%,100%{box-shadow:0 0 0 2px rgba(255,70,85,.55),0 10px 34px -10px rgba(255,70,85,.45)}50%{box-shadow:0 0 0 3px rgba(245,166,35,.75),0 14px 42px -8px rgba(245,166,35,.55)}}
+@keyframes fdcHlTag{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+@media (prefers-reduced-motion: reduce){.fdc-v3.fdc-highlight,.fdc-hl-tag{animation:none}}
