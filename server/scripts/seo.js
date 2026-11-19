@@ -26,7 +26,7 @@ const path = require('node:path');
 
 const SITE_ORIGIN = 'https://www.diginepalnp.com';
 const API_BASE = (process.env.SEO_API_BASE || SITE_ORIGIN).replace(/\/+$/, '');
-const STORE_NAME = 'Digi Prime Nepal';
+const STORE_NAME = 'Digi Nepal'; // one entity name everywhere machine-facing (research 2026-11-19); 'Digi Prime Nepal' survives only as alternateName
 const FALLBACK_WHATSAPP = '9779705985657';
 const FALLBACK_EMAIL = 'digiprimenepal@gmail.com';
 
@@ -255,6 +255,13 @@ function buildFaqs(group) {
       a: 'Yes. ' + name + ' includes an activation warranty — if access fails or is blocked, Digi Nepal re-activates or replaces it free of charge. WhatsApp support is available if you need help with your order.'
     }
   ];
+  // .com Domain: state the renewal price as plainly as the first-year price.
+  if (baseKey(name) === '.com domain' && Number(group.rep.original_price) > 0) {
+    faqs.push({
+      q: 'How much does a .com domain cost to renew after the first year?',
+      a: 'The first year costs ' + formatMoney(group.minPrice) + ' at Digi Nepal. From year 2, renewal is at the regular price of ' + formatMoney(group.rep.original_price) + ' per year — the same regular price shown as the compare price on this page. There are no hidden charges, and free setup help is included on WhatsApp.'
+    });
+  }
   return faqs;
 }
 
@@ -297,6 +304,7 @@ h1{font-size:clamp(2rem,5.5vw,3rem);letter-spacing:-.045em;line-height:1.08;marg
 .pp-hero{background:#fff;border-radius:1rem;padding:1.4rem;display:grid;place-items:center;margin:0 0 1.4rem}
 .pp-hero img{max-width:min(420px,88%);max-height:170px;width:auto;height:auto;object-fit:contain}
 .pp-desc{color:#d4d4d8;font-size:1rem;max-width:65ch}
+.pp-quick{border-left:3px solid #e50914;background:#101013;border-radius:.5rem;padding:.85rem 1rem;color:#e4e4e7;max-width:65ch}
 h2{font-size:1.35rem;letter-spacing:-.03em;margin:2.2rem 0 .9rem;color:#fff}
 .plans{display:grid;gap:.7rem}
 .plan{display:flex;flex-wrap:wrap;align-items:baseline;gap:.45rem .8rem;border:1px solid #26262c;border-radius:.85rem;padding:1rem 1.1rem;background:#0d0d10}
@@ -444,7 +452,7 @@ function buildProductPage(group, siblings, settings) {
   <script type="application/ld+json">${JSON.stringify(crumbsLd)}</script>
 </head>
 <body>
-  <header class="pp-head"><div class="wrap"><a class="pp-brand" href="/">Digi <em>Nepal</em> · Digi Prime Nepal</a></div></header>
+  <header class="pp-head"><div class="wrap"><a class="pp-brand" href="/">Digi <em>Nepal</em></a></div></header>
   <div class="wrap">
     <nav class="crumbs" aria-label="Breadcrumb"><a href="/">Home</a> › ${group.category_name ? escapeHtml(group.category_name) + ' › ' : ''}<span aria-current="page">${escapeHtml(name)}</span></nav>
     <main>
@@ -452,6 +460,7 @@ function buildProductPage(group, siblings, settings) {
       <h1>${escapeHtml(name)}</h1>
       <p class="pp-from">Buy ${escapeHtml(name)} in Nepal — from <strong>${escapeHtml(formatMoney(group.minPrice))}</strong>${group.variants.length > 1 ? ' · ' + group.variants.length + ' plans available' : ''}</p>
       ${imageUrl ? '<figure class="pp-hero"><img src="' + escapeHtml(imageUrl) + '" alt="' + escapeHtml(name + ' — buy in Nepal at Digi Nepal') + '"></figure>' : ''}
+      <p class="pp-quick"><strong>Quick answer:</strong> Digi Nepal (Pokhara, Nepal) sells ${escapeHtml(name)} in Nepal from ${escapeHtml(formatMoney(group.minPrice))} — pay with eSewa, Khalti, IME Pay or Bank QR, delivered the same day after payment approval, with an activation warranty.</p>
       <p class="pp-desc">${escapeHtml(description)}</p>
       <div class="cta-row">
         <a class="btn btn-buy" href="/#product=${encodeURIComponent(rep.id)}">Buy ${escapeHtml(name)} →</a>
@@ -478,7 +487,7 @@ function buildProductPage(group, siblings, settings) {
       <div class="more"><a href="/#catalog">← All subscriptions at Digi Nepal</a></div>
     </main>
   </div>
-  <footer class="pp-foot"><div class="wrap">© Digi Prime Nepal (Digi Nepal) · Prices shown in NPR · <a href="/">diginepalnp.com</a> · WhatsApp <a href="https://wa.me/${settings.whatsapp}">+977 9705985657</a></div></footer>
+  <footer class="pp-foot"><div class="wrap">© Digi Nepal · Prices shown in NPR · <a href="/">diginepalnp.com</a> · WhatsApp <a href="https://wa.me/${settings.whatsapp}">+977 9705985657</a></div></footer>
 </body>
 </html>
 `;
@@ -498,7 +507,7 @@ table.prices .p-view{color:#ff4655;font-weight:700;text-decoration:none;white-sp
 @media (max-width:640px){table.prices .p-cat{display:none}}
 `;
 
-function buildHubPage(groups, settings) {
+function buildHubPage(groups, settings, buildDate) {
   const pageUrl = SITE_ORIGIN + HUB_PATH;
   const byPrice = [...groups].sort((a, b) => Number(a.minPrice) - Number(b.minPrice));
   const cheapest = byPrice[0];
@@ -609,11 +618,11 @@ function buildHubPage(groups, settings) {
   <script type="application/ld+json">${JSON.stringify(crumbsLd)}</script>
 </head>
 <body>
-  <header class="pp-head"><div class="wrap"><a class="pp-brand" href="/">Digi <em>Nepal</em> · Digi Prime Nepal</a></div></header>
+  <header class="pp-head"><div class="wrap"><a class="pp-brand" href="/">Digi <em>Nepal</em></a></div></header>
   <div class="wrap">
     <nav class="crumbs" aria-label="Breadcrumb"><a href="/">Home</a> › <span aria-current="page">Cheapest Subscriptions in Nepal</span></nav>
     <main>
-      <p class="pp-cat">Price list · Updated at every publish</p>
+      <p class="pp-cat">Price list · Prices checked ${escapeHtml(buildDate || '')}</p>
       <h1>Cheapest Subscriptions in Nepal</h1>
       <p class="pp-from">Premium apps at local prices — starting from just <strong>${escapeHtml(formatMoney(cheapest.minPrice))}</strong></p>
       <p class="pp-desc">Buying Netflix, Prime Video, ChatGPT Plus or Spotify from Nepal usually means a US-dollar price and an international card. Digi Nepal sells the same premium subscriptions at local NPR prices — pay with eSewa, Khalti, IME Pay or Bank QR, get instant delivery after payment approval, and stay covered by an activation warranty. Below is the full live price list, cheapest first.</p>
@@ -629,6 +638,8 @@ function buildHubPage(groups, settings) {
         </tbody>
       </table>
       <p class="pp-desc">Prices are the live store prices in Nepali Rupees and can change with supplier rates. Tap a subscription to see every plan, per-month prices and exactly what you get.</p>
+      <h2>Helpful guides</h2>
+      <div class="more"><a href="/how-to-pay-for-subscriptions-in-nepal-without-a-dollar-card/">How to pay without a dollar card — eSewa/Khalti guide</a><a href="/cheapest-chatgpt-plus-in-nepal/">Cheapest ChatGPT Plus in Nepal — plans explained</a></div>
       <h2>Why buy from Digi Nepal?</h2>
       <div class="facts">
         <div class="fact"><b>⚡ Instant delivery</b><span>Delivered right after your payment is approved.</span></div>
@@ -644,7 +655,7 @@ function buildHubPage(groups, settings) {
       <div class="more">${pillsHtml}</div>
     </main>
   </div>
-  <footer class="pp-foot"><div class="wrap">© Digi Prime Nepal (Digi Nepal) · Prices shown in NPR · <a href="/">diginepalnp.com</a> · WhatsApp <a href="https://wa.me/${settings.whatsapp}">+977 9705985657</a></div></footer>
+  <footer class="pp-foot"><div class="wrap">© Digi Nepal · Prices shown in NPR · <a href="/">diginepalnp.com</a> · WhatsApp <a href="https://wa.me/${settings.whatsapp}">+977 9705985657</a></div></footer>
 </body>
 </html>
 `;
@@ -654,6 +665,8 @@ function buildSitemap(groups, buildDate) {
   const statics = [
     { loc: SITE_ORIGIN + '/', changefreq: 'daily', priority: '1.0' },
     { loc: SITE_ORIGIN + '/cheapest-subscriptions-in-nepal/', changefreq: 'weekly', priority: '0.9' },
+    { loc: SITE_ORIGIN + '/how-to-pay-for-subscriptions-in-nepal-without-a-dollar-card/', changefreq: 'monthly', priority: '0.8' },
+    { loc: SITE_ORIGIN + '/cheapest-chatgpt-plus-in-nepal/', changefreq: 'monthly', priority: '0.8' },
     { loc: SITE_ORIGIN + '/about', changefreq: 'monthly', priority: '0.7' },
     { loc: SITE_ORIGIN + '/contact', changefreq: 'monthly', priority: '0.7' },
     { loc: SITE_ORIGIN + '/privacy', changefreq: 'yearly', priority: '0.4' },
@@ -679,13 +692,14 @@ Sitemap: ${SITE_ORIGIN}/sitemap.xml
 
 function buildLlms(groups, settings) {
   const lines = [
-    '# Digi Nepal (Digi Prime Nepal)',
+    '# Digi Nepal',
     '',
-    '> Digi Nepal (Digi Prime Nepal) is an online store in Nepal that sells premium digital subscriptions and gaming top-ups, with all prices in Nepali Rupees (NPR). Customers order on the website or via WhatsApp, pay with local payment methods, and receive instant delivery after payment approval.',
+    '> Digi Nepal is an online store based in Pokhara, Nepal that sells premium digital subscriptions and gaming top-ups all over Nepal, with all prices in Nepali Rupees (NPR). Customers order on the website or via WhatsApp, pay with local payment methods (eSewa, Khalti, IME Pay, Bank QR), and receive same-day delivery after payment approval. Every order is covered by an activation warranty.',
     '',
     '## Store facts',
     '',
     '- Website: ' + SITE_ORIGIN + '/',
+    '- Location: Pokhara, Kaski, Nepal (online store — delivers all over Nepal)',
     '- Country served: Nepal',
     '- Currency: NPR (Nepali Rupees)',
     '- Delivery: instant delivery after payment approval; order status is tracked in the customer account',
@@ -707,6 +721,8 @@ function buildLlms(groups, settings) {
     '## Useful pages',
     '',
     '- [Cheapest Subscriptions in Nepal — full price list](' + SITE_ORIGIN + '/cheapest-subscriptions-in-nepal/)',
+    '- [How to pay for subscriptions in Nepal without a dollar card](' + SITE_ORIGIN + '/how-to-pay-for-subscriptions-in-nepal-without-a-dollar-card/)',
+    '- [Cheapest ChatGPT Plus in Nepal — prices and warranty explained](' + SITE_ORIGIN + '/cheapest-chatgpt-plus-in-nepal/)',
     '- [All subscriptions](' + SITE_ORIGIN + '/#catalog)',
     '- [About Digi Nepal](' + SITE_ORIGIN + '/about)',
     '- [Contact](' + SITE_ORIGIN + '/contact)',
@@ -716,6 +732,179 @@ function buildLlms(groups, settings) {
     ''
   );
   return lines.join('\n');
+}
+
+
+/* ------------------------------------------------------------------ */
+/* Guides — keyword landing pages (research 2026-11-19: the two        */
+/* highest-value content gaps — the no-dollar-card payment guide and   */
+/* the cheapest-ChatGPT-Plus explainer). Prices are injected live      */
+/* from the catalogue at build time, like every other static page.     */
+/* ------------------------------------------------------------------ */
+
+const GUIDE_PATHS = {
+  payGuide: '/how-to-pay-for-subscriptions-in-nepal-without-a-dollar-card/',
+  chatgptGuide: '/cheapest-chatgpt-plus-in-nepal/'
+};
+
+function buildGuidePage(guide, settings) {
+  const pageUrl = SITE_ORIGIN + guide.path;
+  const faqLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: guide.faqs.map(f => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } }))
+  };
+  const crumbsLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_ORIGIN + '/' },
+      { '@type': 'ListItem', position: 2, name: guide.crumb, item: pageUrl }
+    ]
+  };
+  const faqHtml = guide.faqs.map(f => '<details><summary>' + escapeHtml(f.q) + '</summary><p>' + escapeHtml(f.a) + '</p></details>').join('\n        ');
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>${escapeHtml(guide.title)}</title>
+  <meta name="description" content="${escapeHtml(guide.metaDesc)}">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="${pageUrl}">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="${pageUrl}">
+  <meta property="og:title" content="${escapeHtml(guide.title)}">
+  <meta property="og:description" content="${escapeHtml(guide.metaDesc)}">
+  <meta property="og:site_name" content="${STORE_NAME}">
+  <meta property="og:locale" content="en_NP">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="${escapeHtml(guide.title)}">
+  <meta name="twitter:description" content="${escapeHtml(guide.metaDesc)}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+  <style>${PAGE_CSS}</style>
+  <style>${HUB_CSS}</style>
+  <script type="application/ld+json">${JSON.stringify(faqLd)}</script>
+  <script type="application/ld+json">${JSON.stringify(crumbsLd)}</script>
+</head>
+<body>
+  <header class="pp-head"><div class="wrap"><a class="pp-brand" href="/">Digi <em>Nepal</em></a></div></header>
+  <div class="wrap">
+    <nav class="crumbs" aria-label="Breadcrumb"><a href="/">Home</a> › <span aria-current="page">${escapeHtml(guide.crumb)}</span></nav>
+    <main>
+      <p class="pp-cat">Guide · Digi Nepal, Pokhara</p>
+      <h1>${escapeHtml(guide.h1)}</h1>
+      <p class="pp-quick"><strong>Quick answer:</strong> ${guide.quickAnswer}</p>
+      ${guide.bodyHtml}
+      <div class="cta-row">
+        <a class="btn btn-buy" href="${guide.ctaHref}">${escapeHtml(guide.ctaLabel)}</a>
+        <a class="btn btn-wa" href="https://wa.me/${settings.whatsapp}" target="_blank" rel="noopener">Ask on WhatsApp</a>
+      </div>
+      <h2>Frequently asked questions</h2>
+      <div class="faq">
+        ${faqHtml}
+      </div>
+      <h2>Keep browsing</h2>
+      <div class="more"><a href="/cheapest-subscriptions-in-nepal/">Cheapest subscriptions in Nepal — full price list</a><a href="/#catalog">← All subscriptions at Digi Nepal</a></div>
+    </main>
+  </div>
+  <footer class="pp-foot"><div class="wrap">© Digi Nepal · Prices shown in NPR · <a href="/">diginepalnp.com</a> · WhatsApp <a href="https://wa.me/${settings.whatsapp}">+977 9705985657</a></div></footer>
+</body>
+</html>
+`;
+}
+
+function buildGuides(groups, settings) {
+  const byKey = k => groups.find(g => baseKey(g.name) === k);
+  const netflix = byKey('netflix 4k');
+  const spotify = byKey('spotify premium');
+  const youtube = byKey('youtube premium');
+  const prime = byKey('prime video');
+  const chatgpt = byKey('chatgpt plus');
+  const priceRows = [netflix, chatgpt, spotify, youtube, prime].filter(Boolean).map(g =>
+    '<tr><td class="p-name"><a href="/product/' + g.slug + '/">' + escapeHtml(g.name) + '</a></td>' +
+    '<td class="p-price">from ' + escapeHtml(formatMoney(g.minPrice)) + '</td>' +
+    '<td><a class="p-view" href="/product/' + g.slug + '/">See plans →</a></td></tr>').join('\n        ');
+
+  const payGuide = {
+    path: GUIDE_PATHS.payGuide,
+    crumb: 'Pay without a dollar card',
+    title: 'How to Pay for Netflix, ChatGPT & Spotify in Nepal Without a Dollar Card (2026) | Digi Nepal',
+    metaDesc: 'No dollar card? You can still pay for Netflix, ChatGPT Plus, Spotify and YouTube Premium in Nepal with eSewa, Khalti or bank QR. How it works, what it costs in NPR, and how Digi Nepal delivers the same day.',
+    h1: 'How to Pay for Subscriptions in Nepal Without a Dollar Card',
+    quickAnswer: 'You do not need a dollar card to pay for Netflix, ChatGPT Plus, Spotify or YouTube Premium in Nepal. At Digi Nepal (Pokhara) you pay in Nepali Rupees with eSewa, Khalti, IME Pay or any bank QR, and your subscription is activated the same day — Netflix 4K from ' + (netflix ? formatMoney(netflix.minPrice) : 'NPR 299') + ', ChatGPT Plus from ' + (chatgpt ? formatMoney(chatgpt.minPrice) : 'NPR 650') + ', YouTube Premium ' + (youtube ? formatMoney(youtube.minPrice) : 'NPR 99') + ' per month.',
+    bodyHtml: `
+      <h2>Why Nepali bank cards fail on Netflix, Spotify and ChatGPT</h2>
+      <p class="pp-desc">Netflix, Spotify, OpenAI and Google all bill in US dollars from outside Nepal. Most Nepali debit cards have international online payments switched off, so the payment is declined even when you have balance. That is why so many people in Nepal search for a way to pay without an international card.</p>
+      <h2>Option 1: Get a dollar card from your bank</h2>
+      <p class="pp-desc">Nepali banks issue prepaid dollar cards for international payments, but Nepal Rastra Bank caps them at about US $500 per year. That sounds like a lot until you add it up: ChatGPT Plus alone is $20 a month — $240 a year, almost half the cap — before Netflix, Spotify or anything else. There are also issuance and conversion fees, and you still pay the full US-dollar price.</p>
+      <h2>Option 2: Pay in rupees at a Nepali store</h2>
+      <p class="pp-desc">A local store like Digi Nepal buys and manages the subscriptions, so you simply pay in NPR with the wallet already on your phone. No dollar card, no cap problem, and usually a lower price than the official dollar price because plans are shared or supplied as private profiles. Every Digi Nepal order is covered by an activation warranty — if access is blocked, it is re-activated or replaced free.</p>
+      <h2>Prices in Nepal when you pay with eSewa or Khalti</h2>
+      <table class="prices">
+        <thead><tr><th>Subscription</th><th>Price (NPR)</th><th></th></tr></thead>
+        <tbody>
+        ${priceRows}
+        </tbody>
+      </table>
+      <h2>How to order — step by step</h2>
+      <p class="pp-desc">1. Open the product page and choose your plan. 2. Sign in and start the order — you will see a reference number. 3. Pay with eSewa, Khalti, IME Pay or Bank QR and upload the receipt, or send the order on WhatsApp. 4. As soon as the payment is approved, your subscription is activated — usually within minutes, always the same day — and the details reach your email or WhatsApp.</p>`,
+    faqs: [
+      { q: 'Can I pay for Netflix with eSewa in Nepal?', a: 'Yes. Netflix itself does not accept eSewa, but at Digi Nepal you pay for your Netflix 4K plan with eSewa, Khalti, IME Pay or Bank QR in NPR, and Digi Nepal activates your private profile the same day.' },
+      { q: 'Do I need a dollar card for ChatGPT Plus in Nepal?', a: 'No. OpenAI bills $20 a month in dollars, but Digi Nepal sells ChatGPT Plus from ' + (chatgpt ? formatMoney(chatgpt.minPrice) : 'NPR 650') + ' payable with eSewa or Khalti — no dollar card and no $500 yearly cap problem.' },
+      { q: 'Is it safe to buy subscriptions from a Nepali online store?', a: 'It is safe when the store verifies your payment, tracks your order in your account and gives an activation warranty. Digi Nepal does all three, and WhatsApp support is available at +977 9705985657 if anything goes wrong.' },
+      { q: 'How fast will my subscription be activated?', a: 'Delivery is instant after your payment is approved — most orders are activated within minutes, and always the same day.' }
+    ],
+    ctaHref: '/cheapest-subscriptions-in-nepal/',
+    ctaLabel: 'See the full price list →'
+  };
+
+  const cgVariants = chatgpt ? [...chatgpt.variants].sort((a, b) => Number(a.price) - Number(b.price)) : [];
+  const cgRows = cgVariants.map(v => {
+    const tail = (String(v.name).match(/\(([^)]+)\)/) || [])[1] || planLabelFor(v, duplicateDurations(cgVariants));
+    const note = /without/i.test(tail) ? 'Stable account, sold without warranty — no replacement or refund if access is blocked.' : 'Covered by a 30-day activation warranty — free re-activation or replacement if access fails.';
+    return '<tr><td class="p-name">' + escapeHtml(tail) + '</td><td class="p-price">' + escapeHtml(formatMoney(v.price)) + ' / month</td><td>' + escapeHtml(note) + '</td></tr>';
+  }).join('\n        ');
+
+  const chatgptGuide = {
+    path: GUIDE_PATHS.chatgptGuide,
+    crumb: 'Cheapest ChatGPT Plus in Nepal',
+    title: 'Cheapest ChatGPT Plus in Nepal (2026) — From ' + (chatgpt ? formatMoney(chatgpt.minPrice) : 'NPR 650') + ' | Digi Nepal',
+    metaDesc: 'The cheapest ChatGPT Plus in Nepal is at Digi Nepal — from ' + (chatgpt ? formatMoney(chatgpt.minPrice) : 'NPR 650') + ' for 1 month, payable with eSewa or Khalti. With-warranty and without-warranty plans explained honestly: prices, what you get, and which one to buy.',
+    h1: 'Cheapest ChatGPT Plus in Nepal: Prices & Which Plan to Buy',
+    quickAnswer: 'The cheapest ChatGPT Plus in Nepal is at Digi Nepal (Pokhara) — from ' + (chatgpt ? formatMoney(chatgpt.minPrice) : 'NPR 650') + ' for 1 month, paid with eSewa, Khalti or bank QR, activated the same day on your own email. The official OpenAI price is $20 a month (about NPR 3,000 before conversion fees and VAT) and needs a dollar card.',
+    bodyHtml: `
+      <h2>ChatGPT Plus prices in Nepal at Digi Nepal</h2>
+      <table class="prices">
+        <thead><tr><th>Plan</th><th>Price</th><th>What it means</th></tr></thead>
+        <tbody>
+        ${cgRows}
+        </tbody>
+      </table>
+      <p class="pp-desc">Both plans give you the same ChatGPT Plus: GPT-4o access, DALL·E 3 image generation, advanced data analysis and custom GPTs, activated on your own account. The difference is only the safety net.</p>
+      <h2>Which plan should you buy?</h2>
+      <p class="pp-desc"><strong>Choose Without Warranty</strong> if you want the lowest possible price and mainly use ChatGPT for everyday questions, study or content help. The account is stable, but if access is ever blocked there is no replacement or refund. <strong>Choose With Warranty</strong> if ChatGPT is part of your daily work — for 30 days, any activation problem is fixed by free re-activation or replacement.</p>
+      <h2>Why is it cheaper than the official $20 price?</h2>
+      <p class="pp-desc">The official route bills $20 a month in US dollars — roughly NPR 3,000 at the bank rate, more with conversion fees and 13% VAT — and it needs an international dollar card, which Nepal Rastra Bank caps at about $500 a year. Digi Nepal supplies Plus at local NPR prices with local payment, so the saving passes to you.</p>
+      <h2>How buying works</h2>
+      <p class="pp-desc">Pick your plan on the ChatGPT Plus page, sign in, start the order and pay with eSewa, Khalti, IME Pay or Bank QR. After the payment is approved, activation details are delivered to your email the same day — usually within minutes.</p>`,
+    faqs: [
+      { q: 'What is the cheapest ChatGPT Plus price in Nepal?', a: 'At Digi Nepal, ChatGPT Plus starts at ' + (chatgpt ? formatMoney(chatgpt.minPrice) : 'NPR 650') + ' for 1 month (Without Warranty). The With Warranty plan costs ' + (cgVariants.length > 1 ? formatMoney(cgVariants[cgVariants.length - 1].price) : 'NPR 1,399') + ' for 1 month.' },
+      { q: 'Is ChatGPT Plus activated on my own email?', a: 'Yes. Both Digi Nepal plans are activated on your own account, so your chats, history and custom GPTs stay yours.' },
+      { q: 'Can I pay for ChatGPT Plus with eSewa or Khalti?', a: 'Yes — eSewa, Khalti, IME Pay and Bank QR are all accepted at Digi Nepal. No dollar card is needed.' },
+      { q: 'What does the ChatGPT Plus warranty cover?', a: 'The With Warranty plan includes a 30-day activation warranty: if access fails or is blocked in that period, Digi Nepal re-activates or replaces it free. The Without Warranty plan is a stable account sold without replacement or refund.' }
+    ],
+    ctaHref: '/product/chatgpt-plus/',
+    ctaLabel: 'Buy ChatGPT Plus →'
+  };
+
+  return [payGuide, chatgptGuide];
 }
 
 /* ------------------------------------------------------------------ */
@@ -746,7 +935,13 @@ async function generateSeo(outputDir) {
 
   const hubDir = path.join(outputDir, 'cheapest-subscriptions-in-nepal');
   fs.mkdirSync(hubDir, { recursive: true });
-  fs.writeFileSync(path.join(hubDir, 'index.html'), buildHubPage(groups, settings));
+  fs.writeFileSync(path.join(hubDir, 'index.html'), buildHubPage(groups, settings, buildDate));
+
+  for (const guide of buildGuides(groups, settings)) {
+    const guideDir = path.join(outputDir, guide.path.replace(/^\/+|\/+$/g, ''));
+    fs.mkdirSync(guideDir, { recursive: true });
+    fs.writeFileSync(path.join(guideDir, 'index.html'), buildGuidePage(guide, settings));
+  }
 
   fs.writeFileSync(path.join(outputDir, 'sitemap.xml'), buildSitemap(groups, buildDate));
   fs.writeFileSync(path.join(outputDir, 'robots.txt'), ROBOTS_TXT);
@@ -760,6 +955,8 @@ async function generateSeo(outputDir) {
   const marker = '<!-- SEO_CATALOG_LINKS -->';
   if (!indexHtml.includes(marker)) throw new Error('SEO build: ' + marker + ' marker missing from dist/index.html — cannot inject the product link list.');
   const links = '<a href="/cheapest-subscriptions-in-nepal/">Cheapest Subscriptions in Nepal — full price list</a>' +
+    '<a href="/how-to-pay-for-subscriptions-in-nepal-without-a-dollar-card/">How to pay without a dollar card</a>' +
+    '<a href="/cheapest-chatgpt-plus-in-nepal/">Cheapest ChatGPT Plus in Nepal</a>' +
     groups.map(g => '<a href="/product/' + g.slug + '/">' + escapeHtml(g.name) + ' — from ' + escapeHtml(formatMoney(g.minPrice)) + '</a>').join('');
   fs.writeFileSync(indexPath, indexHtml.replace(marker, links));
 
@@ -775,3 +972,4 @@ module.exports = { generateSeo };
 // rebuild 2026-11-19d: static Spotify page to sq5 tile (records repointed)
 
 // rebuild 2026-11-19e: YouTube Premium product page (Rs 99) + refresh all static pages
+// rebuild 2026-11-19f: SEO round 3 — entity unified to Digi Nepal (+Pokhara schema), citable quick-answer on product pages, hub prices-checked date + guide links, 2 new guides (pay without dollar card, cheapest ChatGPT Plus), domain renewal FAQ, llms.txt refresh
