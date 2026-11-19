@@ -603,11 +603,13 @@ function buildHubPage(groups, settings, buildDate) {
   <meta property="og:url" content="${pageUrl}">
   <meta property="og:title" content="${escapeHtml(title)}">
   <meta property="og:description" content="${escapeHtml(metaDesc)}">
+  <meta property="og:image" content="${SITE_ORIGIN}/og-image.png">
   <meta property="og:site_name" content="${STORE_NAME}">
   <meta property="og:locale" content="en_NP">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="${escapeHtml(title)}">
   <meta name="twitter:description" content="${escapeHtml(metaDesc)}">
+  <meta name="twitter:image" content="${SITE_ORIGIN}/og-image.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
@@ -780,11 +782,13 @@ function buildGuidePage(guide, settings) {
   <meta property="og:url" content="${pageUrl}">
   <meta property="og:title" content="${escapeHtml(guide.title)}">
   <meta property="og:description" content="${escapeHtml(guide.metaDesc)}">
+  <meta property="og:image" content="${SITE_ORIGIN}/og-image.png">
   <meta property="og:site_name" content="${STORE_NAME}">
   <meta property="og:locale" content="en_NP">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="${escapeHtml(guide.title)}">
   <meta name="twitter:description" content="${escapeHtml(guide.metaDesc)}">
+  <meta name="twitter:image" content="${SITE_ORIGIN}/og-image.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
@@ -973,3 +977,4 @@ module.exports = { generateSeo };
 
 // rebuild 2026-11-19e: YouTube Premium product page (Rs 99) + refresh all static pages
 // rebuild 2026-11-19f: SEO round 3 — entity unified to Digi Nepal (+Pokhara schema), citable quick-answer on product pages, hub prices-checked date + guide links, 2 new guides (pay without dollar card, cheapest ChatGPT Plus), domain renewal FAQ, llms.txt refresh
+// rebuild 2026-11-19g: default share image (og-image.png) on hub + guide pages
