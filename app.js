@@ -2567,6 +2567,127 @@ async function startWhatsAppOrder(productId, existingOrder) {
   toast('Opening WhatsApp to chat with Digi Prime Nepal...', 'success');
 }
 
+/* ── Customer Reviews ─────────────────────────────────────────────────────
+   Public list = approved reviews only (GET /api/reviews). The form posts
+   a pending review; staff approve it in Admin → Reviews before it shows.
+   The shareable link for customers is https://diginepalnp.com/#reviews */
+const reviewState = { rating: 5 };
+const reviewStars = n => '★★★★★'.slice(0, n) + '☆☆☆☆☆'.slice(0, 5 - n);
+const reviewInitials = name => String(name || '?').trim().split(/\s+/).slice(0, 2).map(w => w[0] || '').join('').toUpperCase() || '?';
+
+function renderReviews(items, summary) {
+  const grid = $('reviews-grid');
+  const empty = $('reviews-empty');
+  const summaryEl = $('reviews-summary');
+  if (!grid) return;
+  const list = Array.isArray(items) ? items : [];
+  grid.innerHTML = list.map(r => {
+    const date = r.created_at ? new Date(r.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+    return `<article class="review-card"><div class="review-stars" aria-label="Rated ${Number(r.rating) || 0} out of 5">${reviewStars(Number(r.rating) || 0)}</div><p class="review-text">“${escapeHtml(r.message)}”</p><div class="review-author"><span class="author-avatar" aria-hidden="true">${escapeHtml(reviewInitials(r.name))}</span><div><strong>${escapeHtml(r.name)}</strong><span>${escapeHtml(r.product_name)}${date ? ' · ' + escapeHtml(date) : ''}</span></div></div></article>`;
+  }).join('');
+  if (empty) empty.hidden = list.length > 0;
+  if (summaryEl) {
+    if (summary && summary.count > 0) {
+      summaryEl.innerHTML = `<span class="rs-stars">${reviewStars(Math.round(summary.average))}</span> ${summary.average} out of 5 · from ${summary.count} customer review${summary.count === 1 ? '' : 's'}`;
+      summaryEl.hidden = false;
+    } else {
+      summaryEl.hidden = true;
+    }
+  }
+}
+
+function populateReviewProducts() {
+  const select = $('review-product');
+  if (!select || select.options.length > 1) return;
+  try {
+    const families = groupProducts(state.allCatalog || []).map(g => g.name).filter(Boolean).sort((a, b) => a.localeCompare(b));
+    for (const name of families) {
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      select.append(opt);
+    }
+  } catch { void 0; }
+  const other = document.createElement('option');
+  other.value = 'Other';
+  other.textContent = 'Other';
+  select.append(other);
+}
+
+async function loadReviews() {
+  const grid = $('reviews-grid');
+  if (!grid) return;
+  populateReviewProducts();
+  try {
+    const data = await api('/reviews');
+    renderReviews(data.items || [], data.summary || null);
+  } catch { void 0; }
+}
+
+function bindReviews() {
+  const writeBtn = $('review-write-btn');
+  const form = $('review-form');
+  if (writeBtn && form) {
+    writeBtn.addEventListener('click', () => {
+      form.hidden = !form.hidden;
+      if (!form.hidden) { populateReviewProducts(); $('review-name')?.focus(); }
+    });
+  }
+  const starsInput = $('review-stars-input');
+  if (starsInput) {
+    starsInput.addEventListener('click', e => {
+      const btn = e.target.closest('button[data-star]');
+      if (!btn) return;
+      reviewState.rating = Number(btn.dataset.star) || 5;
+      starsInput.querySelectorAll('button').forEach(b => b.classList.toggle('on', Number(b.dataset.star) <= reviewState.rating));
+    });
+  }
+  const copyBtn = $('review-copy-btn');
+  if (copyBtn) {
+    copyBtn.addEventListener('click', async () => {
+      const link = 'https://diginepalnp.com/#reviews';
+      try { await navigator.clipboard.writeText(link); toast('Review link copied: ' + link, 'success'); }
+      catch { toast('Review link: ' + link); }
+    });
+  }
+  const waShare = $('review-wa-share');
+  if (waShare) {
+    const text = '⭐ Please review Digi Nepal — it takes less than a minute: https://diginepalnp.com/#reviews';
+    waShare.href = 'https://wa.me/?text=' + encodeURIComponent(text);
+  }
+  if (form) {
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      const msg = $('review-form-msg');
+      const submitBtn = $('review-submit-btn');
+      const payload = {
+        name: $('review-name').value.trim(),
+        product_name: $('review-product').value,
+        rating: reviewState.rating,
+        message: $('review-message').value.trim(),
+        whatsapp: $('review-whatsapp').value.trim(),
+      };
+      if (!payload.name || !payload.product_name || !payload.message) {
+        if (msg) { msg.textContent = 'Please fill your name, the product, and your review.'; msg.className = 'review-form-msg error'; }
+        return;
+      }
+      if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Sending…'; }
+      try {
+        const res = await api('/reviews', { method: 'POST', body: JSON.stringify(payload) });
+        if (msg) { msg.textContent = res.message || 'Thank you! Your review was received.'; msg.className = 'review-form-msg'; }
+        form.reset();
+        reviewState.rating = 5;
+        starsInput?.querySelectorAll('button').forEach(b => b.classList.toggle('on', Number(b.dataset.star) <= 5));
+        toast('Review submitted — thank you!', 'success');
+      } catch (err) {
+        if (msg) { msg.textContent = err.message || 'Could not send your review. Please try again.'; msg.className = 'review-form-msg error'; }
+      } finally {
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Submit review'; }
+      }
+    });
+  }
+}
+
 async function init() {
   if ($('year')) $('year').textContent = new Date().getFullYear();
   bindUI();
@@ -2575,6 +2696,8 @@ async function init() {
   setupMotion();
   setProductLoading();
   await Promise.allSettled([initAccount(), loadProviders(), loadCategories(), loadSettings(), loadCampaign(), loadProducts()]);
+  bindReviews();
+  loadReviews();
   setupProofBubble();
   handleRoute();
   window.addEventListener('hashchange', handleRoute);

@@ -184,6 +184,7 @@ app.use('/api/categories', require('./routes/categories'));
 app.use('/api/orders',     require('./routes/orders'));
 app.use('/api/offers',     require('./routes/offers'));
 app.use('/api/campaigns',  require('./routes/campaigns'));
+app.use('/api/reviews',    require('./routes/reviews'));
 app.use('/api/upload',     require('./routes/upload'));
 app.use('/api/users',      require('./routes/users'));
 app.use('/api/payments',   require('./routes/payments'));

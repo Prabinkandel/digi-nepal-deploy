@@ -3738,3 +3738,34 @@ body:has(dialog[open]) .proof-bubble {
 @media (max-width: 768px) {
   .hero-trust-strip { margin-top: .7rem; padding-top: .7rem; }
 }
+
+/* --- §3zc Customer Reviews (2026-11-19): live review section --------------
+   Approved reviews render into .reviews-grid using the store-ui.css
+   .review-card styles; everything below is the summary line, the action
+   row, the submit form and the star picker. Token-based so both themes
+   work; the light override softens the hard-coded dark card surface. */
+.reviews-summary { margin: 1rem auto 0; color: var(--text-muted); font-size: .95rem; font-weight: 700; }
+.reviews-summary .rs-stars { color: #fbbf24; letter-spacing: .12em; }
+.reviews-empty { text-align: center; color: var(--text-muted); margin: 2.2rem auto 0; }
+.reviews-actions { display: flex; flex-wrap: wrap; gap: .7rem; justify-content: center; margin-top: 1.8rem; }
+.reviews-actions .button { text-decoration: none; }
+.review-form { max-width: 640px; margin: 1.8rem auto 0; text-align: left; background: var(--surface-raised); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem; display: grid; gap: 1rem; }
+.review-form[hidden] { display: none; }
+.review-form h3 { margin: 0; color: var(--text); font-size: 1.05rem; }
+.review-form label { display: grid; gap: .4rem; font-size: .82rem; font-weight: 700; color: var(--text-muted); }
+.review-form input, .review-form select, .review-form textarea { border: 1px solid var(--line-strong); border-radius: .65rem; padding: .72rem .8rem; background: var(--card); color: var(--text); font: inherit; font-weight: 500; width: 100%; box-sizing: border-box; }
+.review-form input:focus, .review-form select:focus, .review-form textarea:focus { outline: 2px solid var(--red); outline-offset: 1px; border-color: transparent; }
+.review-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media (max-width: 620px) { .review-form-row { grid-template-columns: 1fr; } }
+.review-stars-picker { display: flex; align-items: center; gap: .8rem; font-size: .82rem; font-weight: 700; color: var(--text-muted); flex-wrap: wrap; }
+#review-stars-input { display: inline-flex; gap: .15rem; }
+#review-stars-input button { border: 0; background: transparent; color: var(--text-faint); font-size: 1.55rem; line-height: 1; padding: .15rem; cursor: pointer; }
+#review-stars-input button.on { color: #fbbf24; }
+.review-form-note { margin: 0; color: var(--text-faint); font-size: .78rem; }
+.review-form-msg { margin: 0; text-align: center; font-size: .88rem; font-weight: 700; color: var(--success); }
+.review-form-msg.error { color: #ff98a0; }
+.reviews-support-note { text-align: center; color: var(--text-faint); font-size: .82rem; margin: 2rem auto 0; }
+[data-theme="light"] .reviews-section .review-card { background: #fff; border-color: var(--line); }
+[data-theme="light"] .reviews-section .review-text { color: var(--text); }
+[data-theme="light"] .reviews-section .review-author strong { color: var(--text); }
+[data-theme="light"] .review-form-msg.error { color: #b4232f; }

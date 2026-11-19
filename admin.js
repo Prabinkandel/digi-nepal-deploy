@@ -100,10 +100,10 @@ document.querySelectorAll('.nav-item').forEach(a=>{
   });
 });
 
-const pageTitles={dashboard:'Dashboard',products:'Products',categories:'Categories',orders:'Orders',offers:'Flash Offers',campaigns:'Sale Campaigns',payments:'Payments',users:'Users',settings:'Settings'};
+const pageTitles={dashboard:'Dashboard',products:'Products',categories:'Categories',orders:'Orders',offers:'Flash Offers',campaigns:'Sale Campaigns',reviews:'Reviews',payments:'Payments',users:'Users',settings:'Settings'};
 function navigate(page){
   $('page-title').textContent=pageTitles[page]||page;
-  const pages={dashboard:renderDashboard,products:renderProducts,categories:renderCategories,orders:renderOrders,offers:renderOffers,campaigns:renderCampaigns,payments:renderPayments,users:renderUsers,settings:renderSettings};
+  const pages={dashboard:renderDashboard,products:renderProducts,categories:renderCategories,orders:renderOrders,offers:renderOffers,campaigns:renderCampaigns,reviews:renderReviews,payments:renderPayments,users:renderUsers,settings:renderSettings};
   if(pages[page])pages[page]();
 }
 
@@ -845,6 +845,60 @@ async function renderCampaigns(){
       toast('Campaign updated');renderCampaigns();
     });
   });
+}
+
+// REVIEWS — customer reviews wait here as Pending until approved.
+// Only Approved reviews appear on the storefront (/#reviews).
+const REVIEW_STATUS_BADGES={pending:'badge-pending',approved:'badge-active',rejected:'badge-rejected'};
+let reviewFilter='pending';
+async function renderReviews(){
+  $('page-content').innerHTML=`<div style="color:var(--text3);text-align:center;padding:40px">Loading...</div>`;
+  try{
+    const result=await api(`/reviews/all?limit=100&status=${encodeURIComponent(reviewFilter)}`);
+    const items=list(result);
+    const pendingCount=result.pending??items.filter(r=>r.status==='pending').length;
+    const stars=n=>'★'.repeat(Number(n)||0)+'☆'.repeat(Math.max(0,5-(Number(n)||0)));
+    $('page-content').innerHTML=`
+      <div class="section-header"><h2>Customer Reviews <span style="color:var(--text3);font-weight:400;font-size:1rem">(${items.length})</span></h2>
+      <select id="review-status-filter" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px">
+        <option value="pending" ${reviewFilter==='pending'?'selected':''}>Pending${pendingCount?` (${pendingCount})`:''}</option>
+        <option value="approved" ${reviewFilter==='approved'?'selected':''}>Approved — live on site</option>
+        <option value="rejected" ${reviewFilter==='rejected'?'selected':''}>Rejected</option>
+        <option value="" ${reviewFilter===''?'selected':''}>All</option>
+      </select></div>
+      <p style="color:var(--text3);font-size:.85rem;margin:-12px 0 20px">Customers submit reviews at <strong>diginepalnp.com/#reviews</strong> — send them that link after a delivery. A review only appears on the website after you approve it here. WhatsApp numbers are private and never shown on the site.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Customer</th><th>Product</th><th>Rating</th><th>Review</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody>${items.map(r=>`<tr>
+          <td><div class="td-name">${escapeHtml(r.name)}</div>${r.whatsapp?`<div class="td-sub">📱 ${escapeHtml(r.whatsapp)}</div>`:''}</td>
+          <td>${escapeHtml(r.product_name)}</td>
+          <td style="color:#fbbf24;white-space:nowrap" title="${Number(r.rating)||0} out of 5">${stars(r.rating)}</td>
+          <td style="max-width:340px;font-size:.86rem">${escapeHtml(r.message)}</td>
+          <td style="font-size:.82rem;color:var(--text3);white-space:nowrap">${r.created_at?new Date(r.created_at).toLocaleDateString():''}</td>
+          <td><span class="badge ${REVIEW_STATUS_BADGES[r.status]||'badge-user'}">${r.status}</span></td>
+          <td><div class="td-actions">
+            ${r.status!=='approved'?`<button class="btn-outline btn-sm review-set" data-id="${r.id}" data-status="approved">Approve</button>`:''}
+            ${r.status!=='rejected'?`<button class="btn-outline btn-sm review-set" data-id="${r.id}" data-status="rejected">Reject</button>`:''}
+            ${r.status!=='pending'?`<button class="btn-outline btn-sm review-set" data-id="${r.id}" data-status="pending">Pending</button>`:''}
+            <button class="btn-danger btn-sm review-delete" data-id="${r.id}">Delete</button>
+          </div></td>
+        </tr>`).join('')||'<tr class="empty-row"><td colspan="7">No reviews in this list yet.</td></tr>'}
+        </tbody>
+      </table></div>`;
+    $('review-status-filter').onchange=e=>{reviewFilter=e.target.value;renderReviews();};
+    document.querySelectorAll('.review-set').forEach(b=>b.onclick=async()=>{
+      try{await api(`/reviews/${b.dataset.id}`,{method:'PUT',body:JSON.stringify({status:b.dataset.status})});toast(`Review ${b.dataset.status}`);renderReviews();}
+      catch(e){toast(e.message,'error');}
+    });
+    document.querySelectorAll('.review-delete').forEach(b=>b.onclick=()=>{
+      confirm('Delete this review permanently?',async()=>{
+        try{await api(`/reviews/${b.dataset.id}`,{method:'DELETE'});toast('Review deleted');renderReviews();}
+        catch(e){toast(e.message,'error');}
+      });
+    });
+  }catch(e){
+    $('page-content').innerHTML=`<p style="color:var(--text3);text-align:center;padding:40px">${escapeHtml(e.message)}</p>`;
+  }
 }
 
 async function previewCampaign(id){
