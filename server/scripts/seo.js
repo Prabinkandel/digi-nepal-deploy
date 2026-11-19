@@ -770,3 +770,4 @@ async function generateSeo(outputDir) {
 module.exports = { generateSeo };
 
 // rebuild 2026-11-19: ElevenLabs Starter added; ChatGPT Plus split into With Warranty Rs 1,399 / Without Warranty Rs 650
+// rebuild 2026-11-19b: Netflix 1 Month sale price Rs 299 (Super Sale)
