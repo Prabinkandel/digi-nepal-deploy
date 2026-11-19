@@ -129,7 +129,13 @@ function proofItemLabel() {
   const items = (state.allCatalog && state.allCatalog.length) ? state.allCatalog : (state.catalog || []);
   if (!items.length) return pickRandom(PROOF_FALLBACK_ITEMS);
   const p = pickRandom(items);
-  return p.name + (p.duration ? ' (' + p.duration + ')' : '');
+  const name = String(p.name || '').trim();
+  const dur = String(p.duration || '').trim();
+  if (!dur) return name;
+  // Some record names already end with the duration ("Netflix 4K (6 Months)") —
+  // don't append it twice (owner screenshot, 2026-11-19).
+  if (name.toLowerCase().endsWith('(' + dur.toLowerCase() + ')')) return name;
+  return name + ' (' + dur + ')';
 }
 
 function scheduleNextProof() {
