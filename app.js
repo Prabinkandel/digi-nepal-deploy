@@ -148,13 +148,34 @@ function scheduleNextProof() {
   }, 55000 + Math.floor(Math.random() * 40000));
 }
 
+function proofEmojiFor(label) {
+  const t = String(label || '').toLowerCase();
+  if (t.startsWith('netflix')) return '🎬';
+  if (t.startsWith('spotify')) return '🎵';
+  if (t.startsWith('youtube')) return '▶️';
+  if (t.startsWith('prime video')) return '📺';
+  if (t.startsWith('chatgpt')) return '🤖';
+  if (t.startsWith('elevenlabs')) return '🎙️';
+  if (t.startsWith('claude')) return '🧠';
+  if (t.startsWith('gemini')) return '✨';
+  if (t.startsWith('muse ai')) return '🪄';
+  if (t.startsWith('capcut')) return '✂️';
+  if (t.startsWith('canva edu')) return '🎓';
+  if (t.startsWith('canva')) return '🎨';
+  if (t.startsWith('microsoft')) return '💼';
+  if (t.startsWith('.com domain')) return '🌐';
+  if (t.startsWith('free fire')) return '🔥';
+  return '🛒';
+}
+
 function showProofBubble(gen) {
   if (state.proofDismissed) return;
   const bubble = $('proof-bubble');
   if (!bubble || document.visibilityState !== 'visible') return;
   $('proof-name').textContent = pickRandom(PROOF_NAMES);
   $('proof-city').textContent = pickRandom(PROOF_CITIES);
-  $('proof-item').textContent = proofItemLabel();
+  const proofLabel = proofItemLabel();
+  $('proof-item').textContent = proofEmojiFor(proofLabel) + ' ' + proofLabel;
   $('proof-time').textContent = pickRandom(PROOF_TIMES);
   bubble.classList.remove('is-out');
   bubble.removeAttribute('hidden');
