@@ -772,3 +772,4 @@ module.exports = { generateSeo };
 // rebuild 2026-11-19: ElevenLabs Starter added; ChatGPT Plus split into With Warranty Rs 1,399 / Without Warranty Rs 650
 // rebuild 2026-11-19b: Netflix 1 Month sale price Rs 299 (Super Sale)
 // rebuild 2026-11-19c: Spotify Premium plans 1M Rs 300 / 6M Rs 1600 / 1Y Rs 2900 added
+// rebuild 2026-11-19d: static Spotify page to sq5 tile (records repointed)
