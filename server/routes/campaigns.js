@@ -114,6 +114,17 @@ router.get('/active', async (req, res) => {
   res.json({ campaign: decorateCampaign(winner), items });
 });
 
+/* ── Admin ──
+   NOTE: '/all' MUST be registered before '/:id' — Express matches in
+   order, and '/:id' would otherwise swallow '/all' as a campaign id
+   (the bug that left the admin Sale Campaigns page empty until 2026-11-19). */
+router.get('/all', staff, async (req, res) => {
+  const q = query(req);
+  const result = await page(Campaign, { ...searchFilter(q.search, ['name', 'slug']) }, q);
+  result.items = result.items.map(decorateCampaign);
+  res.json(result);
+});
+
 /* ── Public: single campaign by id or slug (live only) ── */
 router.get('/:id', async (req, res) => {
   const key = String(req.params.id);
@@ -122,14 +133,6 @@ router.get('/:id', async (req, res) => {
   }).select('-_id -__v').lean();
   if (!campaign || statusOf(campaign) !== 'live') fail(404, 'This campaign is unavailable.');
   res.json({ campaign: decorateCampaign(campaign), items: await resolveProducts(campaign) });
-});
-
-/* ── Admin ── */
-router.get('/all', staff, async (req, res) => {
-  const q = query(req);
-  const result = await page(Campaign, { ...searchFilter(q.search, ['name', 'slug']) }, q);
-  result.items = result.items.map(decorateCampaign);
-  res.json(result);
 });
 
 router.post('/', staff, async (req, res) => {
