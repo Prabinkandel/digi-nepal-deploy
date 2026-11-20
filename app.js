@@ -407,7 +407,7 @@ function themeVarsString(theme) {
    uploaded in the admin otherwise wins. */
 const BRAND_LOGOS = {
   'netflix 4k': '/logos/sq4/netflix-4k.webp',
-  'spotify premium': '/logos/sq5/spotify-premium.webp',
+  'spotify premium': '/logos/sq5/spotify-premium-v2.webp',
   'canva pro': '/logos/sq4/canva-pro.webp',
   'chatgpt plus': '/logos/sq4/chatgpt-plus.webp',
   'gemini ai pro': '/logos/sq5/gemini.webp',

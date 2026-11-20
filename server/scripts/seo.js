@@ -980,3 +980,4 @@ module.exports = { generateSeo };
 // rebuild 2026-11-19g: default share image (og-image.png) on hub + guide pages
 
 // rebuild 2026-11-20a: Super Duolingo product page (Rs 350, 12 Months) + sq5 tile pickup
+// rebuild 2026-11-20b: Spotify Premium (Pre-activated) 3 Months Rs 399 plan + v2 tile strip
