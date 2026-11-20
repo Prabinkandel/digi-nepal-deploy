@@ -978,3 +978,5 @@ module.exports = { generateSeo };
 // rebuild 2026-11-19e: YouTube Premium product page (Rs 99) + refresh all static pages
 // rebuild 2026-11-19f: SEO round 3 — entity unified to Digi Nepal (+Pokhara schema), citable quick-answer on product pages, hub prices-checked date + guide links, 2 new guides (pay without dollar card, cheapest ChatGPT Plus), domain renewal FAQ, llms.txt refresh
 // rebuild 2026-11-19g: default share image (og-image.png) on hub + guide pages
+
+// rebuild 2026-11-20a: Super Duolingo product page (Rs 350, 12 Months) + sq5 tile pickup
