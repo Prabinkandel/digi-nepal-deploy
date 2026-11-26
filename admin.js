@@ -619,115 +619,167 @@ window.delCat=function(id,name){
 };
 
 // ORDERS
+function timeAgo(ts){
+  const s=Math.floor((Date.now()-new Date(ts).getTime())/1000);
+  if(s<60)return 'just now';
+  const m=Math.floor(s/60);if(m<60)return m+'m ago';
+  const h=Math.floor(m/60);if(h<24)return h+'h ago';
+  const d=Math.floor(h/24);if(d<30)return d+'d ago';
+  return new Date(ts).toLocaleDateString();
+}
+const orderRef=id=>String(id||'').split('-')[0].toUpperCase();
+const STATUS_TABS=[['','All'],['pending','Pending'],['verified','Verified'],['delivered','Delivered'],['rejected','Rejected']];
+
 async function renderOrders(){
   $('page-content').innerHTML=`<div style="color:var(--text3);text-align:center;padding:40px">Loading orders...</div>`;
-  try {
-    const ordersResult = await api('/orders/all?limit=100');
-    let orders = list(ordersResult);
-    
+  try{
+    const res=await api('/orders/all?limit=100');
+    const orders=list(res);
+    const counts=res.counts||{all:orders.length,pending:0,verified:0,delivered:0,rejected:0};
+    let curStatus='';
     $('page-content').innerHTML=`
       <div class="section-header">
-        <h2>Orders <span style="color:var(--text3);font-weight:400;font-size:1rem" id="orders-count">(${orders.length})</span></h2>
-        <div style="display:flex;gap:10px;align-items:center;">
-          ${orders.length?`<button class="btn-danger" id="erase-all-orders">Erase all orders</button>`:''}
-          <input class="search-box" id="order-search" placeholder="Search Order ID / Ref, Customer, Product..." style="width:280px;font-size:.85rem;padding:7px 12px;"/>
-          <select class="filter-select" id="order-filter">
-            <option value="">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="verified">Verified</option>
-            <option value="rejected">Rejected</option>
-            <option value="delivered">Delivered</option>
-          </select>
-        </div>
+        <h2>Orders <span style="color:var(--text3);font-weight:400;font-size:1rem">(${counts.all})</span></h2>
+        ${orders.length?`<button class="btn-danger" id="erase-all-orders">Erase all orders</button>`:''}
       </div>
-      <div class="table-wrap"><div style="overflow-x:auto"><table>
-        <thead><tr><th>Order ID / Ref</th><th>Customer</th><th>Product</th><th>Price</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
-        <tbody id="orders-tbody">${renderOrderRows(orders)}</tbody>
-      </table></div></div>`;
-      
-    async function filterOrders() {
-      const q = $('order-search').value.trim();
-      const s = $('order-filter').value;
-      const params = new URLSearchParams({ limit: '100' });
-      if (q) params.set('search', q);
-      if (s) params.set('status', s);
-      try {
-        const res = await api('/orders/all?' + params.toString());
-        const filtered = list(res);
-        $('orders-tbody').innerHTML = renderOrderRows(filtered);
-        const countEl = $('orders-count');
-        if (countEl) countEl.textContent = `(${filtered.length})`;
-      } catch (err) {
-        toast(err.message, 'error');
-      }
+      <div class="orders-toolbar">
+        <input class="search-box" id="order-search" placeholder="Search name, phone, product, order ref..." style="width:100%"/>
+        <div class="status-tabs" id="order-tabs">${STATUS_TABS.map(([v,l])=>`<button class="status-tab${v===''?' active':''}" data-status="${v}">${l} <span class="tab-count">${v===''?counts.all:(counts[v]||0)}</span></button>`).join('')}</div>
+      </div>
+      <div class="orders-grid" id="orders-grid">${renderOrderCards(orders)}</div>`;
+    async function refresh(){
+      const q=$('order-search').value.trim();
+      const params=new URLSearchParams({limit:'100'});
+      if(q)params.set('search',q);
+      if(curStatus)params.set('status',curStatus);
+      try{
+        const r=await api('/orders/all?'+params.toString());
+        $('orders-grid').innerHTML=renderOrderCards(list(r));
+      }catch(err){toast(err.message,'error');}
     }
-
-    $('order-search').addEventListener('input', () => {
-      clearTimeout(window._orderSearchTimer);
-      window._orderSearchTimer = setTimeout(filterOrders, 300);
+    $('order-search').addEventListener('input',()=>{clearTimeout(window._orderSearchTimer);window._orderSearchTimer=setTimeout(refresh,300);});
+    $('order-tabs').addEventListener('click',e=>{
+      const b=e.target.closest('.status-tab');if(!b)return;
+      curStatus=b.dataset.status;
+      document.querySelectorAll('.status-tab').forEach(x=>x.classList.toggle('active',x===b));
+      refresh();
     });
-    $('order-filter').onchange = filterOrders;
-    attachOrderActions(orders);
-  } catch(e) {
-    $('page-content').innerHTML = `<div style="color:var(--sale);padding:20px">${e.message}</div>`;
+    attachOrderCardActions();
+    const eraseBtn=$('erase-all-orders');
+    if(eraseBtn)eraseBtn.onclick=()=>confirm(`ERASE ALL order records permanently? This cannot be undone.`,async()=>{
+      try{await api('/orders/bulk-all',{method:'DELETE'});toast('All orders erased');renderOrders();}catch(err){toast(err.message,'error');}
+    });
+  }catch(e){
+    $('page-content').innerHTML=`<div style="color:var(--sale);padding:20px">${escapeHtml(e.message)}</div>`;
   }
 }
 
-function renderOrderRows(orders){
-  if(!orders.length)return`<tr class="empty-row"><td colspan="7">No orders</td></tr>`;
-  return orders.map(o=>`
-    <tr>
-      <td><code style="font-size:.8rem;color:var(--blue-light)">#${o.id.split('-')[0].toUpperCase()}</code></td>
-      <td><div class="td-name">${o.user_name||'—'}</div><div class="td-sub">${o.user_email||''}</div></td>
-      <td>${o.product_name}</td>
-      <td>${fmt(o.price)}</td>
-      <td><span class="badge badge-${o.status}">${o.status}</span></td>
-      <td style="font-size:.8rem;color:var(--text3)">${new Date(o.created_at).toLocaleDateString()}</td>
-      <td><div class="td-actions">
-        <select class="filter-select" style="padding:5px 8px;font-size:.8rem" data-oid="${o.id}" onchange="updateOrderStatus(this,'${o.id}')">
-          ${['pending','verified','rejected','delivered'].map(s=>`<option value="${s}" ${o.status===s?'selected':''}>${s}</option>`).join('')}
-        </select>
-        <a href="https://wa.me/9779705985657?text=${encodeURIComponent(o.wa_message||'')}" target="_blank" class="btn-success btn-sm">WA</a>
-        <button class="btn-danger btn-sm del-order" data-id="${o.id}">Delete</button>
-      </div></td>
-    </tr>`).join('');
+function waTextFor(o){
+  const ref=orderRef(o.id),p=o.product_name||'your product';
+  const tail='— Digi Prime Nepal';
+  if(o.status==='pending')return `Namaste! Your order for ${p} (#${ref}) is received. We are verifying your payment — delivery within 5–10 minutes after verification. ${tail}`;
+  if(o.status==='verified')return `Namaste! Your payment for ${p} (#${ref}) is verified ✅ Delivery is on the way. ${tail}`;
+  if(o.status==='delivered')return `Namaste! Your ${p} (#${ref}) has been delivered ✅ Thank you for ordering! Please leave a review: https://www.diginepalnp.com/#reviews ${tail}`;
+  if(o.status==='rejected')return `Namaste! We could not verify your payment for ${p} (#${ref}). Please send a clear payment screenshot again. ${tail}`;
+  return `Namaste! Regarding your order ${p} (#${ref}). ${tail}`;
 }
 
-window.updateOrderStatus=async function(sel,id){
-  try{
-    await api(`/orders/${id}/status`,{method:'PUT',body:JSON.stringify({status:sel.value})});
-    toast(`Order marked as ${sel.value}`);
-  }catch(e){toast(e.message,'error');}
-};
+function renderOrderCards(orders){
+  if(!orders.length)return `<div class="orders-empty">No orders found</div>`;
+  return orders.map(o=>{
+    const ref=orderRef(o.id);
+    const hasPay=!!(o.payment_status||o.payment_screenshot||o.payment_phone);
+    const payId=(o.payment_status==='pending'&&o.payment_id)?o.payment_id:'';
+    const shot=o.payment_screenshot?`<button class="oc-shot" data-shot="${escapeHtml(o.payment_screenshot)}" title="Tap to view payment screenshot"><img src="${escapeHtml(o.payment_screenshot)}" alt="Payment screenshot" loading="lazy"/></button>`:'';
+    const phoneRow=o.payment_phone?`<div class="oc-line">📱 <a href="tel:+${escapeHtml(o.payment_phone)}">+${escapeHtml(o.payment_phone)}</a>${o.payer_name?` <span class="oc-sub">(${escapeHtml(o.payer_name)})</span>`:''}</div>`:'';
+    const payRow=hasPay?`<div class="oc-line oc-sub">${escapeHtml(o.payment_method||'')}${o.payment_txn?` • Txn ${escapeHtml(o.payment_txn)}`:''}${o.payment_status?` • <span class="badge badge-${o.payment_status}">${o.payment_status}</span>`:''}</div>`:'';
+    const noteRow=o.note?`<div class="oc-note">📝 ${escapeHtml(o.note)}</div>`:'';
+    const actions=[];
+    if(o.status==='pending')actions.push(`<button class="btn-success oc-act" data-act="verify" data-id="${o.id}" data-pay="${payId}">✓ Verify</button>`);
+    if(o.status==='verified')actions.push(`<button class="btn-primary oc-act" data-act="deliver" data-id="${o.id}">🚚 Deliver</button>`);
+    if(o.status==='pending'||o.status==='verified')actions.push(`<button class="btn-danger oc-act" data-act="reject" data-id="${o.id}" data-pay="${payId}">✕ Reject</button>`);
+    if(o.payment_phone)actions.push(`<a class="btn-wa oc-act" target="_blank" rel="noopener" href="https://wa.me/${escapeHtml(o.payment_phone)}?text=${encodeURIComponent(waTextFor(o))}">WhatsApp</a>`);
+    actions.push(`<button class="oc-del" data-del="${o.id}" title="Delete order">🗑</button>`);
+    return `<div class="order-card">
+      <div class="oc-top"><code class="oc-ref">#${ref}</code><span class="oc-time">${timeAgo(o.created_at)}</span><span class="badge badge-${o.status}">${o.status}</span></div>
+      <div class="oc-main">${shot}<div class="oc-info">
+        <div class="oc-product">${escapeHtml(o.product_name||'')}</div>
+        <div class="oc-price">${fmt(o.price)}</div>
+        <div class="oc-line">👤 ${escapeHtml(o.user_name||'—')}</div>
+        <div class="oc-line oc-sub">${escapeHtml(o.user_email||'')}</div>
+        ${phoneRow}${payRow}${noteRow}
+      </div></div>
+      <div class="oc-actions">${actions.join('')}</div>
+    </div>`;
+  }).join('');
+}
 
-function attachOrderActions(orders){
-  // Event delegation on the tbody so Delete buttons also work on rows
-  // re-rendered by the search/filter path (which replaces tbody HTML only).
-  const tbody=$('orders-tbody');
-  if(tbody){
-    tbody.addEventListener('click',e=>{
-      const btn=e.target.closest('.del-order');if(!btn)return;
-      const oid=btn.dataset.id;
-      const ref=oid.split('-')[0].toUpperCase();
-      confirm(`Delete order #${ref} permanently? This cannot be undone.`,async()=>{
+function openShotLightbox(src){
+  let lb=$('shot-lightbox');
+  if(!lb){
+    lb=document.createElement('div');lb.id='shot-lightbox';lb.className='shot-lightbox';lb.hidden=true;
+    lb.innerHTML=`<div class="sl-bar"><a class="btn-primary" id="sl-download" target="_blank" rel="noopener" style="padding:8px 14px;font-size:.85rem">⬇ Download</a><button class="btn-danger" id="sl-close" style="padding:8px 14px;font-size:.85rem">✕ Close</button></div><div class="sl-scroll"><img id="sl-img" alt="Payment screenshot"/></div>`;
+    document.body.appendChild(lb);
+    lb.addEventListener('click',e=>{if(e.target===lb||e.target.id==='sl-close')lb.hidden=true;});
+    lb.querySelector('#sl-img').addEventListener('click',()=>lb.querySelector('#sl-img').classList.toggle('zoomed'));
+  }
+  const img=lb.querySelector('#sl-img');img.src=src;img.classList.remove('zoomed');
+  lb.querySelector('#sl-download').href=src;
+  lb.hidden=false;
+}
+
+function attachOrderCardActions(){
+  const grid=$('orders-grid');if(!grid)return;
+  grid.addEventListener('click',async e=>{
+    const shotBtn=e.target.closest('[data-shot]');
+    if(shotBtn){openShotLightbox(shotBtn.dataset.shot);return;}
+    const del=e.target.closest('[data-del]');
+    if(del){
+      const oid=del.dataset.del;
+      confirm(`Delete order #${orderRef(oid)} permanently? This cannot be undone.`,async()=>{
+        try{await api(`/orders/${oid}`,{method:'DELETE'});toast('Order deleted');renderOrders();}catch(err){toast(err.message,'error');}
+      });
+      return;
+    }
+    const btn=e.target.closest('[data-act]');if(!btn)return;
+    const id=btn.dataset.id,payId=btn.dataset.pay||'';
+    if(btn.dataset.act==='verify'){
+      btn.disabled=true;
+      try{
+        if(payId)await api(`/payments/${payId}/status`,{method:'PUT',body:JSON.stringify({status:'verified'})});
+        else await api(`/orders/${id}/status`,{method:'PUT',body:JSON.stringify({status:'verified'})});
+        toast('Order verified ✅');renderOrders();
+      }catch(err){toast(err.message,'error');btn.disabled=false;}
+    }
+    if(btn.dataset.act==='deliver'){
+      openDrawer('Deliver order',`
+        <div class="form-group"><label>Credentials / delivery note (the customer gets this by email)</label>
+        <textarea id="deliver-note" rows="4" placeholder="e.g. login email + password, or activation instructions" style="width:100%"></textarea></div>
+        <p style="color:var(--text3);font-size:.85rem">The customer is emailed automatically when you deliver.</p>
+        <button class="btn-primary" id="drawer-save" style="width:100%;margin-top:10px">🚚 Deliver &amp; email customer</button>`,
+      async()=>{
+        const note=$('deliver-note').value.trim();
         try{
-          await api(`/orders/${oid}`,{method:'DELETE'});
-          toast('Order deleted');renderOrders();
+          await api(`/orders/${id}/status`,{method:'PUT',body:JSON.stringify({status:'delivered',...(note?{note}:{})})});
+          closeDrawer();toast('Order delivered 🚚');renderOrders();
         }catch(err){toast(err.message,'error');}
       });
-    });
-  }
-  const eraseBtn=$('erase-all-orders');
-  if(eraseBtn){
-    eraseBtn.onclick=()=>{
-      confirm(`ERASE ALL ${orders.length} order records permanently? This cannot be undone.`,async()=>{
+    }
+    if(btn.dataset.act==='reject'){
+      openDrawer('Reject order',`
+        <div class="form-group"><label>Reason (the customer sees this in the email)</label>
+        <textarea id="reject-note" rows="3" placeholder="e.g. Screenshot is unclear — please send a clear one" style="width:100%"></textarea></div>
+        <button class="btn-danger" id="drawer-save" style="width:100%;margin-top:10px">✕ Reject order</button>`,
+      async()=>{
+        const note=$('reject-note').value.trim();
         try{
-          await api('/orders/bulk-all',{method:'DELETE'});
-          toast('All orders erased');renderOrders();
+          if(payId){try{await api(`/payments/${payId}/status`,{method:'PUT',body:JSON.stringify({status:'rejected'})});}catch(pe){void pe;}}
+          await api(`/orders/${id}/status`,{method:'PUT',body:JSON.stringify({status:'rejected',...(note?{note}:{})})});
+          closeDrawer();toast('Order rejected');renderOrders();
         }catch(err){toast(err.message,'error');}
       });
-    };
-  }
+    }
+  });
 }
 
 // OFFERS

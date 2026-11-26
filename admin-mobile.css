@@ -211,3 +211,7 @@
   .drawer-close { width: 44px; height: 44px; }
   .td-actions .btn-sm { min-height: 36px; }
 }
+
+/* Orders cards — phone tweaks */
+.oc-shot{width:64px;height:64px}
+.oc-act{font-size:.88rem;padding:10px 8px}
