@@ -1233,6 +1233,22 @@ async function renderSettings(){
           <div id="qr-preview" style="margin-top:16px;text-align:center">
             ${settings.payment_qr_url ? `<img src="${settings.payment_qr_url}" style="max-width:200px;max-height:200px;border-radius:10px;border:1px solid var(--border);box-shadow:0 4px 15px rgba(0,0,0,0.3)"/><p style="font-size:.78rem;color:var(--success);margin-top:6px">Active Custom Payment QR</p>` : '<p style="color:var(--text3);font-size:.8rem">No custom QR set. System will auto-generate FonePay / eSewa QR at checkout.</p>'}
           </div>
+          <div class="form-group" style="margin-top:14px">
+            <label style="font-size:.8rem">Wallet QR Image URL (Khalti — logo + QR image shown when customer picks Khalti)</label>
+            <input id="s-wallet-qr-url" value="${settings.wallet_qr_url||''}" placeholder="/api/media/xyz" style="width:100%"/>
+          </div>
+          <div class="form-group">
+            <label style="font-size:.8rem">Bank QR Image URL (Global IME — logo + QR image shown when customer picks Bank)</label>
+            <input id="s-bank-qr-url" value="${settings.bank_qr_url||''}" placeholder="/api/media/xyz" style="width:100%"/>
+          </div>
+          <div class="form-group">
+            <label style="font-size:.8rem">Khalti Logo URL (small logo on the Khalti payment option)</label>
+            <input id="s-wallet-logo-url" value="${settings.wallet_logo_url||''}" placeholder="/api/media/xyz" style="width:100%"/>
+          </div>
+          <div class="form-group">
+            <label style="font-size:.8rem">Global Bank Logo URL (small logo on the Bank payment option)</label>
+            <input id="s-bank-logo-url" value="${settings.bank_logo_url||''}" placeholder="/api/media/xyz" style="width:100%"/>
+          </div>
         </div>
 
         <div class="form-group" style="margin-top:20px;padding:16px;border:1px solid var(--border);border-radius:12px;background:rgba(255,255,255,0.02)">
@@ -1336,6 +1352,10 @@ async function renderSettings(){
           contact_email:$('s-email').value.trim(),
           payment_instructions:$('s-instructions').value.trim(),
           payment_qr_url:$('s-payment-qr-url').value.trim(),
+          wallet_qr_url:$('s-wallet-qr-url').value.trim(),
+          bank_qr_url:$('s-bank-qr-url').value.trim(),
+          wallet_logo_url:$('s-wallet-logo-url').value.trim(),
+          bank_logo_url:$('s-bank-logo-url').value.trim(),
           smtp_host:$('s-smtp-host').value.trim(),
           smtp_port:$('s-smtp-port').value.trim(),
           smtp_user:$('s-smtp-user').value.trim(),

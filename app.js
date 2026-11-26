@@ -1635,11 +1635,27 @@ function renderPaymentQrView(order, settings, methods) {
   const accountId = settings.payment_account || '9705985657';
   const amount = Number(order.price || 0);
   const reference = paymentReference(order);
-  const qr = settings.payment_qr_url || 'https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=' + encodeURIComponent('Digi Prime Nepal ' + accountId + ' NPR ' + amount + ' ' + reference);
-  
-  $('payment-content').innerHTML = '<div class="payment-flow"><div class="payment-step-label"><span>STEP 1 OF 2</span><strong>Pay via QR, then confirm</strong></div><div class="payment-qr-card"><div class="payment-method-badges">' + methods.map(method => '<span>' + escapeHtml(method) + '</span>').join('') + '</div><img class="payment-qr payment-qr-large" src="' + escapeHtml(qr) + '" alt="Payment QR code for ' + formatMoney(amount) + '"><p class="payment-amount-label">AMOUNT TO PAY</p><strong class="payment-amount">' + formatMoney(amount) + '</strong><p class="payment-account">eSewa / Khalti ID <b>' + escapeHtml(accountId) + '</b></p><p class="payment-reference">Order reference: <b>' + escapeHtml(reference) + '</b></p></div><p class="payment-instructions">' + escapeHtml(settings.payment_instructions || 'Scan the QR, include your order reference, and keep the receipt ready.') + '</p><button class="auth-primary" id="payment-next" type="button"><span>I\'ve paid — enter details</span><span aria-hidden="true">→</span></button><button class="payment-back" id="payment-cancel" type="button">← Back to Payment Options</button></div>';
-  $('payment-next').onclick = () => renderPaymentDetails(order, settings, methods);
-  $('payment-cancel').onclick = () => openPayment(order);
+  const fallbackQr = settings.payment_qr_url || 'https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=' + encodeURIComponent('Digi Prime Nepal ' + accountId + ' NPR ' + amount + ' ' + reference);
+  const walletQr = settings.wallet_qr_url || fallbackQr;
+  const bankQr = settings.bank_qr_url || fallbackQr;
+  const walletLogo = settings.wallet_logo_url || '';
+  const bankLogo = settings.bank_logo_url || '';
+  let payTab = 'wallet';
+  function paint() {
+    const isWallet = payTab === 'wallet';
+    const qr = isWallet ? walletQr : bankQr;
+    const accountLine = isWallet
+      ? 'Khalti — Prabin Kandel · <b>' + escapeHtml(accountId) + '</b>'
+      : 'Global IME Bank — PRABIN KANDEL · <b>****648</b>';
+    const walletTabInner = (walletLogo ? '<img src="' + escapeHtml(walletLogo) + '" alt="">' : '') + '<span>Khalti</span>';
+    const bankTabInner = (bankLogo ? '<img src="' + escapeHtml(bankLogo) + '" alt="">' : '') + '<span>Global Bank</span>';
+    $('payment-content').innerHTML = '<div class="payment-flow"><div class="payment-step-label"><span>STEP 1 OF 2</span><strong>Pay via QR, then confirm</strong></div><div class="payment-qr-card"><div class="payment-qr-tabs"><button type="button" class="payment-qr-tab' + (isWallet ? ' active' : '') + '" id="pay-tab-wallet">' + walletTabInner + '</button><button type="button" class="payment-qr-tab' + (!isWallet ? ' active' : '') + '" id="pay-tab-bank">' + bankTabInner + '</button></div><img class="payment-qr payment-qr-large" src="' + escapeHtml(qr) + '" alt="Payment QR code for ' + formatMoney(amount) + '"><p class="payment-amount-label">AMOUNT TO PAY</p><strong class="payment-amount">' + formatMoney(amount) + '</strong><p class="payment-account">' + accountLine + '</p><p class="payment-reference">Order reference: <b>' + escapeHtml(reference) + '</b></p></div><p class="payment-instructions">' + escapeHtml(settings.payment_instructions || 'Scan the QR, include your order reference, and keep the receipt ready.') + '</p><button class="auth-primary" id="payment-next" type="button"><span>I\'ve paid — enter details</span><span aria-hidden="true">→</span></button><button class="payment-back" id="payment-cancel" type="button">← Back to Payment Options</button></div>';
+    $('pay-tab-wallet').onclick = () => { payTab = 'wallet'; paint(); };
+    $('pay-tab-bank').onclick = () => { payTab = 'bank'; paint(); };
+    $('payment-next').onclick = () => renderPaymentDetails(order, settings, methods);
+    $('payment-cancel').onclick = () => openPayment(order);
+  }
+  paint();
 }
 
 function renderPaymentDetails(order, settings, methods) {

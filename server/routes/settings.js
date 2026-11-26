@@ -8,7 +8,7 @@ const {production}=require('../config/runtime');
 // Keys safe to expose to anonymous visitors: public site content and checkout
 // details only. SMTP credentials (smtp_*) and mail preferences must never be
 // served publicly — they are only returned to a verified admin request below.
-const PUBLIC_SETTING_KEYS=['site_name','tagline','hero_title','hero_description','about_title','about_body','footer_text','contact_email','contact_phone','whatsapp_number','address','theme','logo_url','payment_qr_url','payment_instructions','payment_methods','payment_account','nav_links','footer_links','privacy','terms','refunds'];
+const PUBLIC_SETTING_KEYS=['site_name','tagline','hero_title','hero_description','about_title','about_body','footer_text','contact_email','contact_phone','whatsapp_number','address','theme','logo_url','payment_qr_url','wallet_qr_url','bank_qr_url','wallet_logo_url','bank_logo_url','payment_instructions','payment_methods','payment_account','nav_links','footer_links','privacy','terms','refunds'];
 function publicSettings(all){
  const out={};
  for(const key of PUBLIC_SETTING_KEYS)out[key]=all[key];
