@@ -90,6 +90,20 @@ router.get('/all',admin,async(req,res)=>{
  res.json(result);
 });
 
+
+router.post('/deliver-all',admin,async(req,res)=>{
+ const open=await Order.find({status:{$nin:['delivered','rejected']}});
+ let delivered=0;
+ for(const order of open){
+  order.status='delivered'; await order.save(); delivered++;
+  const user=await User.findOne({id:order.user_id}).lean();
+  if(user&&user.email){
+   mailer.sendMail({to:user.email,subject:'\u{1F389} Your Subscription is DELIVERED & Active!',html:'<div style="font-family:sans-serif;padding:24px;background:#141416;color:#ffffff;border-radius:12px;border:1px solid #2a2a30;"><h2 style="color:#e50914;margin:0 0 16px;">Digi Prime Nepal</h2><h3 style="margin:0 0 10px;color:#4ade80;">Order DELIVERED</h3><p>Hello <strong>'+user.name+'</strong>,</p><p>Your order for <strong>'+order.product_name+'</strong> has been <strong style="color:#4ade80">DELIVERED</strong>. Enjoy!</p><p style="margin:4px 0;">Order Ref: <strong>#'+String(order.id).slice(0,8).toUpperCase()+'</strong></p></div>'}).catch(()=>{});
+  }
+ }
+ res.json({delivered});
+});
+
 router.put('/:id/status',admin,async(req,res)=>{
  const data=z.object({status:z.enum(['pending','verified','rejected','delivered']),note:text(1000).default('')}).strict().parse(req.body);
  const orderId=id.parse(req.params.id);

@@ -115,14 +115,41 @@ router.get('/all',admin,async(req,res)=>{
  res.json(result);
 });
 
+
+router.post('/verify-all',admin,async(req,res)=>{
+ const pending=await Payment.find({status:'pending'}).lean();
+ let verified=0; const failed=[];
+ for(const p of pending){
+  const order=await Order.findOne({id:p.order_id,user_id:p.user_id});
+  if(!order||order.status!=='pending'||p.amount!==order.price){ failed.push({ref:String(p.order_id).slice(0,8).toUpperCase(),reason:!order?'Linked order not found.':(order.status!=='pending'?'Order is '+order.status+'.':'Amount does not match the order.')}); continue; }
+  await Payment.updateOne({id:p.id},{status:'verified'});
+  order.status='verified'; order.payment_id=p.id; await order.save();
+  verified++;
+  const user=await User.findOne({id:p.user_id}).lean();
+  if(user&&user.email){
+   mailer.sendMail({to:user.email,subject:'\u{1F4B3} Payment Update: VERIFIED - '+p.product_name,html:'<div style="font-family:sans-serif;padding:24px;background:#141416;color:#ffffff;border-radius:12px;border:1px solid #2a2a30;"><h2 style="color:#e50914;margin:0 0 16px;">Digi Prime Nepal</h2><h3 style="margin:0 0 10px;color:#4ade80;">Payment VERIFIED</h3><p>Hello <strong>'+user.name+'</strong>,</p><p>Your payment of <strong>Rs '+Number(p.amount).toLocaleString()+'</strong> for <strong>'+p.product_name+'</strong> has been <strong style="color:#4ade80">VERIFIED</strong>.</p><p style="margin:4px 0;">Order Ref: <strong>#'+String(p.order_id).slice(0,8).toUpperCase()+'</strong></p></div>'}).catch(()=>{});
+  }
+ }
+ res.json({verified,failed,total:pending.length});
+});
+
 router.put('/:id/status',admin,async(req,res)=>{
  const data=z.object({status:z.enum(['verified','rejected']),admin_note:text(1000).default('')}).strict().parse(req.body);
   const updatePaymentStatus = async (session) => {
     const payment = session ? await Payment.findOne({id:id.parse(req.params.id)}).session(session) : await Payment.findOne({id:id.parse(req.params.id)});
     if(!payment)fail(404,'Payment not found.');
-    if(payment.status!=='pending')fail(409,'This payment has already been reviewed.');
+    if(payment.status==='rejected')fail(409,'This payment has already been rejected.');
+    if(data.status==='verified'&&payment.status!=='pending')fail(409,'This payment has already been verified.');
     const order = session ? await Order.findOne({id:payment.order_id,user_id:payment.user_id}).session(session) : await Order.findOne({id:payment.order_id,user_id:payment.user_id});
-    if(!order||order.status!=='pending'||payment.amount!==order.price)fail(409,'The payment does not match a pending order. Resolve the legacy record before proceeding.');
+    if(!order)fail(409,'The linked order was not found.');
+    if(payment.status==='verified'){
+      if(order.status==='delivered')fail(409,'This order is already delivered. Reject it from the Orders page if needed.');
+      payment.status='rejected';payment.admin_note=data.admin_note;
+      if (session) await payment.save({session}); else await payment.save();
+      if(order.payment_id===payment.id){ order.status='pending'; order.payment_id=null; if (session) await order.save({session}); else await order.save(); }
+      return payment;
+    }
+    if(order.status!=='pending'||payment.amount!==order.price)fail(409,'The payment does not match a pending order. Resolve the legacy record before proceeding.');
     payment.status=data.status;payment.admin_note=data.admin_note;
     if (session) await payment.save({session}); else await payment.save();
     order.status=data.status==='verified'?'verified':'pending';order.payment_id=data.status==='verified'?payment.id:null;
