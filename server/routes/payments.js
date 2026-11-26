@@ -144,7 +144,7 @@ router.put('/:id/status',admin,async(req,res)=>{
     if(data.status==='verified'&&payment.status!=='pending')fail(409,'This payment has already been verified.');
     const order = session ? await Order.findOne({id:payment.order_id,user_id:payment.user_id}).session(session) : await Order.findOne({id:payment.order_id,user_id:payment.user_id});
     if(!order)fail(409,'The linked order was not found.');
-    if(payment.status==='verified'){
+    if(data.status==='rejected'){
       payment.status='rejected';payment.admin_note=data.admin_note;
       if (session) await payment.save({session}); else await payment.save();
       if(order.payment_id===payment.id){ order.status='pending'; order.payment_id=null; if (session) await order.save({session}); else await order.save(); }
