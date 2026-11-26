@@ -102,6 +102,7 @@ router.put('/:id/status',admin,async(req,res)=>{
   order=await require('mongoose').connection.transaction(async session=>{
    const current=await Order.findOne({id:orderId}).session(session);
    if(!current)fail(404,'Order not found.');
+   if(current.status==='delivered'&&data.status==='rejected')fail(409,'This order is already delivered and cannot be rejected.');
    current.status=data.status;if(data.note)current.note=data.note;await current.save({session});return current;
   });
  } catch(err) {
