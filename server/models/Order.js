@@ -13,4 +13,7 @@ const orderSchema = new mongoose.Schema({
   request_key: { type: String, unique: true, sparse: true },
 }, { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } });
 
+orderSchema.index({ status: 1, created_at: -1 });
+orderSchema.index({ user_id: 1, created_at: -1 });
+
 module.exports = mongoose.model('Order', orderSchema);

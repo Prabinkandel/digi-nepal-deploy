@@ -7,6 +7,7 @@ const database=require('mongoose').connection;
 const mailer=require('../utils/mailer');
 
 const unsupportedTransaction=error=>/Transaction numbers are only allowed|replica set|transactions are not supported/i.test(String(error?.message||''));
+const normalizePhone=raw=>{const digits=String(raw||'').replace(/\D/g,'');const local=digits.startsWith('977')&&digits.length===13?digits.slice(3):digits;return /^9[678]\d{8}$/.test(local)?'977'+local:null;};
 
 async function submitPayment(data,media,userId){
  const fallback=async()=>{
@@ -44,6 +45,9 @@ router.post('/',auth,limit('payments',15,3600,req=>req.user.id),async(req,res)=>
  if(!settings.payment_methods.split(',').map(s=>s.trim()).includes(data.payment_method))fail(400,'Choose an available payment method.');
  const media=await Media.findOne({id:data.media_id,owner_id:req.user.id,purpose:'receipt',is_active:1});
  if(!media)fail(400,'Upload a receipt belonging to your account.');
+ const phone=normalizePhone(data.phone);
+ if(!phone)fail(400,'Enter a valid Nepali WhatsApp number (10 digits starting 98, 97 or 96).');
+ data.phone=phone;
  
  const payment=await submitPayment(data,media,req.user.id);
  const refCode = String(payment.order_id).slice(0, 8).toUpperCase();
@@ -72,6 +76,8 @@ router.post('/',auth,limit('payments',15,3600,req=>req.user.id),async(req,res)=>
  }
 
  // 2. Notify Admin Gmail
+ let screenshotAttachment=[];
+ try{ const fullMedia=await Media.findOne({id:media.id}).select('+data').lean(); if(fullMedia&&fullMedia.data) screenshotAttachment=[{filename:'payment-screenshot.webp',content:Buffer.from(fullMedia.data),cid:'payment-screenshot'}]; }catch(e){ void e; }
  if(adminEmail){
    mailer.sendMail({
      to: adminEmail,
@@ -85,9 +91,13 @@ router.post('/',auth,limit('payments',15,3600,req=>req.user.id),async(req,res)=>
          <p style="margin:4px 0;">Amount: <strong>Rs ${Number(payment.amount).toLocaleString()}</strong></p>
          <p style="margin:4px 0;">Method: <strong>${payment.payment_method}</strong></p>
          <p style="margin:4px 0;">Txn ID: <strong>${payment.transaction_id}</strong></p>
+         <p style="margin:4px 0;">Payer: <strong>${payment.payer_name}</strong></p>
+         <p style="margin:4px 0;">WhatsApp: <strong>${payment.phone}</strong></p>
        </div>
-       <p><a href="${process.env.APP_URL || ''}/admin" style="display:inline-block;padding:10px 18px;background:#e50914;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold;">Verify Payment in Admin Panel →</a></p>
-     </div>`
+       <p style="margin:0 0 12px;"><img src="cid:payment-screenshot" alt="Payment screenshot" style="max-width:100%;border-radius:8px;border:1px solid #333;"/></p>
+       <p><a href="https://wa.me/${payment.phone}" style="display:inline-block;padding:10px 18px;background:#25d366;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold;margin-right:8px;">Chat on WhatsApp →</a><a href="${process.env.APP_URL || ''}/admin" style="display:inline-block;padding:10px 18px;background:#e50914;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold;">Verify Payment in Admin Panel →</a></p>
+     </div>`,
+     attachments: screenshotAttachment
    }).catch(()=>{});
  }
 
