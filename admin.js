@@ -650,7 +650,7 @@ async function renderOrders(){
     $('page-content').innerHTML=`
       <div class="section-header">
         <h2>Orders <span style="color:var(--text3);font-weight:400;font-size:1rem">(${counts.all})</span></h2>
-        ${orders.length?`<button class="btn-danger" id="erase-all-orders">Erase all orders</button>`:''}
+        <span style="display:flex;gap:8px">${(counts.pending||counts.verified)?`<button class="btn-success" id="deliver-all-orders">✓ Deliver all pending (${(counts.pending||0)+(counts.verified||0)})</button>`:''}${orders.length?`<button class="btn-danger" id="erase-all-orders">Erase all orders</button>`:''}</span>
       </div>
       <div class="orders-toolbar">
         <input class="search-box" id="order-search" placeholder="Search name, phone, product, order ref..." style="width:100%"/>
@@ -675,6 +675,8 @@ async function renderOrders(){
       refresh();
     });
     attachOrderCardActions();
+    const deliverAllBtn=$('deliver-all-orders');
+    if(deliverAllBtn)deliverAllBtn.onclick=async()=>{ if(!window.confirm('Deliver ALL pending and verified orders? Every customer will be emailed.'))return; deliverAllBtn.disabled=true; deliverAllBtn.textContent='Delivering...'; try{ const r=await api('/orders/deliver-all',{method:'POST'}); toast(`Delivered ${r.delivered} orders`); renderOrders(); }catch(e){ toast(e.message,'error'); deliverAllBtn.disabled=false; } };
     const eraseBtn=$('erase-all-orders');
     if(eraseBtn)eraseBtn.onclick=()=>confirm(`ERASE ALL order records permanently? This cannot be undone.`,async()=>{
       try{await api('/orders/bulk-all',{method:'DELETE'});toast('All orders erased');renderOrders();}catch(err){toast(err.message,'error');}
@@ -1099,12 +1101,13 @@ async function renderPayments(){
   const statusBadge={pending:'badge-pending',verified:'badge-verified',rejected:'badge-rejected'};
   $('page-content').innerHTML=`
     <div class="section-header"><h2>Payments <span style="color:var(--text3);font-weight:400;font-size:1rem">(${payments.length})</span></h2>
+      <span style="display:flex;gap:8px;align-items:center"><button class="btn-success btn-sm" id="pay-verify-all">✅ Verify all pending</button>
       <select class="filter-select" id="pay-filter" onchange="renderPayments()">
         <option value="">All Status</option>
         <option value="pending">Pending</option>
         <option value="verified">Verified</option>
         <option value="rejected">Rejected</option>
-      </select>
+      </select></span>
     </div>
     <div class="table-wrap"><div style="overflow-x:auto"><table>
       <thead><tr><th>Date</th><th>Customer</th><th>Product</th><th>Amount</th><th>Method</th><th>Txn ID</th><th>Status</th><th>Actions</th></tr></thead>
@@ -1124,11 +1127,15 @@ async function renderPayments(){
             ${p.status==='pending'?`
               <button class="btn-success btn-sm" onclick="verifyPayment('${p.id}','verified')">✅ Verify</button>
               <button class="btn-danger btn-sm" onclick="verifyPayment('${p.id}','rejected')">❌ Reject</button>
+            `:p.status==='verified'?`
+              <button class="btn-danger btn-sm" onclick="verifyPayment('${p.id}','rejected')">❌ Reject</button>
             `:`<span style="color:var(--text3);font-size:.8rem">${p.status}</span>`}
           </div></td>
         </tr>`).join(''):`<tr class="empty-row"><td colspan="8">No payments found</td></tr>`}
       </tbody>
     </table></div></div>`;
+  const va=$('pay-verify-all');
+  if(va)va.onclick=async()=>{ if(!window.confirm('Verify ALL pending payments? Only payments that match a pending order with the exact amount will be verified; customers will be emailed.'))return; va.disabled=true; va.textContent='Verifying...'; try{ const r=await api('/payments/verify-all',{method:'POST'}); toast(`Verified ${r.verified} of ${r.total} pending payments`); if(r.failed&&r.failed.length)alert('Could not verify '+r.failed.length+':\n'+r.failed.map(f=>'#'+f.ref+' — '+f.reason).join('\n')); renderPayments(); }catch(e){ toast(e.message,'error'); va.disabled=false; } };
 }
 
 window.verifyPayment=async function(id,status){
