@@ -69,18 +69,7 @@ router.post('/send-otp', limited, async (req, res) => {
   const mailResult = await mailer.sendMail({
     to: data.email,
     subject: `🔐 Your Digi Prime Nepal Login Verification Code: ${otpCode}`,
-    html: `<div style="font-family:'Segoe UI',Helvetica,Arial,sans-serif;max-width:520px;margin:0 auto;padding:24px;background:#141416;color:#ffffff;border-radius:16px;border:1px solid #2a2a30;">
-      <div style="text-align:center;margin-bottom:20px;">
-        <h2 style="color:#e50914;margin:0;font-size:24px;letter-spacing:-0.5px;">Digi Prime Nepal</h2>
-        <p style="color:#a1a1aa;font-size:13px;margin-top:4px;">Secure Account Authentication</p>
-      </div>
-      <div style="background:#1c1c20;padding:20px;border-radius:12px;text-align:center;border:1px solid #33333d;">
-        <p style="margin:0 0 10px;color:#d4d4d8;font-size:14px;">Your 6-digit Login OTP Code is:</p>
-        <div style="font-size:36px;font-weight:900;letter-spacing:6px;color:#ffffff;background:#27272a;padding:12px 20px;border-radius:8px;display:inline-block;border:1px solid #3f3f46;">${otpCode}</div>
-        <p style="margin:12px 0 0;color:#71717a;font-size:12px;">This code will expire in 10 minutes. Do not share this code with anyone.</p>
-      </div>
-      <p style="color:#52525b;font-size:11px;text-align:center;margin-top:20px;">If you didn't request this code, you can safely ignore this email.</p>
-    </div>`
+    html: mailer.wrapEmail('Login verification code', '#17171c', '<div style="text-align:center;padding:6px 0 2px"><p style="margin:0 0 12px;color:#55555e;font-size:14px">Your 6-digit login OTP code is:</p><div style="font-size:34px;font-weight:900;letter-spacing:6px;color:#17171c;background:#f7f7f9;border:1px solid #ececf1;padding:12px 20px;border-radius:10px;display:inline-block">' + otpCode + '</div><p style="margin:12px 0 0;color:#8a8a93;font-size:12px">This code expires in 10 minutes. Do not share it with anyone.</p><p style="margin:8px 0 0;color:#8a8a93;font-size:12px">If you didn\'t request this code, you can safely ignore this email.</p></div>')
   });
 
   res.json({
@@ -126,11 +115,7 @@ router.post('/test-email', auth, async (req, res) => {
   const result = await mailer.sendMail({
     to: data.to,
     subject: '🧪 Digi Prime Nepal Gmail SMTP Test Email',
-    html: `<div style="font-family:sans-serif;padding:24px;background:#141416;color:#ffffff;border-radius:12px;border:1px solid #333;">
-      <h2 style="color:#e50914;">Digi Prime Nepal SMTP Configuration</h2>
-      <p style="font-size:15px;color:#e4e4e7;">Congratulations! Your Gmail SMTP email setup is working perfectly!</p>
-      <p style="font-size:13px;color:#a1a1aa;">Sent at: ${new Date().toLocaleString()}</p>
-    </div>`
+    html: mailer.wrapEmail('SMTP test', '#15803d', '<p style="margin:0 0 8px">Congratulations! Your Gmail SMTP email setup is working perfectly.</p><p style="margin:0;color:#8a8a93;font-size:12.5px">Sent at: ' + new Date().toLocaleString() + '</p>', { admin: true })
   });
   if (result.sent) {
     res.json({ success: true, message: `Test email successfully sent to ${data.to}` });
