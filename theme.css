@@ -3766,6 +3766,9 @@ body:has(dialog[open]) .proof-bubble {
 .review-form-msg.error { color: #ff98a0; }
 .reviews-support-note { text-align: center; color: var(--text-faint); font-size: .82rem; margin: 2rem auto 0; }
 [data-theme="light"] .reviews-section .review-card { background: #fff; border-color: var(--line); }
+.reviews-section .review-card { position: relative; min-width: 0; }
+.reviews-grid > * { min-width: 0; }
+.reviews-section .review-text { overflow-wrap: anywhere; }
 [data-theme="light"] .reviews-section .review-text { color: var(--text); }
 [data-theme="light"] .reviews-section .review-author strong { color: var(--text); }
 [data-theme="light"] .review-form-msg.error { color: #b4232f; }
