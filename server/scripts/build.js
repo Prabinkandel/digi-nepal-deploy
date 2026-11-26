@@ -7,7 +7,7 @@ const publicFiles = [
   'index.html', 'admin.html', 'about.html', 'contact.html', 'privacy.html', 'terms.html', 'refund.html',
   'style.css', 'animations.css', 'auth.css', 'storefront-polish.css', 'payment-overrides.css', 'store-ui.css', 'mobile-ux.css',
   'responsive-fix.css', 'card-premium.css', 'card-clean.css', 'gaming-trust.css', 'admin.css', 'admin-mobile.css', 'pages.css', 'tokens.css', 'theme.css',
-  'app.js', 'admin.js', 'pages.js', 'theme.js', 'logo.png', 'digi-prime-nepal-logo.png', 'logo mm.png', 'dashain-sale-banner.png', 'dashain-sale-banner.jpg',
+  'app.js', 'admin.js', 'admin-sw.js', 'admin.webmanifest', 'pages.js', 'theme.js', 'logo.png', 'digi-prime-nepal-logo.png', 'logo mm.png', 'dashain-sale-banner.png', 'dashain-sale-banner.jpg',
   'robots.txt', 'sitemap.xml', 'favicon.ico', 'favicon-32.png', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png', 'og-image.png'
 ];
 

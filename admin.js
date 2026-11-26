@@ -100,9 +100,19 @@ document.querySelectorAll('.nav-item').forEach(a=>{
   });
 });
 
+// Mobile tab bar — mirrors the sidebar nav (app-style quick navigation)
+const mTabs=document.querySelectorAll('#mobile-tabbar .mtab');
+mTabs.forEach(b=>b.addEventListener('click',()=>{
+  if(b.dataset.page==='more'){$('sidebar-toggle').click();return;}
+  const item=document.querySelector(`.nav-item[data-page="${b.dataset.page}"]`);
+  if(item)item.click();
+}));
+function syncTabs(page){mTabs.forEach(b=>b.classList.toggle('active',b.dataset.page===page));}
+
 const pageTitles={dashboard:'Dashboard',products:'Products',categories:'Categories',orders:'Orders',offers:'Flash Offers',campaigns:'Sale Campaigns',reviews:'Reviews',payments:'Payments',users:'Users',settings:'Settings'};
 function navigate(page){
   $('page-title').textContent=pageTitles[page]||page;
+  syncTabs(page);
   const pages={dashboard:renderDashboard,products:renderProducts,categories:renderCategories,orders:renderOrders,offers:renderOffers,campaigns:renderCampaigns,reviews:renderReviews,payments:renderPayments,users:renderUsers,settings:renderSettings};
   if(pages[page])pages[page]();
 }
