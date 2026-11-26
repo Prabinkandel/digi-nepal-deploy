@@ -51,6 +51,18 @@ async function configured() {
   return !!cfg;
 }
 
+
+function wrapEmail(heading, color, inner) {
+  return '<div style="font-family:sans-serif;max-width:560px;margin:0 auto;background:#ffffff;color:#17171c;border:1px solid #e7e7ec;border-radius:14px;overflow:hidden">'
+    + '<div style="background:#0c0c0f;padding:18px 24px"><span style="color:#e50914;font-size:20px;font-weight:800">Digi</span> <span style="color:#ffffff;font-size:20px;font-weight:800">Prime Nepal</span></div>'
+    + '<div style="padding:22px 24px">'
+    + (heading ? '<h2 style="margin:0 0 12px;font-size:18px;color:' + (color || '#17171c') + '">' + heading + '</h2>' : '')
+    + inner
+    + '<div style="margin-top:22px;text-align:center"><a href="https://wa.me/9779705985657" style="display:inline-block;background:#25D366;color:#ffffff;text-decoration:none;font-weight:700;padding:11px 22px;border-radius:999px;font-size:14px">\u{1F4AC} Contact on WhatsApp</a></div>'
+    + '<p style="margin:16px 0 0;text-align:center;color:#8a8a93;font-size:12px">Digi Prime Nepal \u00B7 diginepalnp.com</p>'
+    + '</div></div>';
+}
+
 async function sendMail(options) {
   const mailConfig = await getMailConfig();
   const to = options.to;
@@ -97,4 +109,4 @@ async function getAdminEmail() {
   return process.env.ADMIN_EMAIL || process.env.SMTP_USER || process.env.EMAIL_USER || 'admin@diginepal.com';
 }
 
-module.exports = { sendMail, configured, getMailConfig, getAdminEmail };
+module.exports = { sendMail, configured, getMailConfig, getAdminEmail, wrapEmail };

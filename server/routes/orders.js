@@ -3,6 +3,7 @@ const {randomUUID}=require('node:crypto');
 const auth=require('../middleware/auth'),admin=require('../middleware/adminAuth'),limit=require('../middleware/limits');
 const {z,id,text,fail,query,page,searchFilter}=require('../utils/validation');
 const Order=require('../models/Order'),Product=require('../models/Product'),User=require('../models/User'),Payment=require('../models/Payment');
+const Audit=require('../models/Audit');
 const {decorate}=require('../utils/catalog');
 const mailer=require('../utils/mailer');
 
@@ -16,6 +17,7 @@ router.post('/',auth,limit('orders',20,3600,req=>req.user.id),async(req,res)=>{
  const order=await Order.create({id:randomUUID(),user_id:req.user.id,product_id:product.id,product_name:product.name,price:current.price,status:'pending',request_key:data.request_key});
  
  const refCode = String(order.id).slice(0, 8).toUpperCase();
+ Audit.create({actor_id:req.user.id,action:'ORDER_PLACED',target:'order',outcome:'completed',status:201,detail:'#'+refCode+' '+order.product_name+' Rs '+Number(order.price).toLocaleString()}).catch(()=>{});
  const adminEmail = await mailer.getAdminEmail();
 
  // 1. Notify Customer
@@ -23,19 +25,7 @@ router.post('/',auth,limit('orders',20,3600,req=>req.user.id),async(req,res)=>{
    mailer.sendMail({
      to:req.user.email,
      subject:`🛒 Order Confirmation - Ref #${refCode}`,
-     html:`<div style="font-family:sans-serif;padding:24px;background:#141416;color:#ffffff;border-radius:12px;border:1px solid #2a2a30;">
-       <h2 style="color:#e50914;margin:0 0 16px;">Digi Prime Nepal</h2>
-       <h3 style="margin:0 0 10px;color:#4ade80;">Order Placed Successfully!</h3>
-       <p>Hello <strong>${req.user.name || 'Customer'}</strong>,</p>
-       <p>Thank you for your order of <strong>${order.product_name}</strong>.</p>
-       <div style="background:#1c1c20;padding:16px;border-radius:8px;margin:16px 0;border:1px solid #333;">
-         <p style="margin:4px 0;">Order Ref: <strong>#${refCode}</strong></p>
-         <p style="margin:4px 0;">Product: <strong>${order.product_name}</strong></p>
-         <p style="margin:4px 0;">Total Amount: <strong>Rs ${Number(order.price).toLocaleString()}</strong></p>
-         <p style="margin:4px 0;">Status: <span style="color:#fbbf24;font-weight:bold;">PENDING PAYMENT</span></p>
-       </div>
-       <p style="color:#a1a1aa;font-size:13px;margin-top:16px;">Complete your payment via WhatsApp or QR Code scan to activate your subscription.</p>
-     </div>`
+     html: mailer.wrapEmail('Order placed successfully!', '#15803d', `<p style="margin:0 0 10px">Hello <strong>${req.user.name || 'Customer'}</strong>,</p><p style="margin:0 0 10px">Thank you for your order of <strong>${order.product_name}</strong>.</p><div style="background:#f6f6f8;padding:14px 16px;border-radius:10px;margin:14px 0"><p style="margin:3px 0">Order Ref: <strong>#${refCode}</strong></p><p style="margin:3px 0">Product: <strong>${order.product_name}</strong></p><p style="margin:3px 0">Total: <strong>Rs ${Number(order.price).toLocaleString()}</strong></p><p style="margin:3px 0">Status: <strong style="color:#b45309">PENDING PAYMENT</strong></p></div><p style="color:#55555e;font-size:13px;margin:0">Complete your payment by QR scan on the website to activate your subscription.</p>`)
    }).catch(()=>{});
  }
 
@@ -98,7 +88,7 @@ router.post('/deliver-all',admin,async(req,res)=>{
   order.status='delivered'; await order.save(); delivered++;
   const user=await User.findOne({id:order.user_id}).lean();
   if(user&&user.email){
-   mailer.sendMail({to:user.email,subject:'\u{1F389} Your Subscription is DELIVERED & Active!',html:'<div style="font-family:sans-serif;padding:24px;background:#141416;color:#ffffff;border-radius:12px;border:1px solid #2a2a30;"><h2 style="color:#e50914;margin:0 0 16px;">Digi Prime Nepal</h2><h3 style="margin:0 0 10px;color:#4ade80;">Order DELIVERED</h3><p>Hello <strong>'+user.name+'</strong>,</p><p>Your order for <strong>'+order.product_name+'</strong> has been <strong style="color:#4ade80">DELIVERED</strong>. Enjoy!</p><p style="margin:4px 0;">Order Ref: <strong>#'+String(order.id).slice(0,8).toUpperCase()+'</strong></p></div>'}).catch(()=>{});
+   mailer.sendMail({to:user.email,subject:'\u{1F389} Your Subscription is DELIVERED & Active!',html:mailer.wrapEmail('Order DELIVERED', '#15803d', '<p style="margin:0 0 10px">Hello <strong>'+user.name+'</strong>,</p><p style="margin:0 0 10px">Your order for <strong>'+order.product_name+'</strong> has been <strong style="color:#15803d">DELIVERED</strong>. Enjoy!</p><p style="margin:3px 0">Order Ref: <strong>#'+String(order.id).slice(0,8).toUpperCase()+'</strong></p>')}).catch(()=>{});
   }
  }
  res.json({delivered});
@@ -146,19 +136,7 @@ router.put('/:id/status',admin,async(req,res)=>{
    mailer.sendMail({
      to: user.email,
      subject: `📦 Order ${data.status.toUpperCase()}: ${order.product_name} (Ref #${refCode})`,
-     html: `<div style="font-family:sans-serif;padding:24px;background:#141416;color:#ffffff;border-radius:12px;border:1px solid #2a2a30;">
-       <h2 style="color:#e50914;margin:0 0 16px;">Digi Prime Nepal</h2>
-       <h3 style="margin:0 0 10px;color:${statusColors[data.status]};">${statusTitles[data.status] || `Order ${data.status}`}</h3>
-       <p>Hello <strong>${user.name}</strong>,</p>
-       <p>Your order for <strong>${order.product_name}</strong> has been updated to <strong style="color:${statusColors[data.status]}">${data.status.toUpperCase()}</strong>.</p>
-       <div style="background:#1c1c20;padding:16px;border-radius:8px;margin:16px 0;border:1px solid #333;">
-         <p style="margin:4px 0;">Order Ref: <strong>#${refCode}</strong></p>
-         <p style="margin:4px 0;">Product: <strong>${order.product_name}</strong></p>
-         <p style="margin:4px 0;">Status: <strong style="color:${statusColors[data.status]}">${data.status.toUpperCase()}</strong></p>
-         ${data.note ? `<p style="margin:8px 0 0;padding-top:8px;border-top:1px solid #333;color:#d4d4d8;">Note: ${data.note}</p>` : ''}
-       </div>
-       <p style="color:#a1a1aa;font-size:13px;margin-top:16px;">You can view your order history anytime by signing into your account on Digi Prime Nepal.</p>
-     </div>`
+     html: mailer.wrapEmail(statusTitles[data.status] || `Order ${data.status}`, ({delivered:'#15803d',verified:'#1d4ed8',rejected:'#dc2626',pending:'#b45309'})[data.status] || '#17171c', `<p style="margin:0 0 10px">Hello <strong>${user.name}</strong>,</p><p style="margin:0 0 10px">Your order for <strong>${order.product_name}</strong> is now <strong>${data.status.toUpperCase()}</strong>.</p><div style="background:#f6f6f8;padding:14px 16px;border-radius:10px;margin:14px 0"><p style="margin:3px 0">Order Ref: <strong>#${refCode}</strong></p><p style="margin:3px 0">Product: <strong>${order.product_name}</strong></p>${data.note ? `<p style="margin:8px 0 0;padding-top:8px;border-top:1px solid #e2e2e8;color:#33333a">Note: ${data.note}</p>` : ''}</div><p style="color:#55555e;font-size:13px;margin:0">You can view your order history anytime by signing into your account.</p>`)
    }).catch(()=>{});
  }
 

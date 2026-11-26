@@ -14,7 +14,36 @@ router.get('/audit',async(req,res)=>{
 router.get('/',async(req,res)=>{
  const q=query(req),filter={...searchFilter(q.search,['name','email'])};
  if(q.status)filter.is_active=q.status==='active'?1:0;
- res.json(await page(User,filter,q,'id name email role is_active mfa_enabled created_at'));
+ const result=await page(User,filter,q,'id name email role is_active mfa_enabled created_at');
+ if(result.items.length){
+  const pays=await Payment.find({user_id:{$in:result.items.map(u=>u.id)}}).sort({created_at:-1}).select('user_id phone').lean();
+  const latest={};
+  for(const pay of pays){ if(pay.phone&&!latest[pay.user_id])latest[pay.user_id]=pay.phone; }
+  result.items=result.items.map(u=>({...u,phone:latest[u.id]||''}));
+ }
+ res.json(result);
+});
+router.get('/:id/activity',async(req,res)=>{
+ const user=await User.findOne({id:id.parse(req.params.id)}).select('id name email role is_active created_at').lean();
+ if(!user)fail(404,'Account not found.');
+ const [orders,payments,events]=await Promise.all([
+  Order.find({user_id:user.id}).sort({created_at:-1}).limit(20).select('id product_name price status created_at').lean(),
+  Payment.find({user_id:user.id}).sort({created_at:-1}).limit(20).select('id product_name amount payment_method status phone created_at').lean(),
+  Audit.find({actor_id:user.id}).sort({created_at:-1}).limit(50).select('action target outcome detail created_at').lean()
+ ]);
+ const lastSignIn=events.find(e=>['SIGN_IN','GOOGLE_SIGN_IN','GMAIL_OTP_LOGIN'].includes(e.action));
+ res.json({user,last_sign_in:lastSignIn?lastSignIn.created_at:null,orders,payments,events});
+});
+router.post('/:id/email',async(req,res)=>{
+ const data=z.object({subject:z.string().trim().min(2).max(150),message:z.string().trim().min(2).max(4000)}).strict().parse(req.body);
+ const user=await User.findOne({id:id.parse(req.params.id)}).select('name email').lean();
+ if(!user)fail(404,'Account not found.');
+ const mailer=require('../utils/mailer');
+ const esc=t=>t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+ const bodyHtml='<p style="margin:0 0 10px">Hello <strong>'+esc(user.name)+'</strong>,</p><p style="margin:0;line-height:1.65">'+esc(data.message).replace(/\n/g,'<br>')+'</p>';
+ const result=await mailer.sendMail({to:user.email,subject:data.subject,html:mailer.wrapEmail('', '', bodyHtml)});
+ if(!result.sent)fail(502,'Email could not be sent. Check the store email settings.');
+ res.json({sent:true});
 });
 router.put('/:id',async(req,res)=>{
  const data=z.object({role:z.enum(['user','editor','admin']).optional(),is_active:flag.optional()}).strict().parse(req.body);
