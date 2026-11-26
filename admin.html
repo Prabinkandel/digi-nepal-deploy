@@ -8,11 +8,17 @@
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="manifest" href="admin.webmanifest">
+  <meta name="theme-color" content="#06080d">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Digi Admin">
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
   <script>(function(){try{var t=localStorage.getItem('dn-theme');if(t!=='light'&&t!=='dark')t='dark';document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme='dark';}})();</script>
   <link rel="stylesheet" href="admin.css?v=110"/>
-  <link rel="stylesheet" href="admin-mobile.css?v=109"/>
+  <link rel="stylesheet" href="admin-mobile.css?v=110"/>
   <link rel="stylesheet" href="theme.css?v=131"/>
 </head>
 <body>
@@ -73,6 +79,13 @@
       </header>
       <main class="page-content" id="page-content"></main>
     </div>
+    <nav class="mobile-tabbar" id="mobile-tabbar" aria-label="Quick navigation">
+      <button type="button" class="mtab active" data-page="dashboard"><span class="mtab-ico">📊</span><span class="mtab-label">Home</span></button>
+      <button type="button" class="mtab" data-page="orders"><span class="mtab-ico">🛒</span><span class="mtab-label">Orders</span></button>
+      <button type="button" class="mtab" data-page="payments"><span class="mtab-ico">💳</span><span class="mtab-label">Payments</span></button>
+      <button type="button" class="mtab" data-page="products"><span class="mtab-ico">📦</span><span class="mtab-label">Products</span></button>
+      <button type="button" class="mtab" data-page="more"><span class="mtab-ico">☰</span><span class="mtab-label">More</span></button>
+    </nav>
   </div>
 
   <!-- DRAWER (add/edit forms) -->
@@ -100,6 +113,7 @@
 
   <div class="toast" id="a-toast"></div>
   <script src="theme.js?v=110"></script>
-  <script src="admin.js?v=114"></script>
+  <script src="admin.js?v=115"></script>
+  <script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/admin-sw.js',{scope:'/admin'}).catch(function(){});});}</script>
 </body>
 </html>
