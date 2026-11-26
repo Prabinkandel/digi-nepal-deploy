@@ -40,7 +40,9 @@ router.post('/:id/email',async(req,res)=>{
  if(!user)fail(404,'Account not found.');
  const mailer=require('../utils/mailer');
  const esc=t=>t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
- const bodyHtml='<p style="margin:0 0 10px">Hello <strong>'+esc(user.name)+'</strong>,</p><p style="margin:0;line-height:1.65">'+esc(data.message).replace(/\n/g,'<br>')+'</p>';
+ let msgHtml=esc(data.message).replace(/\n/g,'<br>');
+ msgHtml=msgHtml.replace(/https:\/\/wa\.me\/\d+/g,function(u){return '<a href="'+u+'" style="display:inline-block;background:#25D366;color:#ffffff;text-decoration:none;font-weight:700;padding:9px 18px;border-radius:999px;font-size:13.5px">\u{1F4AC} Chat on WhatsApp</a>';});
+ const bodyHtml='<p style="margin:0 0 10px">Hello <strong>'+esc(user.name)+'</strong>,</p><p style="margin:0;line-height:1.65">'+msgHtml+'</p>';
  const result=await mailer.sendMail({to:user.email,subject:data.subject,html:mailer.wrapEmail('', '', bodyHtml)});
  if(!result.sent)fail(502,'Email could not be sent. Check the store email settings.');
  res.json({sent:true});
