@@ -59,20 +59,7 @@ router.post('/',auth,limit('payments',15,3600,req=>req.user.id),async(req,res)=>
    mailer.sendMail({
      to: req.user.email,
      subject: `💳 Payment Receipt Submitted - Ref #${refCode}`,
-     html: `<div style="font-family:sans-serif;padding:24px;background:#141416;color:#ffffff;border-radius:12px;border:1px solid #2a2a30;">
-       <h2 style="color:#e50914;margin:0 0 16px;">Digi Prime Nepal</h2>
-       <h3 style="margin:0 0 10px;color:#60a5fa;">Payment Proof Received!</h3>
-       <p>Hello <strong>${req.user.name}</strong>,</p>
-       <p>We received your payment proof for <strong>${payment.product_name}</strong>.</p>
-       <div style="background:#1c1c20;padding:16px;border-radius:8px;margin:16px 0;border:1px solid #333;">
-         <p style="margin:4px 0;">Order Ref: <strong>#${refCode}</strong></p>
-         <p style="margin:4px 0;">Payment Method: <strong>${payment.payment_method}</strong></p>
-         <p style="margin:4px 0;">Txn ID: <strong>${payment.transaction_id}</strong></p>
-         <p style="margin:4px 0;">Amount: <strong>Rs ${Number(payment.amount).toLocaleString()}</strong></p>
-         <p style="margin:4px 0;">Status: <span style="color:#fbbf24;font-weight:bold;">AWAITING VERIFICATION</span></p>
-       </div>
-       <p style="color:#a1a1aa;font-size:13px;margin-top:16px;">Our verification team will review your transaction and activate your subscription shortly.</p>
-     </div>`
+     html: mailer.wrapEmail('Payment proof received', '#b45309', '<p style="margin:0 0 6px">Hello <strong>' + req.user.name + '</strong>,</p><p style="margin:0">We received your payment proof for <strong>' + payment.product_name + '</strong>. We will verify it and activate your subscription shortly.</p>' + mailer.detailRows([['Order Ref', '#' + refCode],['Product', payment.product_name],['Method', payment.payment_method],['Txn ID', payment.transaction_id],['Amount', 'Rs ' + Number(payment.amount).toLocaleString()],['Status', '<span style="color:#b45309">AWAITING VERIFICATION</span>']]))
    }).catch(()=>{});
  }
 
@@ -83,21 +70,7 @@ router.post('/',auth,limit('payments',15,3600,req=>req.user.id),async(req,res)=>
    mailer.sendMail({
      to: adminEmail,
      subject: `🚨 NEW PAYMENT PROOF SUBMITTED: Rs ${payment.amount} (Ref #${refCode})`,
-     html: `<div style="font-family:sans-serif;padding:24px;background:#141416;color:#ffffff;border-radius:12px;border:1px solid #2a2a30;">
-       <h2 style="color:#e50914;margin:0 0 16px;">Digi Prime Nepal Admin Alert</h2>
-       <h3 style="margin:0 0 10px;color:#fbbf24;">New Payment Submitted for Review!</h3>
-       <div style="background:#1c1c20;padding:16px;border-radius:8px;margin:16px 0;border:1px solid #333;">
-         <p style="margin:4px 0;">Customer: <strong>${req.user.name} (${req.user.email})</strong></p>
-         <p style="margin:4px 0;">Product: <strong>${payment.product_name}</strong></p>
-         <p style="margin:4px 0;">Amount: <strong>Rs ${Number(payment.amount).toLocaleString()}</strong></p>
-         <p style="margin:4px 0;">Method: <strong>${payment.payment_method}</strong></p>
-         <p style="margin:4px 0;">Txn ID: <strong>${payment.transaction_id}</strong></p>
-         <p style="margin:4px 0;">Payer: <strong>${payment.payer_name}</strong></p>
-         <p style="margin:4px 0;">WhatsApp: <strong>${payment.phone}</strong></p>
-       </div>
-       <p style="margin:0 0 12px;"><img src="cid:payment-screenshot" alt="Payment screenshot" style="max-width:100%;border-radius:8px;border:1px solid #333;"/></p>
-       <p><a href="https://wa.me/${payment.phone}" style="display:inline-block;padding:10px 18px;background:#25d366;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold;margin-right:8px;">Chat on WhatsApp →</a><a href="${process.env.APP_URL || ''}/admin" style="display:inline-block;padding:10px 18px;background:#e50914;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold;">Verify Payment in Admin Panel →</a></p>
-     </div>`,
+     html: mailer.wrapEmail('New payment proof', '#b45309', mailer.detailRows([['Customer', req.user.name + ' (' + req.user.email + ')'],['Product', payment.product_name],['Amount', 'Rs ' + Number(payment.amount).toLocaleString()],['Method', payment.payment_method],['Txn ID', payment.transaction_id],['Payer', payment.payer_name],['WhatsApp', payment.phone]]) + '<p style="margin:0 0 12px"><img src="cid:payment-screenshot" alt="Payment screenshot" style="max-width:100%;border-radius:10px;border:1px solid #e7e7ec"/></p><p style="margin:0"><a href="https://wa.me/' + payment.phone + '" style="display:inline-block;padding:10px 18px;background:#25d366;color:#fff;text-decoration:none;border-radius:999px;font-weight:700;margin-right:8px">Chat on WhatsApp</a><a href="' + (process.env.APP_URL || 'https://www.diginepalnp.com') + '/admin" style="display:inline-block;padding:10px 18px;background:#e50914;color:#fff;text-decoration:none;border-radius:999px;font-weight:700">Verify in Admin Panel</a></p>', { admin: true, adminButton: false }),
      attachments: screenshotAttachment
    }).catch(()=>{});
  }
@@ -184,15 +157,7 @@ router.put('/:id/status',admin,async(req,res)=>{
    mailer.sendMail({
      to: adminEmail,
      subject: `🔔 Admin Log: Payment #${refCode} ${data.status.toUpperCase()}`,
-     html: `<div style="font-family:sans-serif;padding:24px;background:#141416;color:#ffffff;border-radius:12px;border:1px solid #2a2a30;">
-       <h2 style="color:#e50914;margin:0 0 16px;">Digi Prime Nepal Admin Log</h2>
-       <h3 style="margin:0 0 10px;">Payment Status Reviewed</h3>
-       <p>Order Reference: <strong>#${refCode}</strong></p>
-       <p>Customer: <strong>${user?.name || 'Customer'} (${user?.email || ''})</strong></p>
-       <p>Product: <strong>${result.product_name}</strong></p>
-       <p>New Status: <strong style="color:${data.status==='verified'?'#4ade80':'#f87171'}">${data.status.toUpperCase()}</strong></p>
-       ${data.admin_note ? `<p>Note: ${data.admin_note}</p>` : ''}
-     </div>`
+     html: mailer.wrapEmail('Payment reviewed', data.status === 'verified' ? '#15803d' : '#dc2626', mailer.detailRows([['Order Ref', '#' + refCode],['Customer', (user && user.name || 'Customer') + ' (' + (user && user.email || '') + ')'],['Product', result.product_name],['New Status', '<span style="color:' + (data.status === 'verified' ? '#15803d' : '#dc2626') + '">' + data.status.toUpperCase() + '</span>']].concat(data.admin_note ? [['Note', data.admin_note]] : [])), { admin: true })
    }).catch(()=>{});
  }
 

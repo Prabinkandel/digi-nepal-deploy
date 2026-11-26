@@ -34,17 +34,7 @@ router.post('/',auth,limit('orders',20,3600,req=>req.user.id),async(req,res)=>{
    mailer.sendMail({
      to:adminEmail,
      subject:`🚨 NEW ORDER PLACED: ${order.product_name} (Ref #${refCode})`,
-     html:`<div style="font-family:sans-serif;padding:24px;background:#141416;color:#ffffff;border-radius:12px;border:1px solid #2a2a30;">
-       <h2 style="color:#e50914;margin:0 0 16px;">Digi Prime Nepal Admin Alert</h2>
-       <h3 style="margin:0 0 10px;color:#38bdf8;">New Customer Order Placed!</h3>
-       <div style="background:#1c1c20;padding:16px;border-radius:8px;margin:16px 0;border:1px solid #333;">
-         <p style="margin:4px 0;">Customer: <strong>${req.user.name} (${req.user.email})</strong></p>
-         <p style="margin:4px 0;">Product: <strong>${order.product_name}</strong></p>
-         <p style="margin:4px 0;">Price: <strong>Rs ${Number(order.price).toLocaleString()}</strong></p>
-         <p style="margin:4px 0;">Ref Code: <strong>#${refCode}</strong></p>
-       </div>
-       <p><a href="${process.env.APP_URL || ''}/admin" style="display:inline-block;padding:10px 18px;background:#e50914;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold;">Open Admin Dashboard →</a></p>
-     </div>`
+     html: mailer.wrapEmail('New order placed', '#e50914', mailer.detailRows([['Customer', req.user.name + ' (' + req.user.email + ')'],['Product', order.product_name],['Price', 'Rs ' + Number(order.price).toLocaleString()],['Order Ref', '#' + refCode]]), { admin: true })
    }).catch(()=>{});
  }
 
@@ -146,15 +136,7 @@ router.put('/:id/status',admin,async(req,res)=>{
    mailer.sendMail({
      to: adminEmail,
      subject: `🔔 Admin Update: Order #${refCode} set to ${data.status.toUpperCase()}`,
-     html: `<div style="font-family:sans-serif;padding:24px;background:#141416;color:#ffffff;border-radius:12px;border:1px solid #2a2a30;">
-       <h2 style="color:#e50914;margin:0 0 16px;">Digi Prime Nepal Admin Log</h2>
-       <h3 style="margin:0 0 10px;">Order Status Changed</h3>
-       <p>Order Reference: <strong>#${refCode}</strong></p>
-       <p>Customer: <strong>${user?.name || 'Customer'} (${user?.email || ''})</strong></p>
-       <p>Product: <strong>${order.product_name}</strong></p>
-       <p>New Status: <strong style="color:${statusColors[data.status]}">${data.status.toUpperCase()}</strong></p>
-       ${data.note ? `<p>Note: ${data.note}</p>` : ''}
-     </div>`
+     html: mailer.wrapEmail('Order status changed', statusColors[data.status] || '#17171c', mailer.detailRows([['Order Ref', '#' + refCode],['Customer', (user && user.name || 'Customer') + ' (' + (user && user.email || '') + ')'],['Product', order.product_name],['New Status', '<span style="color:' + statusColors[data.status] + '">' + data.status.toUpperCase() + '</span>']].concat(data.note ? [['Note', data.note]] : [])), { admin: true })
    }).catch(()=>{});
  }
 
