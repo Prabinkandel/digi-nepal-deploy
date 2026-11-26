@@ -719,7 +719,7 @@ function renderOrderCards(orders){
     const actions=[];
     if(o.status==='pending')actions.push(`<button class="btn-success oc-act" data-act="verify" data-id="${o.id}" data-pay="${payId}">✓ Verify</button>`);
     if(o.status==='verified')actions.push(`<button class="btn-primary oc-act" data-act="deliver" data-id="${o.id}">🚚 Deliver</button>`);
-    if(o.status==='pending'||o.status==='verified')actions.push(`<button class="btn-danger oc-act" data-act="reject" data-id="${o.id}" data-pay="${payId}">✕ Reject</button>`);
+    if(o.status==='pending'||o.status==='verified'||o.status==='delivered')actions.push(`<button class="btn-danger oc-act" data-act="reject" data-id="${o.id}" data-pay="${payId}">✕ Reject</button>`);
     if(o.payment_phone)actions.push(`<a class="btn-wa oc-act" target="_blank" rel="noopener" href="https://wa.me/${escapeHtml(o.payment_phone)}?text=${encodeURIComponent(waTextFor(o))}">WhatsApp</a>`);
     actions.push(`<button class="oc-del" data-del="${o.id}" title="Delete order">🗑</button>`);
     return `<div class="order-card">
