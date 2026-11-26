@@ -22,14 +22,16 @@ async function api(path,opts={}){
   const h={Accept:'application/json'};
   if(opts.body && !(opts.body instanceof FormData))h['Content-Type']='application/json';
   if(csrf)h['x-csrf-token']=csrf;
-  let r=await fetch(API+path,{credentials:'same-origin',...opts,headers:{...h,...(opts.headers||{})}});
+  const fo={credentials:'same-origin',...opts,headers:{...h,...(opts.headers||{})}};
+  if(opts.timeout){ const ac=new AbortController(); fo.signal=ac.signal; setTimeout(()=>ac.abort(),opts.timeout); }
+  let r=await fetch(API+path,fo);
   if(r.status===403){
     try{
       const probe=await r.clone().json().catch(()=>null);
       if(probe&&/csrf/i.test(probe.error||'')){
         const cr=await fetch(API+'/auth/csrf',{credentials:'same-origin',headers:{Accept:'application/json'}});
         const cj=await cr.json().catch(()=>null);
-        if(cj&&cj.csrf){ csrf=cj.csrf; r=await fetch(API+path,{credentials:'same-origin',...opts,headers:{...h,'x-csrf-token':csrf,...(opts.headers||{})}}); }
+        if(cj&&cj.csrf){ csrf=cj.csrf; fo.headers={...h,'x-csrf-token':csrf,...(opts.headers||{})}; r=await fetch(API+path,fo); }
       }
     }catch(e){ void e; }
   }
@@ -686,7 +688,7 @@ async function renderOrders(){
     });
     attachOrderCardActions();
     const deliverAllBtn=$('deliver-all-orders');
-    if(deliverAllBtn)deliverAllBtn.onclick=async()=>{ if(!window.confirm('Deliver ALL pending and verified orders? Every customer will be emailed.'))return; deliverAllBtn.disabled=true; deliverAllBtn.textContent='Delivering...'; try{ const r=await api('/orders/deliver-all',{method:'POST'}); toast(`Delivered ${r.delivered} orders`); renderOrders(); }catch(e){ alert('Deliver all failed: '+e.message); deliverAllBtn.disabled=false; deliverAllBtn.textContent='✓ Deliver all pending'; } };
+    if(deliverAllBtn)deliverAllBtn.onclick=async()=>{ if(!window.confirm('Deliver ALL pending and verified orders? Every customer will be emailed.'))return; deliverAllBtn.disabled=true; deliverAllBtn.textContent='Delivering...'; try{ const r=await api('/orders/deliver-all',{method:'POST',timeout:30000}); toast(`Delivered ${r.delivered} orders`); renderOrders(); }catch(e){ alert('Deliver all failed: '+e.message); deliverAllBtn.disabled=false; deliverAllBtn.textContent='✓ Deliver all pending'; } };
     const eraseBtn=$('erase-all-orders');
     if(eraseBtn)eraseBtn.onclick=()=>confirm(`ERASE ALL order records permanently? This cannot be undone.`,async()=>{
       try{await api('/orders/bulk-all',{method:'DELETE'});toast('All orders erased');renderOrders();}catch(err){toast(err.message,'error');}
@@ -719,7 +721,7 @@ function renderOrderCards(orders){
     const actions=[];
     if(o.status==='pending')actions.push(`<button class="btn-success oc-act" data-act="verify" data-id="${o.id}" data-pay="${payId}">✓ Verify</button>`);
     if(o.status==='verified')actions.push(`<button class="btn-primary oc-act" data-act="deliver" data-id="${o.id}">🚚 Deliver</button>`);
-    if(o.status==='pending'||o.status==='verified'||o.status==='delivered')actions.push(`<button class="btn-danger oc-act" data-act="reject" data-id="${o.id}" data-pay="${payId}">✕ Reject</button>`);
+    if(o.status==='pending'||o.status==='verified')actions.push(`<button class="btn-danger oc-act" data-act="reject" data-id="${o.id}" data-pay="${payId}">✕ Reject</button>`);
     if(o.payment_phone)actions.push(`<a class="btn-wa oc-act" target="_blank" rel="noopener" href="https://wa.me/${escapeHtml(o.payment_phone)}?text=${encodeURIComponent(waTextFor(o))}">WhatsApp</a>`);
     actions.push(`<button class="oc-del" data-del="${o.id}" title="Delete order">🗑</button>`);
     return `<div class="order-card">
@@ -1145,7 +1147,7 @@ async function renderPayments(){
       </tbody>
     </table></div></div>`;
   const va=$('pay-verify-all');
-  if(va)va.onclick=async()=>{ if(!window.confirm('Verify ALL pending payments? Only payments that match a pending order with the exact amount will be verified; customers will be emailed.'))return; va.disabled=true; va.textContent='Verifying...'; try{ const r=await api('/payments/verify-all',{method:'POST'}); toast(`Verified ${r.verified} of ${r.total} pending payments`); if(r.failed&&r.failed.length)alert('Could not verify '+r.failed.length+':\n'+r.failed.map(f=>'#'+f.ref+' — '+f.reason).join('\n')); renderPayments(); }catch(e){ alert('Verify all failed: '+e.message); va.disabled=false; va.textContent='✅ Verify all pending'; } };
+  if(va)va.onclick=async()=>{ if(!window.confirm('Verify ALL pending payments? Only payments that match a pending order with the exact amount will be verified; customers will be emailed.'))return; va.disabled=true; va.textContent='Verifying...'; try{ const r=await api('/payments/verify-all',{method:'POST',timeout:30000}); toast(`Verified ${r.verified} of ${r.total} pending payments`); if(r.failed&&r.failed.length)alert('Could not verify '+r.failed.length+':\n'+r.failed.map(f=>'#'+f.ref+' — '+f.reason).join('\n')); renderPayments(); }catch(e){ alert('Verify all failed: '+e.message); va.disabled=false; va.textContent='✅ Verify all pending'; } };
 }
 
 window.verifyPayment=async function(id,status){
@@ -1194,6 +1196,7 @@ Need help fast? Chat with us on WhatsApp: https://wa.me/9779705985657
         <button class="btn-outline btn-sm" id="activity-close-btn">Close</button>
       </div>
       <p style="color:var(--text3);font-size:.85rem;margin:8px 0 14px">${activityData.user.email} \u00B7 Joined ${new Date(activityData.user.created_at).toLocaleDateString()} \u00B7 Last sign-in: ${activityData.last_sign_in?new Date(activityData.last_sign_in).toLocaleString():'\u2014'}</p>
+      ${(activityData.payments.find(p=>p.phone)?.phone)?`<p style="margin:0 0 14px"><a class="btn-wa" target="_blank" rel="noopener" href="https://wa.me/${activityData.payments.find(p=>p.phone).phone.replace(/\D/g,'')}">\u{1F4AC} WhatsApp \u2014 ${activityData.payments.find(p=>p.phone).phone}</a></p>`:''}
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px">
         <div><h4 style="margin:0 0 8px">Orders (${activityData.orders.length})</h4>
           ${activityData.orders.length?activityData.orders.map(o=>`<div style="font-size:.83rem;padding:6px 0;border-bottom:1px solid var(--border)"><strong>#${String(o.id).slice(0,8).toUpperCase()}</strong> ${o.product_name} \u00B7 Rs ${Number(o.price).toLocaleString()} \u00B7 <span class="badge badge-${o.status}">${o.status}</span><br><span style="color:var(--text3)">${new Date(o.created_at).toLocaleString()}</span></div>`).join(''):'<p style="color:var(--text3);font-size:.83rem">No orders yet</p>'}
