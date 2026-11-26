@@ -688,7 +688,7 @@ async function renderOrders(){
     });
     attachOrderCardActions();
     const deliverAllBtn=$('deliver-all-orders');
-    if(deliverAllBtn)deliverAllBtn.onclick=async()=>{ if(!window.confirm('Deliver ALL pending and verified orders? Every customer will be emailed.'))return; deliverAllBtn.disabled=true; deliverAllBtn.textContent='Delivering...'; try{ const r=await api('/orders/deliver-all',{method:'POST',timeout:30000}); toast(`Delivered ${r.delivered} orders`); renderOrders(); }catch(e){ alert('Deliver all failed: '+e.message); deliverAllBtn.disabled=false; deliverAllBtn.textContent='✓ Deliver all pending'; } };
+    if(deliverAllBtn)deliverAllBtn.onclick=async()=>{ if(!window.confirm('Deliver ALL pending and verified orders? Every customer will be emailed.'))return; deliverAllBtn.disabled=true; deliverAllBtn.textContent='Delivering...'; try{ const r=await api('/orders/deliver-all',{method:'POST',body:JSON.stringify({}),timeout:30000}); toast(`Delivered ${r.delivered} orders`); renderOrders(); }catch(e){ alert('Deliver all failed: '+e.message); deliverAllBtn.disabled=false; deliverAllBtn.textContent='✓ Deliver all pending'; } };
     const eraseBtn=$('erase-all-orders');
     if(eraseBtn)eraseBtn.onclick=()=>confirm(`ERASE ALL order records permanently? This cannot be undone.`,async()=>{
       try{await api('/orders/bulk-all',{method:'DELETE'});toast('All orders erased');renderOrders();}catch(err){toast(err.message,'error');}
@@ -1147,7 +1147,7 @@ async function renderPayments(){
       </tbody>
     </table></div></div>`;
   const va=$('pay-verify-all');
-  if(va)va.onclick=async()=>{ if(!window.confirm('Verify ALL pending payments? Only payments that match a pending order with the exact amount will be verified; customers will be emailed.'))return; va.disabled=true; va.textContent='Verifying...'; try{ const r=await api('/payments/verify-all',{method:'POST',timeout:30000}); toast(`Verified ${r.verified} of ${r.total} pending payments`); if(r.failed&&r.failed.length)alert('Could not verify '+r.failed.length+':\n'+r.failed.map(f=>'#'+f.ref+' — '+f.reason).join('\n')); renderPayments(); }catch(e){ alert('Verify all failed: '+e.message); va.disabled=false; va.textContent='✅ Verify all pending'; } };
+  if(va)va.onclick=async()=>{ if(!window.confirm('Verify ALL pending payments? Only payments that match a pending order with the exact amount will be verified; customers will be emailed.'))return; va.disabled=true; va.textContent='Verifying...'; try{ const r=await api('/payments/verify-all',{method:'POST',body:JSON.stringify({}),timeout:30000}); toast(`Verified ${r.verified} of ${r.total} pending payments`); if(r.failed&&r.failed.length)alert('Could not verify '+r.failed.length+':\n'+r.failed.map(f=>'#'+f.ref+' — '+f.reason).join('\n')); renderPayments(); }catch(e){ alert('Verify all failed: '+e.message); va.disabled=false; va.textContent='✅ Verify all pending'; } };
 }
 
 window.verifyPayment=async function(id,status){
@@ -1181,7 +1181,7 @@ async function renderUsers(){
 
 Write your message here.
 
-Need help fast? Chat with us on WhatsApp: https://wa.me/9779705985657
+\u{1F4AC} Chat on WhatsApp: https://wa.me/9779705985657
 
 — Digi Prime Nepal</textarea>
       <div style="display:flex;gap:8px;margin-top:12px">

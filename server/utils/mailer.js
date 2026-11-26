@@ -58,9 +58,7 @@ function wrapEmail(heading, color, inner, opts) {
   const foot = admin
     ? (opts.adminButton === false ? '' : '<div style="margin-top:18px;text-align:center"><a href="https://www.diginepalnp.com/admin" style="display:inline-block;background:#17171c;color:#ffffff;text-decoration:none;font-weight:700;padding:10px 20px;border-radius:999px;font-size:13.5px">Open Admin Panel</a></div>')
       + '<p style="margin:16px 0 0;text-align:center;color:#8a8a93;font-size:12px">Digi Prime Nepal \u00B7 diginepalnp.com</p>'
-    : '<p style="margin:20px 0 0;text-align:center;color:#55555e;font-size:13.5px">Need any subscription \u2014 Netflix, Prime Video, Spotify and more? Just text us on WhatsApp \u{1F447}</p>'
-      + '<div style="margin-top:14px;text-align:center"><a href="https://wa.me/9779705985657" style="display:inline-block;background:#25D366;color:#ffffff;text-decoration:none;font-weight:700;padding:11px 22px;border-radius:999px;font-size:14px">\u{1F4AC} Contact on WhatsApp</a></div>'
-      + '<p style="margin:14px 0 0;text-align:center;color:#8a8a93;font-size:12px">Digi Prime Nepal \u00B7 diginepalnp.com</p>';
+    : '<p style="margin:18px 0 0;text-align:center;color:#8a8a93;font-size:12px">Digi Prime Nepal \u00B7 diginepalnp.com</p>';
   return '<div style="font-family:sans-serif;max-width:560px;margin:0 auto;background:#ffffff;color:#17171c;border:1px solid #e7e7ec;border-radius:14px;overflow:hidden">'
     + '<div style="padding:16px 24px;border-bottom:3px solid #e50914"><span style="color:#e50914;font-size:19px;font-weight:800">Digi</span> <span style="color:#17171c;font-size:19px;font-weight:800">Prime Nepal</span>' + (admin ? '<span style="float:right;color:#8a8a93;font-size:11px;letter-spacing:.08em;padding-top:5px">ADMIN</span>' : '') + '</div>'
     + '<div style="padding:20px 24px">'
