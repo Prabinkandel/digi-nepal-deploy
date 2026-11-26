@@ -2,7 +2,7 @@ const router=require('express').Router();
 const {randomUUID}=require('node:crypto');
 const auth=require('../middleware/auth'),admin=require('../middleware/adminAuth'),limit=require('../middleware/limits');
 const {z,id,text,fail,query,page,searchFilter}=require('../utils/validation');
-const Order=require('../models/Order'),Product=require('../models/Product'),User=require('../models/User');
+const Order=require('../models/Order'),Product=require('../models/Product'),User=require('../models/User'),Payment=require('../models/Payment');
 const {decorate}=require('../utils/catalog');
 const mailer=require('../utils/mailer');
 
@@ -69,16 +69,24 @@ router.get('/all',admin,async(req,res)=>{
    const matchingUsers=await User.find(searchFilter(q.search,['name','email'])).select('id').lean();
    const userIds=matchingUsers.map(u=>u.id);
    const searchRegex={ $regex: q.search.replace(/[.*+?^$(){}|[\]\\]/g, '\\$&'), $options: 'i' };
+   const matchingPayments=await Payment.find({phone:searchRegex}).select('order_id').lean();
    filter.$or=[
      { product_name: searchRegex },
      { id: searchRegex },
-     { user_id: { $in: userIds } }
+     { user_id: { $in: userIds } },
+     { id: { $in: matchingPayments.map(p=>p.order_id) } }
    ];
  }
  if(q.status)filter.status=z.enum(['pending','verified','rejected','delivered']).parse(q.status);
  const result=await page(Order,filter,q);
  const users=await User.find({id:{$in:result.items.map(o=>o.user_id)}}).select('id name email').lean();
- result.items=result.items.map(o=>({...o,user_name:users.find(u=>u.id===o.user_id)?.name||'Unknown',user_email:users.find(u=>u.id===o.user_id)?.email||''}));
+ const orderIds=result.items.map(o=>o.id);
+ const payments=orderIds.length?await Payment.find({order_id:{$in:orderIds}}).sort({created_at:-1}).lean():[];
+ const payByOrder={};
+ for(const p of payments){if(!payByOrder[p.order_id])payByOrder[p.order_id]=p;}
+ result.items=result.items.map(o=>{const p=payByOrder[o.id];return {...o,user_name:users.find(u=>u.id===o.user_id)?.name||'Unknown',user_email:users.find(u=>u.id===o.user_id)?.email||'',payment_phone:p?.phone||'',payment_screenshot:p?.screenshot_url||'',payment_method:p?.payment_method||'',payment_txn:p?.transaction_id||'',payment_status:p?.status||'',payer_name:p?.payer_name||''};});
+ const [cAll,cPending,cVerified,cDelivered,cRejected]=await Promise.all([Order.countDocuments({}),Order.countDocuments({status:'pending'}),Order.countDocuments({status:'verified'}),Order.countDocuments({status:'delivered'}),Order.countDocuments({status:'rejected'})]);
+ result.counts={all:cAll,pending:cPending,verified:cVerified,delivered:cDelivered,rejected:cRejected};
  res.json(result);
 });
 

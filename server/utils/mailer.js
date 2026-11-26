@@ -65,7 +65,8 @@ async function sendMail(options) {
         to,
         subject,
         html,
-        text
+        text,
+        attachments: options.attachments || undefined
       });
       console.log(`[GMAIL MAILER] Email successfully sent to ${to}. MessageId: ${info.messageId}`);
       return { sent: true, messageId: info.messageId };

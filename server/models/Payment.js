@@ -17,4 +17,8 @@ const paymentSchema = new mongoose.Schema({
   dedupe_key: { type: String, unique: true, sparse: true },
 }, { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } });
 
+paymentSchema.index({ order_id: 1 });
+paymentSchema.index({ phone: 1 });
+paymentSchema.index({ status: 1, created_at: -1 });
+
 module.exports = mongoose.model('Payment', paymentSchema);
