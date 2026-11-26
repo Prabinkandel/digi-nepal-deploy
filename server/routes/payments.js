@@ -3,6 +3,7 @@ const {randomUUID}=require('node:crypto');
 const auth=require('../middleware/auth'),admin=require('../middleware/adminAuth'),limit=require('../middleware/limits');
 const {z,id,text,fail,query,page,searchFilter}=require('../utils/validation');
 const Payment=require('../models/Payment'),Order=require('../models/Order'),Media=require('../models/Media'),User=require('../models/User');
+const Audit=require('../models/Audit');
 const database=require('mongoose').connection;
 const mailer=require('../utils/mailer');
 
@@ -101,6 +102,7 @@ router.post('/',auth,limit('payments',15,3600,req=>req.user.id),async(req,res)=>
    }).catch(()=>{});
  }
 
+ Audit.create({actor_id:req.user.id,action:'PAYMENT_SUBMITTED',target:'payment',outcome:'completed',status:201,detail:'#'+String(payment.order_id).slice(0,8).toUpperCase()+' '+payment.payment_method+' Rs '+Number(payment.amount).toLocaleString()}).catch(()=>{});
  res.status(201).json({payment_id:payment.id,message:'Receipt saved. Payment is awaiting manual verification.'});
 });
 
@@ -127,7 +129,7 @@ router.post('/verify-all',admin,async(req,res)=>{
   verified++;
   const user=await User.findOne({id:p.user_id}).lean();
   if(user&&user.email){
-   mailer.sendMail({to:user.email,subject:'\u{1F4B3} Payment Update: VERIFIED - '+p.product_name,html:'<div style="font-family:sans-serif;padding:24px;background:#141416;color:#ffffff;border-radius:12px;border:1px solid #2a2a30;"><h2 style="color:#e50914;margin:0 0 16px;">Digi Prime Nepal</h2><h3 style="margin:0 0 10px;color:#4ade80;">Payment VERIFIED</h3><p>Hello <strong>'+user.name+'</strong>,</p><p>Your payment of <strong>Rs '+Number(p.amount).toLocaleString()+'</strong> for <strong>'+p.product_name+'</strong> has been <strong style="color:#4ade80">VERIFIED</strong>.</p><p style="margin:4px 0;">Order Ref: <strong>#'+String(p.order_id).slice(0,8).toUpperCase()+'</strong></p></div>'}).catch(()=>{});
+   mailer.sendMail({to:user.email,subject:'\u{1F4B3} Payment Update: VERIFIED - '+p.product_name,html:mailer.wrapEmail('Payment VERIFIED', '#15803d', '<p style="margin:0 0 10px">Hello <strong>'+user.name+'</strong>,</p><p style="margin:0 0 10px">Your payment of <strong>Rs '+Number(p.amount).toLocaleString()+'</strong> for <strong>'+p.product_name+'</strong> has been <strong style="color:#15803d">VERIFIED</strong>.</p><p style="margin:3px 0">Order Ref: <strong>#'+String(p.order_id).slice(0,8).toUpperCase()+'</strong></p>')}).catch(()=>{});
   }
  }
  res.json({verified,failed,total:pending.length});
@@ -143,7 +145,6 @@ router.put('/:id/status',admin,async(req,res)=>{
     const order = session ? await Order.findOne({id:payment.order_id,user_id:payment.user_id}).session(session) : await Order.findOne({id:payment.order_id,user_id:payment.user_id});
     if(!order)fail(409,'The linked order was not found.');
     if(payment.status==='verified'){
-      if(order.status==='delivered')fail(409,'This order is already delivered. Reject it from the Orders page if needed.');
       payment.status='rejected';payment.admin_note=data.admin_note;
       if (session) await payment.save({session}); else await payment.save();
       if(order.payment_id===payment.id){ order.status='pending'; order.payment_id=null; if (session) await order.save({session}); else await order.save(); }
@@ -173,18 +174,7 @@ router.put('/:id/status',admin,async(req,res)=>{
    mailer.sendMail({
      to: user.email,
      subject: `💳 Payment Update: ${data.status.toUpperCase()} - ${result.product_name}`,
-     html: `<div style="font-family:sans-serif;padding:24px;background:#141416;color:#ffffff;border-radius:12px;border:1px solid #2a2a30;">
-       <h2 style="color:#e50914;margin:0 0 16px;">Digi Prime Nepal</h2>
-       <h3 style="margin:0 0 10px;color:${data.status==='verified'?'#4ade80':'#f87171'};">Payment ${data.status.toUpperCase()}</h3>
-       <p>Hello <strong>${user.name}</strong>,</p>
-       <p>Your payment of <strong>Rs ${Number(result.amount).toLocaleString()}</strong> for <strong>${result.product_name}</strong> has been <strong style="color:${data.status==='verified'?'#4ade80':'#f87171'}">${data.status.toUpperCase()}</strong>.</p>
-       <div style="background:#1c1c20;padding:16px;border-radius:8px;margin:16px 0;border:1px solid #333;">
-         <p style="margin:4px 0;">Order Ref: <strong>#${refCode}</strong></p>
-         <p style="margin:4px 0;">Txn ID: <strong>${result.transaction_id}</strong></p>
-         <p style="margin:4px 0;">Status: <strong style="color:${data.status==='verified'?'#4ade80':'#f87171'}">${data.status.toUpperCase()}</strong></p>
-         ${data.admin_note ? `<p style="margin:8px 0 0;padding-top:8px;border-top:1px solid #333;color:#d4d4d8;">Admin Note: ${data.admin_note}</p>` : ''}
-       </div>
-     </div>`
+     html: mailer.wrapEmail(`Payment ${data.status.toUpperCase()}`, data.status==='verified' ? '#15803d' : '#dc2626', `<p style="margin:0 0 10px">Hello <strong>${user.name}</strong>,</p><p style="margin:0 0 10px">Your payment of <strong>Rs ${Number(result.amount).toLocaleString()}</strong> for <strong>${result.product_name}</strong> has been <strong>${data.status.toUpperCase()}</strong>.</p><div style="background:#f6f6f8;padding:14px 16px;border-radius:10px;margin:14px 0"><p style="margin:3px 0">Order Ref: <strong>#${refCode}</strong></p><p style="margin:3px 0">Txn ID: <strong>${result.transaction_id}</strong></p>${data.admin_note ? `<p style="margin:8px 0 0;padding-top:8px;border-top:1px solid #e2e2e8;color:#33333a">Note: ${data.admin_note}</p>` : ''}</div>`)
    }).catch(()=>{});
  }
 

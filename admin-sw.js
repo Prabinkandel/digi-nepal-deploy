@@ -2,15 +2,15 @@
 // Strategy: network-first for everything, cache as fallback. API calls are
 // never cached. The cache only holds admin shell assets so the panel can be
 // installed and opened like an app.
-const CACHE = 'digi-admin-v3';
+const CACHE = 'digi-admin-v5';
 const SHELL = [
   '/admin',
   '/admin.css?v=110',
   '/admin-mobile.css?v=110',
   '/theme.css?v=131',
-  '/admin.js?v=117',
-  '/icon-192.png',
-  '/icon-512.png',
+  '/admin.js?v=118',
+  '/admin-icon-192.png',
+  '/admin-icon-512.png',
   '/apple-touch-icon.png',
   '/digi-prime-nepal-logo.png?v=2'
 ];

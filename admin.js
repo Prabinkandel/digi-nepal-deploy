@@ -22,7 +22,17 @@ async function api(path,opts={}){
   const h={Accept:'application/json'};
   if(opts.body && !(opts.body instanceof FormData))h['Content-Type']='application/json';
   if(csrf)h['x-csrf-token']=csrf;
-  const r=await fetch(API+path,{credentials:'same-origin',...opts,headers:{...h,...(opts.headers||{})}});
+  let r=await fetch(API+path,{credentials:'same-origin',...opts,headers:{...h,...(opts.headers||{})}});
+  if(r.status===403){
+    try{
+      const probe=await r.clone().json().catch(()=>null);
+      if(probe&&/csrf/i.test(probe.error||'')){
+        const cr=await fetch(API+'/auth/csrf',{credentials:'same-origin',headers:{Accept:'application/json'}});
+        const cj=await cr.json().catch(()=>null);
+        if(cj&&cj.csrf){ csrf=cj.csrf; r=await fetch(API+path,{credentials:'same-origin',...opts,headers:{...h,'x-csrf-token':csrf,...(opts.headers||{})}}); }
+      }
+    }catch(e){ void e; }
+  }
   
   const contentType = r.headers.get('content-type');
   if (contentType && contentType.includes('application/json')) {
@@ -676,7 +686,7 @@ async function renderOrders(){
     });
     attachOrderCardActions();
     const deliverAllBtn=$('deliver-all-orders');
-    if(deliverAllBtn)deliverAllBtn.onclick=async()=>{ if(!window.confirm('Deliver ALL pending and verified orders? Every customer will be emailed.'))return; deliverAllBtn.disabled=true; deliverAllBtn.textContent='Delivering...'; try{ const r=await api('/orders/deliver-all',{method:'POST'}); toast(`Delivered ${r.delivered} orders`); renderOrders(); }catch(e){ toast(e.message,'error'); deliverAllBtn.disabled=false; } };
+    if(deliverAllBtn)deliverAllBtn.onclick=async()=>{ if(!window.confirm('Deliver ALL pending and verified orders? Every customer will be emailed.'))return; deliverAllBtn.disabled=true; deliverAllBtn.textContent='Delivering...'; try{ const r=await api('/orders/deliver-all',{method:'POST'}); toast(`Delivered ${r.delivered} orders`); renderOrders(); }catch(e){ alert('Deliver all failed: '+e.message); deliverAllBtn.disabled=false; deliverAllBtn.textContent='✓ Deliver all pending'; } };
     const eraseBtn=$('erase-all-orders');
     if(eraseBtn)eraseBtn.onclick=()=>confirm(`ERASE ALL order records permanently? This cannot be undone.`,async()=>{
       try{await api('/orders/bulk-all',{method:'DELETE'});toast('All orders erased');renderOrders();}catch(err){toast(err.message,'error');}
@@ -709,7 +719,7 @@ function renderOrderCards(orders){
     const actions=[];
     if(o.status==='pending')actions.push(`<button class="btn-success oc-act" data-act="verify" data-id="${o.id}" data-pay="${payId}">✓ Verify</button>`);
     if(o.status==='verified')actions.push(`<button class="btn-primary oc-act" data-act="deliver" data-id="${o.id}">🚚 Deliver</button>`);
-    if(o.status==='pending'||o.status==='verified')actions.push(`<button class="btn-danger oc-act" data-act="reject" data-id="${o.id}" data-pay="${payId}">✕ Reject</button>`);
+    if(o.status==='pending'||o.status==='verified'||o.status==='delivered')actions.push(`<button class="btn-danger oc-act" data-act="reject" data-id="${o.id}" data-pay="${payId}">✕ Reject</button>`);
     if(o.payment_phone)actions.push(`<a class="btn-wa oc-act" target="_blank" rel="noopener" href="https://wa.me/${escapeHtml(o.payment_phone)}?text=${encodeURIComponent(waTextFor(o))}">WhatsApp</a>`);
     actions.push(`<button class="oc-del" data-del="${o.id}" title="Delete order">🗑</button>`);
     return `<div class="order-card">
@@ -1135,7 +1145,7 @@ async function renderPayments(){
       </tbody>
     </table></div></div>`;
   const va=$('pay-verify-all');
-  if(va)va.onclick=async()=>{ if(!window.confirm('Verify ALL pending payments? Only payments that match a pending order with the exact amount will be verified; customers will be emailed.'))return; va.disabled=true; va.textContent='Verifying...'; try{ const r=await api('/payments/verify-all',{method:'POST'}); toast(`Verified ${r.verified} of ${r.total} pending payments`); if(r.failed&&r.failed.length)alert('Could not verify '+r.failed.length+':\n'+r.failed.map(f=>'#'+f.ref+' — '+f.reason).join('\n')); renderPayments(); }catch(e){ toast(e.message,'error'); va.disabled=false; } };
+  if(va)va.onclick=async()=>{ if(!window.confirm('Verify ALL pending payments? Only payments that match a pending order with the exact amount will be verified; customers will be emailed.'))return; va.disabled=true; va.textContent='Verifying...'; try{ const r=await api('/payments/verify-all',{method:'POST'}); toast(`Verified ${r.verified} of ${r.total} pending payments`); if(r.failed&&r.failed.length)alert('Could not verify '+r.failed.length+':\n'+r.failed.map(f=>'#'+f.ref+' — '+f.reason).join('\n')); renderPayments(); }catch(e){ alert('Verify all failed: '+e.message); va.disabled=false; va.textContent='✅ Verify all pending'; } };
 }
 
 window.verifyPayment=async function(id,status){
@@ -1148,16 +1158,65 @@ window.verifyPayment=async function(id,status){
 };
 
 // USERS
+let userSearchTerm='';
+let mailToUser=null;
+let activityData=null;
 async function renderUsers(){
-  const users=list(await api('/users?limit=100'));
+  const q=userSearchTerm?('&search='+encodeURIComponent(userSearchTerm)):'';
+  const users=list(await api('/users?limit=100'+q));
   $('page-content').innerHTML=`
-    <div class="section-header"><h2>Users</h2></div>
+    <div class="section-header"><h2>Users <span style="color:var(--text3);font-weight:400;font-size:1rem">(${users.length}${userSearchTerm?' found':''})</span></h2>
+      <span style="display:flex;gap:8px"><input class="search-box" id="user-search" placeholder="Search name or email..." value="${userSearchTerm.replace(/"/g,'&quot;')}" style="min-width:220px"/><button class="btn-primary btn-sm" id="user-search-btn">Search</button></span>
+    </div>
+    ${mailToUser?`
+    <div class="table-wrap" style="padding:18px;margin-bottom:14px">
+      <h3 style="margin:0 0 4px">✉ Send email to ${mailToUser.name}</h3>
+      <p style="color:var(--text3);font-size:.82rem;margin:0 0 12px">${mailToUser.email} — the message goes straight to their inbox from the store email.</p>
+      <label style="font-size:.8rem;display:block;margin-bottom:4px">Subject</label>
+      <input id="mail-subject" value="Message from Digi Prime Nepal" style="width:100%;margin-bottom:10px"/>
+      <label style="font-size:.8rem;display:block;margin-bottom:4px">Message</label>
+      <textarea id="mail-message" rows="7" style="width:100%">Namaste ${mailToUser.name}!
+
+Write your message here.
+
+Need help fast? Chat with us on WhatsApp: https://wa.me/9779705985657
+
+— Digi Prime Nepal</textarea>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn-success" id="mail-send-btn">Send Email</button>
+        <button class="btn-outline" id="mail-cancel-btn">Cancel</button>
+      </div>
+    </div>`:''}
+    ${activityData?`
+    <div class="table-wrap" style="padding:18px;margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h3 style="margin:0">\u{1F4CB} Activity — ${activityData.user.name}</h3>
+        <button class="btn-outline btn-sm" id="activity-close-btn">Close</button>
+      </div>
+      <p style="color:var(--text3);font-size:.85rem;margin:8px 0 14px">${activityData.user.email} \u00B7 Joined ${new Date(activityData.user.created_at).toLocaleDateString()} \u00B7 Last sign-in: ${activityData.last_sign_in?new Date(activityData.last_sign_in).toLocaleString():'\u2014'}</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px">
+        <div><h4 style="margin:0 0 8px">Orders (${activityData.orders.length})</h4>
+          ${activityData.orders.length?activityData.orders.map(o=>`<div style="font-size:.83rem;padding:6px 0;border-bottom:1px solid var(--border)"><strong>#${String(o.id).slice(0,8).toUpperCase()}</strong> ${o.product_name} \u00B7 Rs ${Number(o.price).toLocaleString()} \u00B7 <span class="badge badge-${o.status}">${o.status}</span><br><span style="color:var(--text3)">${new Date(o.created_at).toLocaleString()}</span></div>`).join(''):'<p style="color:var(--text3);font-size:.83rem">No orders yet</p>'}
+        </div>
+        <div><h4 style="margin:0 0 8px">Payments (${activityData.payments.length})</h4>
+          ${activityData.payments.length?activityData.payments.map(pay=>`<div style="font-size:.83rem;padding:6px 0;border-bottom:1px solid var(--border)">${pay.product_name} \u00B7 Rs ${Number(pay.amount).toLocaleString()} \u00B7 ${pay.payment_method} \u00B7 <span class="badge badge-${pay.status}">${pay.status}</span><br><span style="color:var(--text3)">${new Date(pay.created_at).toLocaleString()}</span></div>`).join(''):'<p style="color:var(--text3);font-size:.83rem">No payments yet</p>'}
+        </div>
+        <div><h4 style="margin:0 0 8px">Logins &amp; steps (${activityData.events.length})</h4>
+          ${activityData.events.length?activityData.events.map(e=>`<div style="font-size:.83rem;padding:6px 0;border-bottom:1px solid var(--border)"><strong>${e.action}</strong>${e.detail?' \u00B7 '+e.detail:''}<br><span style="color:var(--text3)">${new Date(e.created_at).toLocaleString()}</span></div>`).join(''):'<p style="color:var(--text3);font-size:.83rem">No recorded events yet</p>'}
+        </div>
+      </div>
+    </div>`:''}
     <div class="table-wrap"><table>
-      <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead>
+      <thead><tr><th>Name</th><th>Email / Contact</th><th>Role</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead>
       <tbody>${users.map(u=>`
         <tr>
           <td class="td-name">${u.name}</td>
-          <td style="font-size:.85rem">${u.email}</td>
+          <td style="font-size:.85rem"><div>${u.email}</div>
+            <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+              <button class="btn-outline btn-sm" onclick="openUserMail('${u.id}')">✉ Send Email</button>
+              <button class="btn-outline btn-sm" onclick="openUserActivity('${u.id}')">📋 Activity</button>
+              ${u.phone?`<a class="btn-success btn-sm" style="text-decoration:none" target="_blank" rel="noopener" href="https://wa.me/${String(u.phone).replace(/\D/g,'')}">💬 WhatsApp ${u.phone}</a>`:''}
+            </div></td>
           <td><span class="badge badge-${u.role}">${u.role}</span></td>
           <td><span class="badge ${u.is_active?'badge-active':'badge-inactive'}">${u.is_active?'Active':'Disabled'}</span></td>
           <td style="font-size:.8rem;color:var(--text3)">${new Date(u.created_at).toLocaleDateString()}</td>
@@ -1168,7 +1227,18 @@ async function renderUsers(){
         </tr>`).join('')}
       </tbody>
     </table></div>`;
+  window.__usersCache=users;
+  const sb=$('user-search-btn'); if(sb)sb.onclick=()=>{ userSearchTerm=$('user-search').value.trim(); renderUsers(); };
+  const si=$('user-search'); if(si)si.onkeydown=e=>{ if(e.key==='Enter'){ userSearchTerm=si.value.trim(); renderUsers(); } };
+  const acb=$('activity-close-btn'); if(acb)acb.onclick=()=>{ activityData=null; renderUsers(); };
+  const sendBtn=$('mail-send-btn');
+  if(sendBtn)sendBtn.onclick=async()=>{ const subject=$('mail-subject').value.trim(),message=$('mail-message').value.trim(); if(subject.length<2||message.length<2){toast('Subject and message are required','error');return;} sendBtn.disabled=true; sendBtn.textContent='Sending...'; try{ await api(`/users/${mailToUser.id}/email`,{method:'POST',body:JSON.stringify({subject,message})}); toast('Email sent to '+mailToUser.email); mailToUser=null; renderUsers(); }catch(e){ toast(e.message,'error'); sendBtn.disabled=false; sendBtn.textContent='Send Email'; } };
+  const cancelBtn=$('mail-cancel-btn'); if(cancelBtn)cancelBtn.onclick=()=>{ mailToUser=null; renderUsers(); };
 }
+
+window.openUserMail=function(id){ const u=(window.__usersCache||[]).find(x=>x.id===id); if(!u)return; mailToUser={id:u.id,name:u.name,email:u.email}; renderUsers(); };
+
+window.openUserActivity=async function(id){ try{ activityData=await api(`/users/${id}/activity`); renderUsers(); const cb=$('activity-close-btn'); if(cb)cb.onclick=()=>{ activityData=null; renderUsers(); }; window.scrollTo({top:0,behavior:'smooth'}); }catch(e){ toast(e.message,'error'); } };
 
 window.toggleUser=function(id,name,active){
   confirm(`${active?'Disable':'Enable'} user "${name}"?`,async()=>{
