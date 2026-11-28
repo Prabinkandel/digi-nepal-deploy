@@ -13,6 +13,7 @@ router.post('/',auth,limit('orders',20,3600,req=>req.user.id),async(req,res)=>{
  if(existing)return res.json(existing);
  const product=await Product.findOne({id:data.product_id,is_active:1}).lean();
  if(!product)fail(404,'This product is unavailable.');
+ if(Number(product.stock_out)===1||(product.stock!==null&&product.stock!==undefined&&Number(product.stock)<=0))fail(400,'This plan is currently out of stock.');
  const current=(await decorate([product]))[0];
  const order=await Order.create({id:randomUUID(),user_id:req.user.id,product_id:product.id,product_name:product.name,price:current.price,status:'pending',request_key:data.request_key});
  
