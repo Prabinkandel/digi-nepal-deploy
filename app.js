@@ -769,8 +769,8 @@ function productCard(group) {
 
 
 
-async function loadProducts() {
-  setProductLoading();
+async function loadProducts(append = false) {
+  if (!append) setProductLoading();
   const query = new URLSearchParams({ page:String(state.page), limit:'24', sort:state.sort });
   if (state.category) query.set('category',state.category);
   if (state.search) query.set('search',state.search);
@@ -779,23 +779,26 @@ async function loadProducts() {
   try {
     const result = await api('/products?' + query, { signal: state.catalogController.signal });
     const products = result.items || result;
+    const combined = append && Array.isArray(state.catalogRaw) ? state.catalogRaw.concat(products) : products;
+    state.catalogRaw = combined;
     if (!state.category && !state.search) {
-      state.allCatalog = products;
+      state.allCatalog = combined;
     }
-    state.catalog = products;
-    state.total = Number(result.total ?? products.length);
-    state.groups = groupProducts(products);
+    state.catalog = combined;
+    state.total = Number(result.total ?? combined.length);
+    state.groups = groupProducts(combined);
     state.groupByKey = new Map(state.groups.map(g => [g.key, g]));
     $('product-grid').innerHTML = state.groups.map(productCard).join('') || '';
     $('catalog-empty').hidden = state.groups.length > 0;
-    renderCatalogStatus(products.length);
-    renderDeals(state.allCatalog || products);
+    renderCatalogStatus(combined.length);
+    renderDeals(state.allCatalog || combined);
     renderPages(result.pages || 1);
   } catch (error) {
     if (error.name === 'AbortError') return;
+    if (append) return;
     if ($('catalog-status')) $('catalog-status').replaceChildren();
     $('product-grid').innerHTML = '<div class="catalog-empty"><h3>Couldn’t load subscriptions.</h3><p>' + escapeHtml(error.message) + '</p><button class="button button-quiet" id="retry-products">Try again</button></div>';
-    $('retry-products').onclick = loadProducts;
+    $('retry-products').onclick = () => loadProducts();
   }
 }
 
@@ -1070,7 +1073,22 @@ function dealThumb(product) {
 
 function _renderDiscovery(products) { const rail=$('discovery-rail'); if(!rail) return; rail.innerHTML=products.map(product => '<button class="discovery-card" data-discovery-product="' + escapeHtml(product.id) + '">' + productVisual(product,true) + '<span><small>' + escapeHtml(product.category_name || 'DIGITAL SERVICE') + '</small><strong>' + escapeHtml(product.name) + '</strong><b>' + formatMoney(product.price) + '</b></span></button>').join(''); rail.querySelectorAll('[data-discovery-product]').forEach(button=>button.onclick=()=>openProduct(button.dataset.discoveryProduct)); }
 
-function renderPages(pages) { const holder = $('pagination'); holder.replaceChildren(); if (pages <= 1) return; for (let number=1; number<=pages; number++) { const button = document.createElement('button'); button.className = 'page-button' + (number === state.page ? ' active':''); button.textContent = number; button.ariaLabel = 'Page ' + number; button.onclick = () => { state.page = number; loadProducts(); document.querySelector('#catalog').scrollIntoView({behavior:'smooth'}); }; holder.append(button); } }
+let catalogScrollObserver = null;
+function renderPages(pages) {
+  state.totalPages = pages || 1;
+  const holder = $('pagination');
+  if (holder) holder.replaceChildren();
+  if (catalogScrollObserver) { catalogScrollObserver.disconnect(); catalogScrollObserver = null; }
+  if (!holder || state.totalPages <= state.page) return;
+  catalogScrollObserver = new IntersectionObserver(entries => {
+    if (!entries.some(entry => entry.isIntersecting)) return;
+    if (state.loadingMore || state.page >= (state.totalPages || 1)) return;
+    state.loadingMore = true;
+    state.page += 1;
+    loadProducts(true).catch(() => {}).finally(() => { state.loadingMore = false; });
+  }, { rootMargin: '700px 0px' });
+  catalogScrollObserver.observe(holder);
+}
 
 function _getCategoryMeta(name) {
   const n = (name || '').toLowerCase();
