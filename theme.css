@@ -3786,7 +3786,7 @@ body:has(dialog[open]) .proof-bubble {
 /* 1 — Product popup banner: the photo fills the whole banner, no white box around it */
 .pd-banner{background:#101223}
 .pd-banner img{object-fit:cover}
-/* 2 — Hero trust strip: compact and neat in a small space */
-.hero-trust-strip{gap:.35rem .5rem;margin-top:.9rem;padding:.65rem .7rem;border:1px solid var(--line);border-radius:.85rem;font-size:.78rem;justify-content:center}
+/* 2 — Hero trust strip: compact and neat in a small space — one unified section (2026-11-28) */
+.hero-trust-strip{gap:.35rem .5rem;margin:.9rem auto 0;padding:.65rem .7rem;border:1px solid var(--line);border-radius:.85rem;font-size:.78rem;justify-content:center;max-width:880px}
 .hero-trust-strip li{gap:.35rem;padding:.26rem .6rem;border-radius:999px;background:rgba(127,140,180,.12);white-space:nowrap}
 @media (max-width:640px){.hero-trust-strip{gap:.3rem .4rem;padding:.55rem}.hero-trust-strip li{font-size:.72rem;padding:.22rem .48rem}}
