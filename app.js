@@ -1207,6 +1207,16 @@ function detailVisual(product) {
     '<div class="brand-detail-emblem" style="display:none">' + brandVisual + '</div>';
 }
 
+/* Blurred-backdrop support for the dialog banner: theme.css §banner-3
+   paints a blurred, zoomed copy of the banner image behind the
+   uncropped tile via the --pd-bg custom property. Mirror the rendered
+   banner <img> src onto the banner element after each detail render. */
+function syncPdBannerBg() {
+  const banner = document.querySelector('#product-detail .pd-banner');
+  const img = banner && banner.querySelector('img');
+  if (banner && img && img.getAttribute('src')) banner.style.setProperty('--pd-bg', 'url("' + img.getAttribute('src') + '")');
+}
+
 function detailRelated(product, excludeIds) {
   const excluded = new Set(excludeIds && excludeIds.length ? excludeIds : [product.id]);
   const related = state.catalog.filter(item => !excluded.has(item.id) && item.category_id === product.category_id).slice(0, 3);
@@ -1405,6 +1415,7 @@ function renderGroupDetail(group, preselectVariantId) {
       detailPayChips() +
     '</footer>' +
   '</div>';
+  syncPdBannerBg();
   const renderFeatures = (v) => {
     const section = $('pd-features');
     const list = $('pd-features-list');
@@ -1553,6 +1564,7 @@ async function openProduct(id) {
         detailPayChips() +
       '</footer>' +
     '</div>';
+    syncPdBannerBg();
     summaryClamp();
     $('start-order').onclick = () => startOrder(product.id);
     $('start-whatsapp-order').onclick = () => startWhatsAppOrder(product.id);
